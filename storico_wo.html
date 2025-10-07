@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Storico WO - FIC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            color: #E2E8F0;
+            min-height: 100vh;
+        }
+        .wo-card {
+            border-left: 6px solid; /* Bordo più spesso */
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+        .wo-card:hover {
+            transform: translateY(-3px); /* Effetto sollevamento maggiore */
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+        }
+        .ergo-border { border-color: #3B82F6; } /* Blu */
+        .bike-border { border-color: #10B981; } /* Verde */
+        .boat-border { border-color: #F59E0B; } /* Giallo/Arancione */
+        
+        /* Stile specifico per i messaggi di stato */
+        #loading-message, #error-message, #no-data-message {
+            background-color: #1F2937;
+            border-radius: 0.5rem;
+            margin-top: 1.5rem;
+            padding: 2rem;
+            font-weight: 500;
+        }
+
+        /* Stile per input e select modernizzato (risolve problema sfondo bianco) */
+        .input-dark {
+            /* Assicura sfondo scuro (slate-900), bordo (slate-700) e testo bianco (text-white) */
+            /* Aggiornato per usare bg-slate-900 e un colore di focus coeso */
+            @apply w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none;
+        }
+
+        /* Correzioni per Input Date */
+        
+        /* 1. Forza l'icona del calendario ad essere chiara per contrasto */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+        }
+
+        /* 2. Forza il testo della data (valore selezionato) ad essere bianco e sfondo scuro */
+        input[type="date"], .input-dark[type="date"] {
+            color: white; 
+            background-color: #0f172a; /* Corrisponde a bg-slate-900 */
+        }
+        
+        /* Correzioni per Select (Riquadro Tipo) */
+        
+        /* Forza lo sfondo scuro sull'elemento select e le sue opzioni */
+        .input-dark, .input-dark option {
+            background-color: #0F172A !important; /* Forza sfondo scuro */
+            color: white !important; /* Forza testo bianco */
+        }
+        
+        /* Aggiunge il filtro invertito alla freccia di sistema del select per farla apparire bianca */
+        .input-dark.appearance-none {
+            /* Per select: Rimuove l'aspetto di default e lo gestisce Tailwind (non necessario qui, ma utile) */
+        }
+    </style>
+</head>
+<body class="antialiased p-4 md:p-8">
+
+    <div class="max-w-4xl mx-auto">
+        <header class="mb-8 flex justify-between items-center border-b border-slate-700 pb-4">
+            <h1 class="text-3xl md:text-4xl font-black text-slate-100">Storico Workout</h1>
+            <a href="./index.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg shadow transition-colors text-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M12 19l-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Indietro
+            </a>
+        </header>
+
+        <p id="info-atleta" class="text-xl font-semibold text-slate-300 mb-6"></p>
+
+        <!-- Controlli di Filtro -->
+        <div class="bg-slate-900/50 p-4 sm:p-6 rounded-xl mb-8 border border-slate-700/50">
+            <h2 class="text-xl font-bold mb-4 text-white">Filtra Allenamenti</h2>
+            <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
+                <!-- Selettore Data Inizio -->
+                <div class="col-span-1">
+                    <label for="startDate" class="block text-sm font-medium text-slate-400 mb-1">Dal:</label>
+                    <input type="date" id="startDate" class="input-dark">
+                </div>
+                
+                <!-- Selettore Data Fine -->
+                <div class="col-span-1">
+                    <label for="endDate" class="block text-sm font-medium text-slate-400 mb-1">Al:</label>
+                    <input type="date" id="endDate" class="input-dark">
+                </div>
+
+                <!-- Filtro Tipo Allenamento -->
+                <div class="col-span-1">
+                    <label for="tipoFilter" class="block text-sm font-medium text-slate-400 mb-1">Tipo:</label>
+                    <select id="tipoFilter" class="input-dark appearance-none">
+                        <option value="TUTTI">Tutti i Tipi</option>
+                        <option value="ERGO">ERGO</option>
+                        <option value="BIKE">BIKE</option>
+                        <option value="BOAT">BOAT</option>
+                    </select>
+                </div>
+                
+                <!-- Pulsante Applica Filtri -->
+                <button id="applyFiltersBtn" class="w-full sm:col-span-1 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors mt-2 sm:mt-0">
+                    Applica Filtri
+                </button>
+            </div>
+        </div>
+
+        <!-- Lista dei Workout -->
+        <div id="workout-list" class="space-y-6">
+            <p id="loading-message" class="text-slate-400 text-center">Caricamento storico allenamenti...</p>
+            <p id="error-message" class="text-red-400 text-center hidden">Si è verificato un errore nel caricamento dei dati.</p>
+        </div>
+
+        <p id="no-data-message" class="text-slate-400 text-center hidden">Nessun allenamento trovato nell'ultima settimana.</p>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Configurazione Firebase (la stessa usata in index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
+            authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
+            projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.appspot.com",
+            messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+
+        // Inizializzazione Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // Riferimenti al DOM
+        const infoAtleta = document.getElementById('info-atleta');
+        const workoutList = document.getElementById('workout-list');
+        const loadingMessage = document.getElementById('loading-message');
+        const errorMessage = document.getElementById('error-message');
+        const noDataMessage = document.getElementById('no-data-message');
+        
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const tipoFilterSelect = document.getElementById('tipoFilter');
+        const applyFiltersBtn = document.getElementById('applyFiltersBtn');
+
+
+        // --- Funzioni di Utility ---
+        
+        /**
+         * Imposta i valori di default per i selettori di data (ultimi 7 giorni)
+         */
+        function setDefaultDates() {
+            const today = new Date();
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(today.getDate() - 7);
+            
+            // Formatta YYYY-MM-DD
+            const formatDate = (date) => {
+                const y = date.getFullYear();
+                const m = String(date.getMonth() + 1).padStart(2, '0');
+                const d = String(date.getDate()).padStart(2, '0');
+                return `${y}-${m}-${d}`;
+            };
+
+            startDateInput.value = formatDate(sevenDaysAgo);
+            endDateInput.value = formatDate(today);
+        }
+
+        /**
+         * Calcola la data di 7 giorni fa (in formato timestamp per confronto locale).
+         * Utilizzato solo all'inizio se i campi data non sono usati.
+         */
+        function getSevenDaysAgoTimestamp() {
+            const sevenDaysAgo = new Date();
+            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+            return sevenDaysAgo.getTime(); 
+        }
+
+        function getCardColorClass(tipo) {
+            switch (tipo ? tipo.toUpperCase() : '') {
+                case 'ERGO': return 'ergo-border';
+                case 'BIKE': return 'bike-border';
+                case 'BOAT': return 'boat-border';
+                default: return 'border-slate-500';
+            }
+        }
+        
+        function formatWorkoutData(data) {
+            // Aggiungo 'ep' ai valori di default e lo estraggo dai dati
+            const defaultValues = { tipo: 'N/A', modalita: 'N/A', distanza: 'N/A', ep: null, data: 'N/A', timestamp: null, intervalli: [] };
+            const { tipo, modalita, distanza, ep, data: formattedDateString, timestamp, intervalli } = { ...defaultValues, ...data };
+
+            let intervalsHtml = '';
+            if (intervalli && intervalli.length > 0) {
+                // Miglioramento della formattazione degli intervalli per mobile
+                intervalsHtml = `<div class="mt-3 pt-3 border-t border-slate-700/50">
+                                    <p class="font-medium text-slate-300 mb-1">Intervalli:</p>
+                                    <ul class="grid grid-cols-2 gap-x-4 text-sm text-slate-400">`;
+                intervalli.forEach((interval, index) => {
+                    intervalsHtml += `<li><span class="font-mono text-white">${index + 1}:</span> ${interval}</li>`;
+                });
+                intervalsHtml += `</ul></div>`;
+            }
+
+            const borderClass = getCardColorClass(tipo);
+            
+            // Logica per visualizzare EP (Efficienza Personale)
+            let epHtml = '';
+            if (ep !== null && ep !== undefined) {
+                let epValue = String(ep);
+                
+                // Se è un numero, lo formatto con 2 decimali
+                if (!isNaN(parseFloat(ep))) {
+                    epValue = parseFloat(ep).toFixed(2);
+                }
+                
+                epHtml = `
+                    <div class="flex justify-between text-slate-300">
+                        <p>Efficienza (Ep):</p>
+                        <span class="font-semibold text-white">${epValue}</span>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="wo-card ${borderClass} bg-slate-800 p-5 rounded-xl shadow-xl">
+                    <div class="flex flex-col sm:flex-row justify-between sm:items-center mb-3">
+                        <span class="font-extrabold text-xl text-white mb-1 sm:mb-0">${tipo} (${modalita})</span>
+                        <span class="text-sm text-slate-400 font-medium">${formattedDateString}</span>
+                    </div>
+                    <div class="flex justify-between text-slate-300">
+                        <p>Distanza:</p>
+                        <span class="font-semibold text-white">${distanza}</span>
+                    </div>
+                    ${epHtml}
+                    ${intervalsHtml}
+                </div>
+            `;
+        }
+
+        // --- Funzione Principale di Caricamento ---
+        
+        async function fetchWorkouts(cognomeAtleta, startFilterDate, endFilterDate, tipoFilter) {
+            loadingMessage.classList.remove('hidden');
+            errorMessage.classList.add('hidden');
+            noDataMessage.classList.add('hidden');
+            workoutList.innerHTML = ''; 
+
+            if (!cognomeAtleta) {
+                errorMessage.textContent = "Cognome dell'atleta non trovato. Riprova l'accesso.";
+                errorMessage.classList.remove('hidden');
+                loadingMessage.classList.add('hidden');
+                return;
+            }
+
+            // Imposta i limiti temporali per il filtro JS (inclusivo)
+            const startTime = startFilterDate ? new Date(startFilterDate).getTime() : 0;
+            // La data di fine deve includere l'intero giorno, quindi aggiungiamo un giorno intero (86400000 ms)
+            const endTime = endFilterDate ? new Date(endFilterDate).getTime() + 86400000 : Infinity; 
+            
+            try {
+                // PRIMO PASSAGGIO: Recupera tutti gli allenamenti dell'atleta (solo filtro per cognome)
+                const q = query(
+                    collection(db, "allenamenti"),
+                    where("cognomeAtleta", "==", cognomeAtleta)
+                );
+                
+                const querySnapshot = await getDocs(q);
+                
+                let filteredWorkouts = [];
+
+                if (!querySnapshot.empty) {
+                    querySnapshot.forEach((doc) => {
+                        const data = doc.data();
+                        
+                        // SECONDO PASSAGGIO: Filtra i risultati localmente in JavaScript
+                        
+                        // 1. Filtro Temporale (data DB deve essere YYYY-MM-DD)
+                        const workoutDate = new Date(data.data); 
+                        const workoutTime = workoutDate.getTime();
+
+                        const isWithinDateRange = !isNaN(workoutTime) && workoutTime >= startTime && workoutTime < endTime;
+                        
+                        // 2. Filtro per Tipo (più robusto)
+                        const isCorrectType = tipoFilter === 'TUTTI' || 
+                            (data.tipo && data.tipo.toUpperCase() === tipoFilter.toUpperCase()) ||
+                            (data.modalita && data.modalita.toUpperCase() === tipoFilter.toUpperCase()); // Controllo anche la modalita, se necessario
+                        
+                        if (isWithinDateRange && isCorrectType) {
+                            filteredWorkouts.push(data);
+                        }
+                    });
+                }
+                
+                if (filteredWorkouts.length === 0) {
+                    noDataMessage.classList.remove('hidden');
+                } else {
+                    let resultsHtml = '';
+                    
+                    // Ordina i workout dal più recente al più vecchio
+                    filteredWorkouts.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
+
+                    filteredWorkouts.forEach((data) => {
+                        resultsHtml += formatWorkoutData(data);
+                    });
+                    workoutList.innerHTML = resultsHtml;
+                }
+
+            } catch (error) {
+                console.error("Errore nel recupero degli allenamenti:", error);
+                errorMessage.textContent = "Errore nel database: Impossibile caricare i dati degli allenamenti.";
+                errorMessage.classList.remove('hidden');
+            } finally {
+                loadingMessage.classList.add('hidden');
+            }
+        }
+
+        // --- Gestione Stato Autenticazione e Inizializzazione ---
+        
+        applyFiltersBtn.addEventListener('click', () => {
+            const cognome = sessionStorage.getItem('atletaCognome');
+            if (cognome) {
+                // Esegue il fetch ogni volta che si clicca "Applica Filtri"
+                fetchWorkouts(
+                    cognome.toUpperCase(),
+                    startDateInput.value,
+                    endDateInput.value,
+                    tipoFilterSelect.value
+                );
+            }
+        });
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                const cognome = sessionStorage.getItem('atletaCognome');
+                
+                if (cognome) {
+                    // Imposta le date di default all'avvio
+                    setDefaultDates();
+                    
+                    infoAtleta.textContent = `Storico Workout per ${cognome}`;
+                    
+                    // Imposta sempre il valore di default del filtro su 'TUTTI'
+                    tipoFilterSelect.value = 'TUTTI'; 
+                    
+                    // Carica i dati con i filtri di default (ultima settimana e TUTTI i tipi)
+                    fetchWorkouts(
+                        cognome.toUpperCase(),
+                        startDateInput.value,
+                        endDateInput.value,
+                        tipoFilterSelect.value 
+                    );
+                } else {
+                    infoAtleta.textContent = "Informazioni atleta mancanti. Reindirizzamento alla pagina di login...";
+                    setTimeout(() => {
+                         window.location.href = './index.html'; 
+                    }, 1500);
+                    loadingMessage.classList.add('hidden');
+                }
+            } else {
+                window.location.href = './index.html'; 
+            }
+        });
+
+    </script>
+</body>
+</html>
