@@ -23,7 +23,7 @@
             background-color: #0F172A; /* Slate 900 */
             color: #E2E8F0; /* Slate 200 */
             -webkit-font-smoothing: antialiased;
-            -moz-osx-moz-osx-font-smoothing: grayscale;
+            -moz-osx-moz-font-smoothing: grayscale;
         }
         .background-gradient {
             position: fixed; top: 50%; left: 50%;
@@ -61,7 +61,7 @@
         </div>
 
         <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-100 text-center mb-2">Analisi Allenamento per Squadra</h1>
-        <p class="text-md text-slate-400 text-center mb-8">Seleziona equipaggio e intervalli, inserisci il passo, poi genera e salva il grafico.</p>
+        <p class="text-md text-slate-400 text-center mb-8">Seleziona equipaggio e intervalli, inserisci il passo e i colpi, poi genera e salva il grafico.</p>
 
         <!-- SELETTORI DINAMICI E CONFIGURAZIONE -->
         <div class="bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 mb-6 shadow-xl backdrop-blur-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
@@ -105,7 +105,7 @@
         <div class="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
             <button id="generate-chart-btn" onclick="generateChartAndSaveData(true)" disabled class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
-                Genera Grafico & Salva Dati
+                Genera Grafici & Salva Dati
             </button>
             <button id="download-data-btn" onclick="downloadPdf()" disabled class="px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
@@ -113,11 +113,19 @@
             </button>
         </div>
         
-        <!-- Contenitore Principale (Grafico) -->
-        <div id="chart-container" class="mt-8 bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 md:p-6 shadow-xl backdrop-blur-sm hidden">
-            <h2 class="text-xl font-bold text-slate-100 mb-4">Grafico Comparativo Intervalli (m/s vs Distanza)</h2>
+        <!-- Contenitore Grafico Velocità -->
+        <div id="speed-chart-container" class="mt-8 bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 md:p-6 shadow-xl backdrop-blur-sm hidden">
+            <h2 class="text-xl font-bold text-slate-100 mb-4">Grafico 1: Velocità Comparativa (m/s vs Distanza)</h2>
             <div class="h-64 md:h-96">
-                <canvas id="performanceChart"></canvas>
+                <canvas id="performanceChartSpeed"></canvas>
+            </div>
+        </div>
+
+        <!-- Contenitore Grafico Frequenza di Colpi -->
+        <div id="sr-chart-container" class="mt-8 bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 md:p-6 shadow-xl backdrop-blur-sm hidden">
+            <h2 class="text-xl font-bold text-slate-100 mb-4">Grafico 2: Frequenza di Colpi Comparativa (SR vs Distanza)</h2>
+            <div class="h-64 md:h-96">
+                <canvas id="performanceChartSR"></canvas>
             </div>
         </div>
 
@@ -155,13 +163,18 @@
             '#4ADE80', '#0EA5E9', '#F472B6', '#FACC15', '#A78BFA',
             '#FB923C', '#E11D48', '#14B8A6', '#64748B', '#A3E635',
         ];
+        // Colore univoco per la linea SR (Ora usiamo COLORS per coerenza, ma il colore del punto rimane univoco)
+        const SR_SINGLE_RUN_COLOR = '#F97316'; 
+        const SR_POINT_MAX_COLOR = '#FACC15'; // Giallo per SR max
+        const SR_POINT_MIN_COLOR = '#E11D48'; // Rosso scuro per SR min
 
         const BOATS = [
             'M1X', 'M2X', 'M4X', 'M2-', 'M4-', 'M8+', 
             'W1X', 'W2X', 'W4X', 'W2-', 'W4-', 'W8+'
         ];
 
-        let chartInstance;
+        let chartInstanceSpeed;
+        let chartInstanceSR;
         let selectedDistance = 2000; 
         let selectedRuns = 1;
         let athletesList = []; 
@@ -237,6 +250,8 @@
                             nome: data.nome || '' 
                         });
                     }
+                    // Non uso l'orderBy di Firestore qui, lo faccio in JS se necessario,
+                    // per evitare l'errore di indice mancante, ma l'API Firebase in questo ambiente è permissiva.
                 });
 
                 console.log(`Caricati ${athletesList.length} atleti dal database e ordinati per cognome.`);
@@ -265,14 +280,14 @@
                 await addDoc(graphicsCollectionRef, dataToSave);
 
                 showMessageBox("Successo!", `Allenamento di ${dataToSave.distance}m per la barca ${dataToSave.boat} salvato nella raccolta 'graphics'.`);
-                saveButton.textContent = "Genera Grafico & Salva Dati";
+                saveButton.textContent = "Genera Grafici & Salva Dati";
                 document.getElementById('download-data-btn').disabled = false;
 
             } catch (error) {
                 console.error("Errore durante il salvataggio dei dati:", error);
                 showMessageBox("Errore di Salvataggio", `Impossibile salvare i dati: ${error.message}`);
                 saveButton.disabled = false;
-                saveButton.textContent = "Genera Grafico & Salva Dati";
+                saveButton.textContent = "Genera Grafici & Salva Dati";
             }
         }
         
@@ -345,7 +360,7 @@
                 const div = document.createElement('div');
                 div.innerHTML = `
                     <label for="athlete-selector-${i}" class="block text-sm font-medium text-slate-300 mb-1">Atleta ${i}</label>
-                    <select id="athlete-selector-${i}" data-position="${i}" class="athlete-selector w-full p-2 bg-slate-700/70 border border-slate-600 rounded-lg text-white font-semibold" ${athletesList.length === 0 ? 'disabled' : ''}>
+                    <select id="athlete-selector-${i}" data-position="${i}" class="athlete-selector w-full p-2 bg-slate-700/70 border border-slate-600 rounded-lg text-white font-semibold" ${athletesList.length === 0 ? 'disabled' : ''} onchange="updateAllData(false); renderInputs();">
                         <option value="" disabled selected>Seleziona...</option>
                         ${athleteOptions}
                     </select>
@@ -362,9 +377,10 @@
             document.getElementById('runs-wrapper').classList.remove('hidden');
 
             renderAthleteSelectors(document.getElementById('boat-selector').value);
-            renderInputs();
+            renderInputs(); // Chiama renderInputs per inizializzare lo stato disabled/message
 
-            document.getElementById('chart-container').classList.add('hidden');
+            document.getElementById('speed-chart-container').classList.add('hidden');
+            document.getElementById('sr-chart-container').classList.add('hidden');
             document.getElementById('summary-legend-container').classList.add('hidden');
             document.getElementById('download-data-btn').disabled = true;
 
@@ -375,27 +391,172 @@
             const boatSelected = document.getElementById('boat-selector').value !== '';
             const hasAthletes = athletesList.length > 0;
             const allAthletesSelected = Array.from(document.querySelectorAll('.athlete-selector')).every(select => select.value !== '');
+            // Check if pace and SR inputs are rendered
             const inputsRendered = document.getElementById('input-runs-container').querySelectorAll('.pace-input').length > 0;
             
-            document.getElementById('generate-chart-btn').disabled = !(boatSelected && allAthletesSelected && inputsRendered && hasAthletes);
+            // Chiamo updateAllData con shouldDrawChart=false per aggiornare la validità
+            const allRunResults = updateAllData(false);
+            const allRunsValid = (allRunResults.length === selectedRuns) && allRunResults.length > 0;
+
+            document.getElementById('generate-chart-btn').disabled = !(allRunsValid && allAthletesSelected && inputsRendered && hasAthletes);
+        }
+
+        // --- FUNZIONI DI MASCHERA E VALIDAZIONE INPUT ---
+        
+        // Formatta il passo in MM:SS.D (Implementazione semplificata per input intuitivo)
+        function formatPaceInput(event) {
+            const input = event.target;
+            
+            // 1. Pulisci, lasciando solo cifre
+            let digits = input.value.replace(/[^0-9]/g, ''); 
+            
+            // Limita a un massimo di 6 cifre (MMSSDD, anche se ci aspettiamo M:SS.D o MM:SS.D)
+            if (digits.length > 6) {
+                digits = digits.substring(0, 6);
+            }
+            
+            let formattedValue = '';
+
+            // Applica la mascheratura da destra a sinistra (D, SS, M/MM)
+            if (digits.length >= 1) {
+                const d = digits.slice(-1); // Decimo (ultimo carattere)
+                let ss = digits.slice(-3, -1); // Secondi (due caratteri prima del decimo)
+                let m = digits.slice(0, -3); // Minuti (il resto)
+                
+                // Correggi l'input dei secondi se supera 59
+                if (ss.length === 2 && parseInt(ss, 10) > 59) {
+                    // Se l'utente digita un numero troppo alto (es. 65), lo correggiamo a 59
+                    // E teniamo il primo carattere come parte dei minuti
+                    if (m.length === 0) {
+                        m = ss.charAt(0);
+                        ss = '59';
+                    } else {
+                         // Se ci sono già minuti, mantieni solo 59 secondi
+                         ss = '59';
+                    }
+                }
+
+                // Ricostruisci il valore
+                if (m) {
+                    // Minuti:Secondi.Decimo
+                    formattedValue = `${m}:${ss.padStart(2, '0')}.${d}`;
+                } else if (ss.length === 2) {
+                    // 0:SS.D (es. 35.6 -> 0:35.6)
+                    formattedValue = `0:${ss}.${d}`;
+                } else if (ss.length === 1) {
+                    // 0:0S.D (es. 5.6 -> 0:05.6)
+                    formattedValue = `0:0${ss}.${d}`;
+                } else {
+                    // 0:00.D (es. 6 -> 0:00.6)
+                    formattedValue = `0:00.${d}`;
+                }
+                
+                // --- NUOVA CORREZIONE: Rimuovi gli zeri iniziali superflui solo per i minuti ---
+                // Esempio: 01:30.5 deve diventare 1:30.5, ma 0:30.5 deve rimanere 0:30.5
+                const parts = formattedValue.split(':');
+                if (parts.length === 2) {
+                    let minutesPart = parts[0];
+                    if (minutesPart.length > 1 && minutesPart.startsWith('0')) {
+                        // Rimuovi lo zero iniziale se non è l'unica cifra (es. "01" -> "1")
+                        minutesPart = minutesPart.replace(/^0+/, '');
+                        if (minutesPart === '') minutesPart = '0'; // Se era solo zeri, metti '0'
+                    }
+                    formattedValue = `${minutesPart}:${parts[1]}`;
+                }
+
+
+            }
+
+            // Pulisci i valori intermedi se l'utente cancella completamente
+            if (!digits) {
+                 formattedValue = '';
+            }
+            
+            input.value = formattedValue;
+            updateAllData(false);
+        }
+
+        // Formatta SR in NN.N
+        function formatSrInput(event) {
+            const input = event.target;
+            
+            // Pulisci, lasciando solo cifre
+            let digits = input.value.replace(/[^0-9]/g, ''); 
+
+            if (digits.length > 3) {
+                digits = digits.substring(0, 3);
+            }
+            
+            let formattedValue = '';
+
+            if (digits.length === 3) {
+                 // Esempio: 455 -> 45.5
+                 formattedValue = `${digits.substring(0, 2)}.${digits.substring(2, 3)}`;
+            } else if (digits.length === 2) {
+                // Esempio: 45
+                 formattedValue = digits;
+            } else if (digits.length === 1) {
+                // Esempio: 4
+                 formattedValue = digits;
+            } else {
+                 formattedValue = '';
+            }
+
+            // Gestione del punto decimale inserito manualmente (ad esempio, l'utente digita "45.")
+            if (event.data === '.' || event.data === ',') {
+                const currentVal = input.value.replace(/[^0-9]/g, ''); // Cifre attuali
+                if (currentVal.length === 2 && !input.value.includes('.')) {
+                    // Se ci sono 2 cifre e l'utente ha premuto . o ,
+                    formattedValue = `${currentVal}.`;
+                } else if (currentVal.length === 1 && !input.value.includes('.')) {
+                    // Se c'è 1 cifra e l'utente ha premuto . o ,
+                    formattedValue = `${currentVal}.`;
+                }
+            }
+
+            // Assicurati che non ci siano più di 2 cifre prima del punto
+            if (formattedValue.includes('.')) {
+                let parts = formattedValue.split('.');
+                parts[0] = parts[0].substring(0, 2);
+                parts[1] = parts[1].substring(0, 1);
+                formattedValue = parts.join('.');
+            } else {
+                formattedValue = formattedValue.substring(0, 2);
+            }
+            
+            input.value = formattedValue;
+            updateAllData(false);
         }
 
         // --- LOGICA DI ANALISI E GRAFICO ---
 
         function paceToSeconds(paceString) {
             if (!paceString) return 0;
-            paceString = paceString.trim().replace(',', '.');
+            paceString = paceString.trim().replace(',', '.'); // Permetti sia virgola che punto per i decimali
+            
             const parts = paceString.split(':');
             
-            if (parts.length === 1 && !isNaN(parseFloat(parts[0]))) {
-                return parseFloat(parts[0]) > 0 ? parseFloat(parts[0]) : 0;
-            } else if (parts.length !== 2) {
+            let totalSeconds = 0;
+            if (parts.length === 2) {
+                const minutes = parseInt(parts[0], 10);
+                const seconds = parseFloat(parts[1]); // Qui parts[1] sarà SS.D
+                if (isNaN(minutes) || isNaN(seconds) || minutes < 0 || seconds < 0) return 0;
+                
+                // Valida i secondi
+                if (Math.floor(seconds) >= 60) return 0;
+
+                totalSeconds = (minutes * 60) + seconds;
+            } else if (paceString.includes('.') && !isNaN(parseFloat(paceString))) {
+                 // Caso in cui l'utente ha solo SS.D (e.g. 30.5)
+                 totalSeconds = parseFloat(paceString);
+            } else if (!isNaN(parseFloat(paceString)) && parseFloat(paceString) > 0) {
+                 // Ultimo fallback, se è un numero > 0, consideralo come secondi totali (anche se in teoria la maschera lo previene)
+                 totalSeconds = parseFloat(paceString);
+            } else {
                  return 0;
             }
-            const minutes = parseInt(parts[0], 10);
-            const seconds = parseFloat(parts[1]);
-            if (isNaN(minutes) || isNaN(seconds)) return 0;
-            return (minutes * 60) + seconds;
+            
+            return totalSeconds > 0 ? totalSeconds : 0;
         }
 
         function paceToSpeedMps(paceSeconds) {
@@ -413,14 +574,34 @@
             const formattedSeconds = seconds.toFixed(1).padStart(4, '0');
             return `${minutes}:${formattedSeconds}`;
         }
-
+        
+        // Nuova funzione per gestire l'incolla di due colonne di dati (Pace e SR)
         window.handlePaste = (event, runId) => {
             event.preventDefault();
             const paste = event.clipboardData.getData('text');
-            const paceValues = paste.split(/[\n\r]+/).map(s => s.trim()).filter(s => s.length > 0);
-            const inputFields = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
-            paceValues.forEach((value, index) => {
-                if (inputFields[index]) inputFields[index].value = value;
+            const lines = paste.split(/[\n\r]+/).map(s => s.trim()).filter(s => s.length > 0);
+            
+            const paceInputs = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
+            const srInputs = document.querySelectorAll(`.sr-input[data-run-id="${runId}"]`);
+            
+            lines.forEach((line, index) => {
+                const parts = line.split(/[\t\s]+/); // Split by tab or space
+                
+                // Parts[0] = Pace, Parts[1] = SR (Stroke Rate)
+                if (paceInputs[index] && parts[0]) {
+                    // Pulisci l'input per il pace (accetta solo cifre)
+                    let paceDigits = parts[0].replace(/[^0-9.]/g, ''); 
+                    
+                    paceInputs[index].value = paceDigits; 
+                    const syntheticEvent = { target: paceInputs[index], type: 'input' };
+                    formatPaceInput(syntheticEvent); // Applica la formattazione
+                }
+                if (srInputs[index] && parts[1]) {
+                    // Simula l'input dell'utente e lascia che formatSrInput faccia il suo lavoro
+                    srInputs[index].value = parts[1].replace(/[^0-9.]/g, ''); // Incolla solo cifre e punto
+                    const syntheticEvent = { target: srInputs[index], type: 'input' };
+                    formatSrInput(syntheticEvent);
+                }
             });
             updateAllData(false);
         };
@@ -433,6 +614,19 @@
             if (!document.getElementById('boat-selector').value) {
                 container.innerHTML = '<div class="p-6 text-center text-slate-400 bg-slate-800/50 border border-slate-700/50 rounded-xl">Seleziona Barca, Distanza e Numero Intervalli per inserire i dati.</div>';
                 return;
+            }
+            
+            // Verifica se TUTTI gli atleti sono stati selezionati
+            const athleteSelectors = Array.from(document.querySelectorAll('.athlete-selector'));
+            const athleteCountRequired = getAthleteCount(document.getElementById('boat-selector').value);
+            const allAthletesSelected = athleteSelectors.length === athleteCountRequired &&
+                                        athleteSelectors.every(s => s.value !== '');
+            const inputDisabled = !allAthletesSelected ? 'disabled' : '';
+
+            if (!allAthletesSelected && athleteCountRequired > 0) {
+                 container.innerHTML = `<div class="p-6 text-center text-yellow-400 bg-slate-800/50 border border-yellow-700/50 rounded-xl">
+                    <p class="font-bold mb-2">ATTENZIONE: Seleziona tutti i ${athleteCountRequired} atleti prima di inserire i tempi.</p>
+                 </div>`;
             }
 
             for (let i = 1; i <= selectedRuns; i++) {
@@ -448,50 +642,81 @@
                             <td class="py-2 px-3 text-sm font-medium text-slate-300">${distance}</td>
                             <td class="py-2 px-3 text-center">
                                 <input type="text" 
-                                    class="pace-input w-24 p-1 text-center bg-slate-700/70 border border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm text-white font-mono"
-                                    placeholder="1:45.0" data-run-id="${runId}" data-distance="${distance}"
-                                    oninput="updateAllData(false)" ${j === 1 ? `onpaste="handlePaste(event, ${runId})"` : ''}>
+                                    class="pace-input w-24 p-1 text-center bg-slate-700/70 border border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm text-white font-mono ${inputDisabled ? 'opacity-50 cursor-not-allowed' : ''}"
+                                    placeholder="mm:ss.d" 
+                                    data-run-id="${runId}" 
+                                    data-distance="${distance}"
+                                    oninput="formatPaceInput(event)"
+                                    ${j === 1 ? `onpaste="handlePaste(event, ${runId})"` : ''}
+                                    ${inputDisabled}>
+                            </td>
+                            <td class="py-2 px-3 text-center">
+                                <input type="text" 
+                                    class="sr-input w-16 p-1 text-center bg-slate-700/70 border border-slate-600 rounded-md focus:ring-orange-500 focus:border-orange-500 text-sm text-white font-mono ${inputDisabled ? 'opacity-50 cursor-not-allowed' : ''}"
+                                    placeholder="nn.n"
+                                    data-run-id="${runId}" 
+                                    data-distance="${distance}"
+                                    oninput="formatSrInput(event)"
+                                    ${inputDisabled}>
                             </td>
                             <td id="speed-${runId}-${distance}" class="py-2 px-3 text-center text-sm text-emerald-400 font-mono">-</td>
                         </tr>`;
                 }
 
-                section.innerHTML = `
-                    <h3 class="text-lg font-bold text-slate-100 mb-4" style="color: ${runColor};">
-                        <span style="background-color: ${runColor}; width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px;"></span>
-                        Intervallo ${runId}
-                    </h3>
-                    <div class="overflow-x-auto">
-                        <table class="min-w-full divide-y divide-slate-700">
-                            <thead class="bg-slate-700/50">
-                                <tr>
-                                    <th class="py-3 px-3 text-left text-sm font-semibold text-slate-300">Distanza (m)</th>
-                                    <th class="py-3 px-3 text-center text-sm font-semibold text-slate-300">Passo/500m</th>
-                                    <th class="py-3 px-3 text-center text-sm font-semibold text-slate-300">Velocità (m/s)</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-slate-700">${tableRows}</tbody>
-                        </table>
-                    </div>`;
-                container.appendChild(section);
+                // Genera la tabella solo se gli atleti sono stati selezionati O se non sono richiesti atleti (e.g. 1X)
+                if(allAthletesSelected || athleteCountRequired === 0) {
+                     section.innerHTML = `
+                        <h3 class="text-lg font-bold text-slate-100 mb-4" style="color: ${runColor};">
+                            <span style="background-color: ${runColor}; width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px;"></span>
+                            Intervallo ${runId}
+                        </h3>
+                        <p class="text-sm text-slate-400 mb-3">Inserisci il passo/500m (es. 1:45.0) e i colpi (SR).</p>
+                        <div class="overflow-x-auto">
+                            <table class="min-w-full divide-y divide-slate-700">
+                                <thead class="bg-slate-700/50">
+                                    <tr>
+                                        <th class="py-3 px-3 text-left text-sm font-semibold text-slate-300">Distanza (m)</th>
+                                        <th class="py-3 px-3 text-center text-sm font-semibold text-slate-300">Passo/500m</th>
+                                        <th class="py-3 px-3 text-center text-sm font-semibold text-slate-300">Colpi (SR)</th>
+                                        <th class="py-3 px-3 text-center text-sm font-semibold text-slate-300">Velocità (m/s)</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-slate-700">${tableRows}</tbody>
+                            </table>
+                        </div>`;
+                    container.appendChild(section);
+                }
             }
-            updateAllData(false);
+            // Aggiorna lo stato dei pulsanti Genera/Download dopo aver reso gli input
+            checkGenerationReadiness();
         }
 
         function analyzeRunData(runId) {
-            const dataPoints = [];
+            const speedDataPoints = [];
+            const srDataPoints = [];
             let totalTimeSeconds = 0, validSegmentsCount = 0;
+            let totalSr = 0, validSrCount = 0;
             
-            const inputs = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
-            inputs.forEach(input => {
-                const distance = parseInt(input.dataset.distance);
-                const paceSeconds = paceToSeconds(input.value);
+            const paceInputs = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
+            const srInputs = document.querySelectorAll(`.sr-input[data-run-id="${runId}"]`);
+            
+            let allValid = true;
+
+            paceInputs.forEach((paceInput, index) => {
+                const distance = parseInt(paceInput.dataset.distance);
+                const srInput = srInputs[index];
+                const paceSeconds = paceToSeconds(paceInput.value);
+                const sr = parseFloat(srInput.value.replace(',', '.')); // Usa parseFloat per gestire NN.N
                 const speedDisplay = document.getElementById(`speed-${runId}-${distance}`);
 
-                if (paceSeconds > 0) {
+                const hasPace = paceSeconds > 0;
+                const hasSr = sr > 0 && !isNaN(sr);
+                
+                // Analisi Velocità
+                if (hasPace) {
                     const speedMps = paceToSpeedMps(paceSeconds);
                     speedDisplay.textContent = speedMps.toFixed(2);
-                    dataPoints.push({ 
+                    speedDataPoints.push({ 
                         x: distance, y: parseFloat(speedMps.toFixed(3)),
                         paceSeconds: paceSeconds, segmentTime: calculateSegmentTime(paceSeconds) 
                     });
@@ -499,52 +724,98 @@
                     validSegmentsCount++;
                 } else {
                     speedDisplay.textContent = '-';
+                    allValid = false;
+                }
+
+                // Analisi SR
+                if (hasSr) {
+                    srDataPoints.push({ x: distance, y: sr });
+                    totalSr += sr;
+                    validSrCount++;
+                } else {
+                    allValid = false;
                 }
             });
 
-            if (validSegmentsCount < (selectedDistance / SEGMENT_DISTANCE)) return null;
-            if (dataPoints.length === 0) return null;
+            // Se mancano segmenti o non ci sono dati, ritorna null (invalido)
+            if (validSegmentsCount !== (selectedDistance / SEGMENT_DISTANCE) || validSrCount !== (selectedDistance / SEGMENT_DISTANCE)) return null;
+            if (speedDataPoints.length === 0 || srDataPoints.length === 0) return null;
 
-            const maxSpeedSeg = dataPoints.reduce((max, p) => p.y > max.y ? p : max, { y: -1 });
-            
-            const relevantPointsForMin = dataPoints.filter(p => p.x > 200);
-            const minSpeedSeg = (relevantPointsForMin.length > 0 ? relevantPointsForMin : dataPoints)
+            // Statistiche Velocità
+            const maxSpeedSeg = speedDataPoints.reduce((max, p) => p.y > max.y ? p : max, { y: -1 });
+            const relevantPointsForMin = speedDataPoints.filter(p => p.x > 200);
+            const minSpeedSeg = (relevantPointsForMin.length > 0 ? relevantPointsForMin : speedDataPoints)
                 .reduce((min, p) => p.y < min.y ? p : min, { y: Infinity });
+
+            // Statistiche SR
+            const averageSr = parseFloat((totalSr / validSrCount).toFixed(1));
+            const maxSrSeg = srDataPoints.reduce((max, p) => p.y > max.y ? p : max, { y: -1 });
+            const minSrSeg = srDataPoints.reduce((min, p) => p.y < min.y ? p : min, { y: Infinity });
+
 
             return {
                 runId: runId, color: COLORS[runId - 1],
                 totalTimeSeconds: totalTimeSeconds, totalTimeString: secondsToPaceString(totalTimeSeconds),
-                speedData: dataPoints,
+                
+                // Speed Stats
+                speedData: speedDataPoints,
                 maxSpeedSegment: { x: maxSpeedSeg.x, y: maxSpeedSeg.y, paceString: secondsToPaceString(maxSpeedSeg.y > 0 ? PACE_REFERENCE_DISTANCE / maxSpeedSeg.y : 0) },
                 minSpeedSegment: { x: minSpeedSeg.x, y: minSpeedSeg.y, paceString: secondsToPaceString(minSpeedSeg.y > 0 ? PACE_REFERENCE_DISTANCE / minSpeedSeg.y : 0) },
                 averageSpeed: parseFloat((selectedDistance / totalTimeSeconds).toFixed(3)),
+                
+                // SR Stats
+                srData: srDataPoints,
+                averageSr: averageSr,
+                maxSrSegment: maxSrSeg,
+                minSrSegment: minSrSeg,
             };
         }
 
         function updateAllData(shouldDrawChart) {
             const allRunResults = [];
-            let allRunsValid = true;
-
-            for (let i = 1; i <= selectedRuns; i++) {
-                const result = analyzeRunData(i);
-                if (result) allRunResults.push(result);
-                else allRunsValid = false;
-            }
             
-            const allAthletesSelected = Array.from(document.querySelectorAll('.athlete-selector')).every(s => s.value !== '');
-            document.getElementById('generate-chart-btn').disabled = !(allRunsValid && allAthletesSelected && allRunResults.length > 0);
+            // Se gli input non sono ancora abilitati (atleti non scelti), non analizzare i dati
+            const athleteSelectors = Array.from(document.querySelectorAll('.athlete-selector'));
+            const athleteCountRequired = getAthleteCount(document.getElementById('boat-selector').value);
+            const allAthletesSelected = athleteSelectors.length === athleteCountRequired &&
+                                        athleteSelectors.every(s => s.value !== '');
+            const inputEnabled = (allAthletesSelected || athleteCountRequired === 0);
+
+            if (inputEnabled) {
+                for (let i = 1; i <= selectedRuns; i++) {
+                    const result = analyzeRunData(i);
+                    if (result) allRunResults.push(result);
+                }
+            }
+
+
+            // Determina la validità basandosi sul fatto che TUTTE le ripetute sono state analizzate con successo
+            const allRunsValid = allRunResults.length === selectedRuns;
+
+            const inputsRendered = document.getElementById('input-runs-container').querySelectorAll('.pace-input').length > 0;
+            const hasAthletes = athletesList.length > 0;
+
+
+            // Aggiorna lo stato del pulsante genera
+            document.getElementById('generate-chart-btn').disabled = !(allRunsValid && allAthletesSelected && inputsRendered && hasAthletes);
 
             if (shouldDrawChart) {
-                updateChart(allRunResults);
+                updateCharts(allRunResults);
                 updateSummaryLegend(allRunResults);
-                document.getElementById('chart-container').classList.remove('hidden');
+                document.getElementById('speed-chart-container').classList.remove('hidden');
+                document.getElementById('sr-chart-container').classList.remove('hidden');
                 document.getElementById('summary-legend-container').classList.remove('hidden');
             }
             return allRunResults;
         }
 
-        function updateChart(allRunResults) {
-            if (!chartInstance) return;
+        function updateCharts(allRunResults) {
+            updateSpeedChart(allRunResults);
+            updateSrChart(allRunResults);
+        }
+
+        function updateSpeedChart(allRunResults) {
+            if (!chartInstanceSpeed) return;
 
             let overallMinSpeed = Infinity;
             let overallMaxSpeed = -Infinity;
@@ -580,7 +851,7 @@
                 newDatasets.push({
                     label: `Intervallo ${run.runId}`,
                     data: run.speedData,
-                    borderColor: run.color,
+                    borderColor: run.color, // Colore coerente per la curva di velocità
                     tension: 0.4, 
                     pointRadius: pointRadii,
                     pointStyle: pointStyles,
@@ -588,28 +859,109 @@
                     borderWidth: 3,
                 });
 
+                // Linea media velocità (RIPRISTINATA: hidden: false)
                 newDatasets.push({
-                    label: `Media Intervallo ${run.runId}`,
+                    label: `Media Velocità Intervallo ${run.runId}`,
                     data: [
                         { x: run.speedData[0].x, y: run.averageSpeed },
                         { x: run.speedData[run.speedData.length - 1].x, y: run.averageSpeed }
                     ],
-                    borderColor: '#F472B6',
-                    borderWidth: 3, 
+                    borderColor: run.color, // Colore coerente per la media di velocità
+                    borderWidth: 2, 
                     borderDash: [5, 5],
                     pointRadius: 0,
                     fill: false,
+                    // Rimuovere hidden: true per visualizzarla
+                    // hidden: true, // Rimosso per mostrare la linea media
                 });
             });
 
-            chartInstance.data.datasets = newDatasets;
-            chartInstance.options.scales.x.max = selectedDistance;
-            chartInstance.options.scales.x.min = SEGMENT_DISTANCE;
+            chartInstanceSpeed.data.datasets = newDatasets;
+            chartInstanceSpeed.options.scales.x.max = selectedDistance;
+            chartInstanceSpeed.options.scales.x.min = SEGMENT_DISTANCE;
             
-            chartInstance.options.scales.y.min = Math.floor(overallMinSpeed * 10) / 10 - 0.1;
-            chartInstance.options.scales.y.max = Math.ceil(overallMaxSpeed * 10) / 10 + 0.1;
+            chartInstanceSpeed.options.scales.y.min = Math.floor(overallMinSpeed * 10) / 10 - 0.1;
+            chartInstanceSpeed.options.scales.y.max = Math.ceil(overallMaxSpeed * 10) / 10 + 0.1;
 
-            chartInstance.update();
+            chartInstanceSpeed.update();
+        }
+
+        function updateSrChart(allRunResults) {
+             if (!chartInstanceSR) return;
+
+            let overallMinSr = Infinity;
+            let overallMaxSr = -Infinity;
+            allRunResults.forEach(run => {
+                run.srData.forEach(point => {
+                    if (point.y < overallMinSr) overallMinSr = point.y;
+                    if (point.y > overallMaxSr) overallMaxSr = point.y;
+                });
+            });
+
+            // Aggiungiamo un po' di margine al range SR
+            const srRangeMin = Math.max(0, Math.floor(overallMinSr) - 2);
+            const srRangeMax = Math.ceil(overallMaxSr) + 2;
+
+            const newDatasets = [];
+            
+            // Dati SR per ogni intervallo
+            allRunResults.forEach(run => {
+                 const pointRadii = [], pointStyles = [], pointBackgroundColors = [];
+                const maxSrValue = run.maxSrSegment.y;
+                const minSrValue = run.minSrSegment.y;
+                
+                run.srData.forEach(point => {
+                    if (point.y === maxSrValue) {
+                        pointRadii.push(8); 
+                        pointStyles.push('star');
+                        pointBackgroundColors.push(SR_POINT_MAX_COLOR); 
+                    } else if (point.y === minSrValue) {
+                        pointRadii.push(8);
+                        pointStyles.push('triangle');
+                        pointBackgroundColors.push(SR_POINT_MIN_COLOR); 
+                    } else {
+                        pointRadii.push(4);
+                        pointStyles.push('circle');
+                        pointBackgroundColors.push(run.color);
+                    }
+                });
+
+                newDatasets.push({
+                    label: `Intervallo ${run.runId} (SR)`,
+                    data: run.srData,
+                    borderColor: run.color, // Colore coerente per la curva SR
+                    tension: 0.4, 
+                    pointRadius: pointRadii,
+                    pointStyle: pointStyles,
+                    pointBackgroundColor: pointBackgroundColors,
+                    borderWidth: 3,
+                });
+
+                 // Linea media SR
+                 newDatasets.push({
+                    label: `Media Colpi Intervallo ${run.runId}`,
+                    data: [
+                        { x: run.srData[0].x, y: run.averageSr },
+                        { x: run.srData[run.srData.length - 1].x, y: run.averageSr }
+                    ],
+                    borderColor: run.color, // Colore coerente per la media SR
+                    borderWidth: 2, 
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false,
+                    hidden: true,
+                });
+            });
+
+            chartInstanceSR.data.datasets = newDatasets;
+            chartInstanceSR.options.scales.x.max = selectedDistance;
+            chartInstanceSR.options.scales.x.min = SEGMENT_DISTANCE;
+            
+            chartInstanceSR.options.scales.y.min = srRangeMin;
+            chartInstanceSR.options.scales.y.max = srRangeMax;
+            chartInstanceSR.options.scales.y.ticks.stepSize = 1;
+
+            chartInstanceSR.update();
         }
 
         function updateSummaryLegend(allRunResults) {
@@ -637,21 +989,48 @@
                             <p class="text-xl font-extrabold text-white">${run.totalTimeString}</p>
                         </div>
                     </div>
-                    <div class="mt-3 pt-3 border-t border-slate-700/50 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
-                        <div class="bg-slate-800/50 p-2 rounded-lg">
-                            <p class="text-xs font-semibold text-slate-400 uppercase">Velocità Media</p>
-                            <p class="text-2xl font-bold font-mono text-pink-400">${run.averageSpeed.toFixed(2)}</p>
-                            <p class="text-sm font-sans text-slate-400 -mt-1">m/s</p>
+                    
+                    <div class="mt-3 pt-3 border-t border-slate-700/50 grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <!-- STATISTICHE VELOCITÀ -->
+                        <div class="bg-slate-800/50 p-3 rounded-lg">
+                            <h4 class="text-sm font-bold text-pink-400 mb-2">Velocità (m/s)</h4>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="p-1 rounded-md bg-slate-700/50">
+                                    <p class="text-xs font-semibold text-slate-400 uppercase">Media</p>
+                                    <p class="text-lg font-bold font-mono text-pink-400">${run.averageSpeed.toFixed(2)}</p>
+                                </div>
+                                <div class="p-1 rounded-md bg-slate-700/50">
+                                    <p class="text-xs font-semibold text-slate-400 uppercase">Max</p>
+                                    <p class="text-lg font-bold font-mono text-sky-400">${run.maxSpeedSegment.y.toFixed(2)}</p>
+                                    <p class="text-xs text-slate-500 -mt-1">@ ${run.maxSpeedSegment.x}m</p>
+                                </div>
+                                <div class="p-1 rounded-md bg-slate-700/50">
+                                    <p class="text-xs font-semibold text-slate-400 uppercase">Min</p>
+                                    <p class="text-lg font-bold font-mono text-red-400">${run.minSpeedSegment.y.toFixed(2)}</p>
+                                    <p class="text-xs text-slate-500 -mt-1">@ ${run.minSpeedSegment.x}m</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg">
-                            <p class="text-xs font-semibold text-slate-400 uppercase">Velocità Max</p>
-                            <p class="text-2xl font-bold font-mono text-sky-400">${run.maxSpeedSegment.y.toFixed(2)}</p>
-                            <p class="text-xs text-slate-500">${run.maxSpeedSegment.paceString} @ ${run.maxSpeedSegment.x}m</p>
-                        </div>
-                        <div class="bg-slate-800/50 p-2 rounded-lg">
-                            <p class="text-xs font-semibold text-slate-400 uppercase">Velocità Min</p>
-                            <p class="text-2xl font-bold font-mono text-red-400">${run.minSpeedSegment.y.toFixed(2)}</p>
-                            <p class="text-xs text-slate-500">${run.minSpeedSegment.paceString} @ ${run.minSpeedSegment.x}m</p>
+
+                        <!-- STATISTICHE FREQUENZA DI COLPI (SR) -->
+                        <div class="bg-slate-800/50 p-3 rounded-lg">
+                            <h4 class="text-sm font-bold text-orange-400 mb-2">Colpi (SR)</h4>
+                            <div class="grid grid-cols-3 gap-2 text-center">
+                                <div class="p-1 rounded-md bg-slate-700/50">
+                                    <p class="text-xs font-semibold text-slate-400 uppercase">Media</p>
+                                    <p class="text-lg font-bold font-mono text-orange-400">${run.averageSr.toFixed(1)}</p>
+                                </div>
+                                <div class="p-1 rounded-md bg-slate-700/50">
+                                    <p class="text-xs font-semibold text-slate-400 uppercase">Max</p>
+                                    <p class="text-lg font-bold font-mono text-yellow-400">${run.maxSrSegment.y.toFixed(1)}</p>
+                                    <p class="text-xs text-slate-500 -mt-1">@ ${run.maxSrSegment.x}m</p>
+                                </div>
+                                <div class="p-1 rounded-md bg-slate-700/50">
+                                    <p class="text-xs font-semibold text-slate-400 uppercase">Min</p>
+                                    <p class="text-lg font-bold font-mono text-red-700">${run.minSrSegment.y.toFixed(1)}</p>
+                                    <p class="text-xs text-slate-500 -mt-1">@ ${run.minSrSegment.x}m</p>
+                                </div>
+                            </div>
                         </div>
                     </div>`;
                 summaryList.appendChild(summaryDiv);
@@ -683,10 +1062,19 @@
                 runs: allRunResults.map(run => ({
                     runId: run.runId,
                     totalTime: run.totalTimeString,
+                    
+                    // Speed Data
                     averageSpeed_mps: run.averageSpeed,
-                    segments: run.speedData,
+                    speedSegments: run.speedData,
                     maxSpeed: run.maxSpeedSegment,
                     minSpeed: run.minSpeedSegment,
+
+                    // SR Data
+                    averageSr: run.averageSr,
+                    srSegments: run.srData,
+                    maxSr: run.maxSrSegment,
+                    minSr: run.minSrSegment,
+
                 })),
                 timestamp: serverTimestamp(),
                 createdBy: auth.currentUser?.uid || 'anonymous'
@@ -717,64 +1105,78 @@
             const workoutString = `${selectedRuns}x${selectedDistance}m`;
             const filename = `${crewSurnames}_${boat}_${workoutString}.pdf`;
 
-            // Prepara il grafico per la stampa (tema chiaro)
-            const originalChartColors = {
-                xTicks: chartInstance.options.scales.x.ticks.color,
-                xTitle: chartInstance.options.scales.x.title.color,
-                yTicks: chartInstance.options.scales.y.ticks.color,
-                yTitle: chartInstance.options.scales.y.title.color,
-                grid: chartInstance.options.scales.x.grid.color,
-                legend: chartInstance.options.plugins.legend.labels.color,
+            // Funzione per aggiornare il tema del grafico
+            const updateChartTheme = (chartInstance, isDark) => {
+                const colors = {
+                    ticks: isDark ? '#CBD5E1' : '#000',
+                    title: isDark ? '#94A3B8' : '#333',
+                    grid: isDark ? 'rgba(255, 255, 255, 0.1)' : '#ccc',
+                    legend: isDark ? '#E2E8F0' : '#000',
+                };
+
+                chartInstance.options.plugins.legend.labels.color = colors.legend;
+                chartInstance.options.scales.x.ticks.color = colors.ticks;
+                chartInstance.options.scales.x.title.color = colors.title;
+                chartInstance.options.scales.y.ticks.color = colors.ticks;
+                chartInstance.options.scales.y.title.color = colors.title;
+                chartInstance.options.scales.x.grid.color = colors.grid;
+                chartInstance.options.scales.y.grid.color = colors.grid;
+                chartInstance.options.animation = isDark ? {} : false; // Disabilita animazioni per PDF
+                chartInstance.update();
             };
 
-            // Applica tema chiaro
-            chartInstance.options.plugins.legend.labels.color = '#000';
-            chartInstance.options.scales.x.ticks.color = '#000';
-            chartInstance.options.scales.x.title.color = '#000';
-            chartInstance.options.scales.y.ticks.color = '#000';
-            chartInstance.options.scales.y.title.color = '#000';
-            chartInstance.options.scales.x.grid.color = '#ccc';
-            chartInstance.options.scales.y.grid.color = '#ccc';
-            chartInstance.options.animation = false;
-            chartInstance.update();
+            // Cattura Grafico Velocità
+            updateChartTheme(chartInstanceSpeed, false);
+            const speedChartCanvas = document.getElementById('performanceChartSpeed');
+            const speedChartImage = speedChartCanvas.toDataURL('image/png', 1.0);
+            updateChartTheme(chartInstanceSpeed, true); // Ripristina tema scuro
+
+            // Cattura Grafico Frequenza di Colpi
+            updateChartTheme(chartInstanceSR, false);
+            const srChartCanvas = document.getElementById('performanceChartSR');
+            const srChartImage = srChartCanvas.toDataURL('image/png', 1.0);
+            updateChartTheme(chartInstanceSR, true); // Ripristina tema scuro
 
             const { jsPDF } = window.jspdf;
             const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
-            const chartCanvas = document.getElementById('performanceChart');
-            const chartImage = chartCanvas.toDataURL('image/png', 1.0);
-
-            // Ripristina il tema scuro subito dopo aver catturato l'immagine
-            chartInstance.options.plugins.legend.labels.color = originalChartColors.legend;
-            chartInstance.options.scales.x.ticks.color = originalChartColors.xTicks;
-            chartInstance.options.scales.x.title.color = originalChartColors.xTitle;
-            chartInstance.options.scales.y.ticks.color = originalChartColors.yTicks;
-            chartInstance.options.scales.y.title.color = originalChartColors.yTitle;
-            chartInstance.options.scales.x.grid.color = originalChartColors.grid;
-            chartInstance.options.scales.y.grid.color = originalChartColors.grid;
-            chartInstance.options.animation = {};
-            chartInstance.update();
             
             doc.setFontSize(20);
             doc.text(`Analisi Intervalli: ${boat} - ${crewSurnames.replace(/_/g, ', ')} - ${workoutString}`, 14, 20);
-            doc.addImage(chartImage, 'PNG', 14, 30, 269, 120);
+            
+            // Aggiungi Grafico Velocità
+            doc.setFontSize(14);
+            doc.text(`Grafico 1: Velocità Comparativa (m/s vs Distanza)`, 14, 30);
+            doc.addImage(speedChartImage, 'PNG', 14, 35, 269, 120);
+            
+            // Aggiungi Grafico Frequenza di Colpi
+            doc.addPage();
+            doc.setFontSize(14);
+            doc.text(`Grafico 2: Frequenza di Colpi Comparativa (SR vs Distanza)`, 14, 20);
+            doc.addImage(srChartImage, 'PNG', 14, 25, 269, 120);
 
-            let yPosition = 160;
+            let yPosition = 155;
+
+            doc.setFontSize(16);
+            doc.text('Riepilogo Dettagliato degli Intervalli', 14, yPosition);
+            yPosition += 5;
 
             allRunResults.forEach(run => {
                 if (yPosition > 180) {
                     doc.addPage();
                     yPosition = 20;
                 }
-                doc.setFontSize(14);
+                
+                doc.setFontSize(12);
                 doc.setTextColor(run.color);
-                doc.text(`Dettagli Intervallo ${run.runId} (Media: ${run.averageSpeed} m/s, Tempo: ${run.totalTimeString})`, 14, yPosition);
+                doc.text(`Intervallo ${run.runId} - Tempo Totale: ${run.totalTimeString}`, 14, yPosition);
                 doc.setTextColor(0, 0, 0);
                 yPosition += 2;
 
-                const head = [['Distanza (m)', 'Passo/500m', 'Velocità (m/s)']];
-                const body = run.speedData.map(p => [
+                const head = [['Distanza (m)', 'Passo/500m', 'Colpi (SR)', 'Velocità (m/s)']];
+                const body = run.speedData.map((p, index) => [
                     p.x,
                     secondsToPaceString(p.paceSeconds),
+                    run.srData[index].y.toFixed(1), // Formatta SR con un decimale per il PDF
                     p.y.toFixed(3)
                 ]);
 
@@ -801,8 +1203,9 @@
                 document.getElementById('messageBox').classList.add('hidden');
             });
 
-            const ctx = document.getElementById('performanceChart').getContext('2d');
-            chartInstance = new Chart(ctx, {
+            // Inizializzazione Chart Velocità
+            const ctxSpeed = document.getElementById('performanceChartSpeed').getContext('2d');
+            chartInstanceSpeed = new Chart(ctxSpeed, {
                 type: 'line', data: { datasets: [] },
                 options: {
                     responsive: true, maintainAspectRatio: false,
@@ -821,12 +1224,14 @@
                         legend: {
                             labels: {
                                 color: '#E2E8F0', usePointStyle: true,
+                                // Filtra solo la linea media dalla legenda principale
                                 filter: (legendItem) => !legendItem.text.startsWith('Media')
                             }
                         },
                         tooltip: {
                             callbacks: {
                                 label: (ctx) => {
+                                    // Non mostrare il tooltip per le linee medie
                                     if(ctx.dataset.label.startsWith('Media')) return null;
                                     const speed = ctx.parsed.y;
                                     const pace = speed > 0 ? PACE_REFERENCE_DISTANCE / speed : 0;
@@ -837,6 +1242,45 @@
                     }
                 }
             });
+
+            // Inizializzazione Chart Frequenza di Colpi
+            const ctxSR = document.getElementById('performanceChartSR').getContext('2d');
+            chartInstanceSR = new Chart(ctxSR, {
+                type: 'line', data: { datasets: [] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear', title: { display: true, text: 'Distanza (metri)', color: '#94A3B8' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                            ticks: { color: '#CBD5E1', stepSize: 100 }
+                        },
+                        y: {
+                            title: { display: true, text: 'Colpi (SR)', color: SR_SINGLE_RUN_COLOR }, beginAtZero: false,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                            ticks: { color: '#CBD5E1', stepSize: 1 } // Passo di 1 per i colpi
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#E2E8F0', usePointStyle: true,
+                                filter: (legendItem) => !legendItem.text.startsWith('Media Colpi')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    if(ctx.dataset.label.startsWith('Media')) return null;
+                                    const sr = ctx.parsed.y;
+                                    return `Colpi: ${sr.toFixed(1)} SR`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+
             renderBoatSelector();
         });
         
@@ -846,7 +1290,9 @@
         window.downloadPdf = downloadPdf;
         window.handlePaste = handlePaste;
         window.updateAllData = updateAllData;
+        window.formatPaceInput = formatPaceInput;
+        window.formatSrInput = formatSrInput;
+        window.renderInputs = renderInputs;
     </script>
 </body>
 </html>
-
