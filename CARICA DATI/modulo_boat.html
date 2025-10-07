@@ -116,6 +116,7 @@
         const loaderOverlay = document.getElementById('loader-overlay');
         const workoutType = 'boat';
         let allAthletes = []; // Cache per la lista atleti
+        let worldRecords = new Map(); // Cache per i record mondiali
 
         // --- FUNZIONI DI UTILITÀ ---
         function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
@@ -127,30 +128,124 @@
         async function signInAnonymously() {
             try { await auth.signInAnonymously(); } catch (error) { console.error("Auth Error: ", error); showMessageBox("Errore di autenticazione."); }
         }
+        
+        // --- FUNZIONI DI CALCOLO EP (trasferite dal ranking_boat.html) ---
+
+        /**
+         * Converte una stringa di tempo (mm:ss.d) in secondi totali.
+         * @param {string} timeStr - Stringa tempo.
+         * @returns {number} Secondi totali.
+         */
+        function timeToSeconds(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+            const parts = timeStr.split(':');
+            const minutes = parseInt(parts[0], 10);
+            // Sostituisce la virgola con il punto e converte in float per i decimali di secondo
+            const seconds = parseFloat(parts[1].replace(',', '.'));
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+        
+        /**
+         * Carica tutti i record mondiali dalla collezione 'world_records'.
+         */
+        async function fetchWorldRecords() {
+            try {
+                const snapshot = await firestore.collection('world_records').get();
+                worldRecords = new Map();
+                snapshot.forEach(doc => {
+                    worldRecords.set(doc.id, doc.data());
+                });
+            } catch (error) {
+                console.error("Error fetching world records:", error);
+            }
+        }
+
+        /**
+         * Calcola l'Efficiency Percentage (EP) per un allenamento in Barca.
+         * @param {object} workoutData - Dati dell'allenamento.
+         * @param {string} boatType - Tipo di imbarcazione.
+         * @returns {number | null} Il valore EP calcolato (in percentuale) o null se il calcolo fallisce.
+         */
+        function calculateBoatEP(workoutData, boatType) {
+            const worldRecordData = worldRecords.get(boatType);
+            
+            if (!worldRecordData || !worldRecordData.time) {
+                console.warn(`Record mondiale per ${boatType} mancante o invalido.`);
+                return null;
+            }
+            
+            const recordWorldSeconds = timeToSeconds(worldRecordData.time);
+
+            if (recordWorldSeconds <= 0) return null;
+            
+            // Calcolo Watt record mondiale (basato su 2000m standard)
+            const wattRecordMondiale = 2.8 * Math.pow(2000 / recordWorldSeconds, 3);
+            
+            if (wattRecordMondiale <= 0) return null;
+            
+            let wattAllenamento = 0;
+            
+            // Trasformiamo i dati degli intervalli (che sono stringhe) in secondi o metri a seconda della modalità
+            const intervals = workoutData.intervalli.map(i => timeToSeconds(i) || parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n) && n > 0);
+            
+            if (intervals.length === 0) return null;
+
+            const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+
+            if (workoutData.modalita === 'tempo') {
+                // Modalità tempo: L'input nell'intervallo è la Distanza percorsa (metri)
+                const mediaMetri = mediaIntervalli; 
+                const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60; // Durata del singolo intervallo
+                
+                if (tempoSelezionatoSec > 0) {
+                    wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
+                }
+            } else if (workoutData.modalita === 'distanza') {
+                // Modalità distanza: L'input nell'intervallo è il Tempo (mm:ss.d)
+                const mediaTempoSec = mediaIntervalli; 
+                const distanzaSelezionata = parseInt(workoutData.distanza, 10); // Distanza del singolo intervallo
+                
+                if (mediaTempoSec > 0) {
+                    wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
+                }
+            }
+
+            if (wattAllenamento > 0) {
+                const epValue = (wattAllenamento / wattRecordMondiale) * 100;
+                return epValue;
+            }
+            
+            return null; // Calcolo fallito
+        }
+
 
         // --- LOGICA DI SETUP PAGINA ---
         async function setupPage() {
             loaderOverlay.style.display = 'flex';
             
-            // Popola imbarcazioni
+            // 1. Popola imbarcazioni
             const boatTypes = ["M1X", "W1X", "M2X", "W2X", "M2-", "W2-", "M4X", "W4X", "M4-", "W4-", "M8+", "W8+"];
             const boatSelect = document.getElementById('boatTypeSelect');
             boatSelect.innerHTML = '<option value="">-- Seleziona imbarcazione --</option>';
             boatTypes.forEach(b => boatSelect.innerHTML += `<option value="${b}">${b}</option>`);
 
-            // Popola distanze
+            // 2. Popola distanze
             const distanze = [500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 20000];
             const distanzaSelect = document.getElementById('distanzaSelect');
             distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
             distanze.forEach(d => distanzaSelect.innerHTML += `<option value="${d}">${d}m</option>`);
 
-            // Carica e Caching atleti
+            // 3. Carica e Caching atleti
             try {
                 const athletesSnapshot = await firestore.collection('atleti').orderBy('cognome').get();
                 athletesSnapshot.forEach(doc => {
-                    allAthletes.push({ id: doc.id, cognome: doc.data().cognome });
+                    allAthletes.push({ id: doc.id, cognome: doc.data().cognome, nome: doc.data().nome });
                 });
             } catch (error) { console.error("Error loading athletes: ", error); }
+            
+            // 4. Carica e Caching record mondiali
+            await fetchWorldRecords();
             
             loaderOverlay.style.display = 'none';
         }
@@ -180,7 +275,11 @@
             if(crewSize > 0) container.style.display = 'grid'; else container.style.display = 'none';
 
             for (let i = 1; i <= crewSize; i++) {
-                const athleteOptions = allAthletes.map(a => `<option value="${a.id}">${a.cognome}</option>`).join('');
+                // Ordina gli atleti per cognome prima di popolare il selettore
+                const athleteOptions = allAthletes
+                    .sort((a, b) => a.cognome.localeCompare(b.cognome))
+                    .map(a => `<option value="${a.id}" data-cognome="${a.cognome}" data-nome="${a.nome}">${a.cognome} ${a.nome ? a.nome.charAt(0) + '.' : ''}</option>`).join('');
+                
                 const selectHTML = `
                     <div>
                         <label for="atleta-${i}" class="form-label">Atleta ${i}</label>
@@ -207,11 +306,12 @@
             const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
             const mode = document.getElementById('workoutMode').value;
             container.innerHTML = '';
+
             if (numero > 0 && numero <= 20) {
                 for (let i = 1; i <= numero; i++) {
                     const inputType = mode === 'distanza' ? 'text' : 'number';
-                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore';
-                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i}</label>`;
+                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore (es. 2500m)';
+                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} ${mode === 'distanza' ? '(Tempo)' : '(Distanza)'}</label>`;
                     const input = `<input type="${inputType}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${mode === 'distanza' ? 'oninput="formatTimeInput(event)" maxlength="7"' : ''}>`;
                     container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
                 }
@@ -228,7 +328,7 @@
             input.value = f;
         }
         
-        // --- SALVATAGGIO DATI ---
+        // --- SALVATAGGIO DATI (AGGIORNATO CON CALCOLO EP) ---
         async function saveWorkout() {
             const btn = document.getElementById('saveWorkoutBtn');
             btn.disabled = true;
@@ -240,28 +340,40 @@
             const crewMemberSelects = document.querySelectorAll('.crew-member-select');
             const equipaggio = [];
             let crewIsValid = true;
+            
+            // 1. Costruzione Equipaggio
             crewMemberSelects.forEach(select => {
+                const selectedOption = select.options[select.selectedIndex];
                 if(select.value) {
                     equipaggio.push({
                         atletaId: select.value,
-                        cognomeAtleta: select.options[select.selectedIndex].text
+                        cognomeAtleta: selectedOption.getAttribute('data-cognome'),
+                        nomeAtleta: selectedOption.getAttribute('data-nome') || ''
                     });
                 } else {
                     crewIsValid = false;
                 }
             });
+            
+            // L'atletaId e cognomeAtleta per l'indicizzazione del ranking sarà il primo membro dell'equipaggio
+            const firstCrewMember = equipaggio[0] || {}; 
 
             const workoutData = {
                 tipo: workoutType.toUpperCase(),
                 imbarcazione: boatType,
                 equipaggio: equipaggio,
                 modalita: mode,
+                // Campi duplicati per compatibilità con il ranking singolo atleta
+                atletaId: firstCrewMember.atletaId || null, 
+                cognomeAtleta: firstCrewMember.cognomeAtleta || null, 
+
                 data: new Date().toISOString().split('T')[0],
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                intervalli: []
+                intervalli: [],
+                ep: null // Inizializzato a null
             };
 
-            // Validazione
+            // 2. Validazioni
             if (!boatType || !crewIsValid || equipaggio.length === 0) {
                 showMessageBox("Seleziona un'imbarcazione e tutti i membri dell'equipaggio.");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
@@ -280,18 +392,41 @@
 
             const intervalliInputs = document.querySelectorAll('.intervallo-input');
             let allIntervalsValid = true;
-            intervalliInputs.forEach(input => input.value ? workoutData.intervalli.push(input.value) : allIntervalsValid = false);
+            intervalliInputs.forEach(input => {
+                if (input.value) {
+                    // Controlla il formato se è modalità distanza (tempo)
+                    if (mode === 'distanza' && !/^\d{1,2}:\d{2}\.\d{1}$/.test(input.value)) {
+                         allIntervalsValid = false;
+                    }
+                    workoutData.intervalli.push(input.value);
+                } else {
+                    allIntervalsValid = false;
+                }
+            });
             if (!allIntervalsValid || intervalliInputs.length === 0) {
-                showMessageBox("Compila tutti i campi degli intervalli.");
+                showMessageBox("Compila tutti i campi degli intervalli in modo corretto.");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
 
+            // 3. Calcola l'EP
+            const epValueToSave = calculateBoatEP(workoutData, boatType);
+            
+            if (epValueToSave !== null && epValueToSave > 0) {
+                workoutData.ep = parseFloat(epValueToSave.toFixed(2));
+            } else {
+                console.warn(`EP non calcolato per imbarcazione ${boatType}. Controlla che il record mondiale sia presente.`);
+            }
+
+            // 4. Salva in Firestore
             try {
                 await firestore.collection('allenamenti').add(workoutData);
-                showMessageBox("Allenamento salvato con successo!");
+                showMessageBox("Allenamento salvato con successo! (EP calcolato)");
+                
+                // Reset form
                 document.getElementById('boatTypeSelect').value = "";
-                generateCrewSelectors();
                 document.getElementById('workoutMode').value = "";
+                document.getElementById('intervalliNumero').value = "";
+                generateCrewSelectors(); // Resetta i selettori dell'equipaggio
                 updateFormVisibility();
             } catch (error) {
                 console.error("Errore salvataggio: ", error);
@@ -316,4 +451,3 @@
     </script>
 </body>
 </html>
-

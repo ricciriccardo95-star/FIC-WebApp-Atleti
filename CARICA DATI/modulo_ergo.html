@@ -137,6 +137,99 @@
             try { await auth.signInAnonymously(); } catch (error) { console.error("Auth Error: ", error); showMessageBox("Errore di autenticazione."); }
         }
 
+        // --- FUNZIONI DI CALCOLO EP (trasferite dal ranking_ergo.html) ---
+
+        /**
+         * Converte una stringa di tempo (mm:ss.d) in secondi totali.
+         * @param {string} timeStr - Stringa tempo.
+         * @returns {number} Secondi totali.
+         */
+        function timeToSeconds(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+            const parts = timeStr.split(':');
+            const minutes = parseInt(parts[0], 10);
+            // Sostituisce la virgola con il punto e converte in float per i decimali di secondo
+            const seconds = parseFloat(parts[1].replace(',', '.')); 
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+
+        /**
+         * Carica il record RowErg di un atleta.
+         * @param {string} athleteId - ID del documento dell'atleta.
+         * @returns {object | null} Dati dell'atleta o null.
+         */
+        async function fetchAthleteRecord(athleteId) {
+            try {
+                const docRef = firestore.collection('atleti').doc(athleteId);
+                const doc = await docRef.get();
+                if (doc.exists) {
+                    return doc.data();
+                }
+            } catch (error) {
+                console.error("Error fetching athlete record:", error);
+            }
+            return null;
+        }
+
+        /**
+         * Calcola l'Efficiency Percentage (EP) per un allenamento RowErg.
+         * @param {object} workoutData - Dati dell'allenamento.
+         * @param {object} athleteData - Dati dell'atleta contenenti il record 'rowerg'.
+         * @returns {number | null} Il valore EP calcolato (in percentuale) o null se il calcolo fallisce.
+         */
+        function calculateErgoEP(workoutData, athleteData) {
+            if (!athleteData || !athleteData.rowerg) return null;
+            if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) return null;
+
+            const recordErgoSeconds = timeToSeconds(athleteData.rowerg);
+
+            if (recordErgoSeconds <= 0) {
+                console.warn("Record RowErg non valido o assente per l'atleta.");
+                return null;
+            }
+            
+            // Calcolo Watt record personale (basato su 2000m standard)
+            const wattRecordPersonale = 2.8 * Math.pow(2000 / recordErgoSeconds, 3);
+
+            if (wattRecordPersonale <= 0) return null;
+
+            let wattAllenamento = 0;
+            const intervals = workoutData.intervalli.map(i => timeToSeconds(i) || parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n) && n > 0);
+            
+            if (intervals.length === 0) return null;
+
+            const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+
+            if (workoutData.modalita === 'tempo') {
+                // Modalità tempo: L'input è la Distanza percorsa nell'intervallo (es. 2500m)
+                const mediaMetri = mediaIntervalli; 
+                const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60; // Durata del singolo intervallo (es. 30 min)
+                
+                if (tempoSelezionatoSec > 0) {
+                    // W = 2.8 * (D/T)^3
+                    wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
+                }
+            } else if (workoutData.modalita === 'distanza') {
+                // Modalità distanza: L'input è il Tempo (mm:ss.d) impiegato per percorrere la distanza selezionata (es. 2000m)
+                const mediaTempoSec = mediaIntervalli; 
+                const distanzaSelezionata = parseInt(workoutData.distanza, 10); 
+                
+                if (mediaTempoSec > 0) {
+                    // W = 2.8 * (D/T)^3
+                    wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
+                }
+            }
+
+            if (wattAllenamento > 0) {
+                const epValue = (wattAllenamento / wattRecordPersonale) * 100;
+                return epValue;
+            }
+            
+            return null; // Calcolo fallito
+        }
+
+
         // --- LOGICA DI SETUP PAGINA ---
         async function setupPage() {
             loaderOverlay.style.display = 'flex';
@@ -179,8 +272,8 @@
             if (numero > 0 && numero <= 20) {
                 for (let i = 1; i <= numero; i++) {
                     const inputType = mode === 'distanza' ? 'text' : 'number';
-                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore';
-                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i}</label>`;
+                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore (es. 2500m)';
+                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} ${mode === 'distanza' ? '(Tempo)' : '(Distanza)'}</label>`;
                     const input = `<input type="${inputType}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${mode === 'distanza' ? 'oninput="formatTimeInput(event)" maxlength="7"' : ''}>`;
                     container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
                 }
@@ -197,7 +290,7 @@
             input.value = f;
         }
         
-        // --- SALVATAGGIO DATI ---
+        // --- SALVATAGGIO DATI (AGGIORNATO CON CALCOLO EP) ---
         async function saveWorkout() {
             const btn = document.getElementById('saveWorkoutBtn');
             btn.disabled = true;
@@ -205,47 +298,40 @@
             
             const mode = document.getElementById('workoutMode').value;
             const athleteSelect = document.getElementById('athleteSelect');
+            const athleteId = athleteSelect.value;
             
             const workoutData = {
                 tipo: workoutType.toUpperCase(),
-                atletaId: athleteSelect.value,
+                atletaId: athleteId,
                 cognomeAtleta: athleteSelect.options[athleteSelect.selectedIndex].text,
                 modalita: mode,
                 data: new Date().toISOString().split('T')[0],
                 timestamp: firebase.firestore.FieldValue.serverTimestamp(),
-                intervalli: []
+                intervalli: [],
+                ep: null // Inizializzato a null
             };
 
-            // Validazione base
-            if (!workoutData.atletaId || !mode) {
+            // 1. Validazioni
+            if (!athleteId || !mode) {
                 showMessageBox("Seleziona atleta e modalità.");
-                btn.disabled = false;
-                btn.textContent = 'Salva Allenamento';
-                return;
+                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
-
             if (mode === 'distanza') {
                 workoutData.distanza = document.getElementById('distanzaSelect').value;
-                if (!workoutData.distanza) {
-                     showMessageBox("Seleziona una distanza.");
-                     btn.disabled = false;
-                     btn.textContent = 'Salva Allenamento';
-                     return;
-                }
+                if (!workoutData.distanza) { showMessageBox("Seleziona una distanza."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
             } else { // tempo
                 workoutData.tempo = document.getElementById('tempoSelect').value;
-                 if (!workoutData.tempo) {
-                     showMessageBox("Seleziona una durata.");
-                     btn.disabled = false;
-                     btn.textContent = 'Salva Allenamento';
-                     return;
-                }
+                 if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
             }
 
             const intervalliInputs = document.querySelectorAll('.intervallo-input');
             let allIntervalsValid = true;
             intervalliInputs.forEach(input => {
                 if (input.value) {
+                    // Controlla il formato se è modalità distanza (tempo)
+                    if (mode === 'distanza' && !/^\d{1,2}:\d{2}\.\d{1}$/.test(input.value)) {
+                         allIntervalsValid = false;
+                    }
                     workoutData.intervalli.push(input.value);
                 } else {
                     allIntervalsValid = false;
@@ -253,18 +339,39 @@
             });
 
             if (!allIntervalsValid || intervalliInputs.length === 0) {
-                showMessageBox("Compila tutti i campi degli intervalli.");
-                 btn.disabled = false;
-                btn.textContent = 'Salva Allenamento';
-                return;
+                showMessageBox("Compila tutti i campi degli intervalli in modo corretto (es. mm:ss.d per il tempo).");
+                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
+            }
+            
+            // 2. Carica i record dell'atleta
+            let athleteData = null;
+            try {
+                athleteData = await fetchAthleteRecord(athleteId);
+            } catch (error) {
+                console.error("Errore caricamento record atleta:", error);
             }
 
+            // 3. Calcola l'EP
+            if (athleteData) {
+                const epValueToSave = calculateErgoEP(workoutData, athleteData);
+                if (epValueToSave !== null && epValueToSave > 0) {
+                    workoutData.ep = parseFloat(epValueToSave.toFixed(2));
+                } else {
+                    console.warn("EP non calcolato. Controlla che 'rowerg' sia presente e valido nei dati dell'atleta.");
+                }
+            } else {
+                console.warn(`Record atleta ${athleteId} non trovato. L'EP non può essere calcolato.`);
+            }
+
+            // 4. Salva in Firestore
             try {
                 await firestore.collection('allenamenti').add(workoutData);
-                showMessageBox("Allenamento salvato con successo!");
+                showMessageBox("Allenamento salvato con successo! (EP calcolato)");
+                
                 // Reset form
                 document.getElementById('athleteSelect').value = "";
                 document.getElementById('workoutMode').value = "";
+                document.getElementById('intervalliNumero').value = "";
                 updateFormVisibility();
             } catch (error) {
                 console.error("Errore salvataggio: ", error);
