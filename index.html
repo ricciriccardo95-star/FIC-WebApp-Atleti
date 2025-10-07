@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIC - SQUADRA OLIMPICA</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            color: #E2E8F0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .background-gradient {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(100px); z-index: -1;
+        }
+        .gradient-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%);
+            animation: pulse 10s infinite alternate;
+        }
+        .gradient-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
+            animation: pulse 12s infinite alternate-reverse;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(20deg); }
+        }
+        .nav-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        #logo-container {
+            transition: transform 1s ease-in-out;
+        }
+        #login-form-container {
+            transition: opacity 1s ease-in;
+        }
+    </style>
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="FIC Canottaggio">
+    <link rel="apple-touch-icon" href="logo-fic (1) copia.png"> 
+    <link rel="manifest" href="manifest.json">
+
+</head>
+<body class="antialiased">
+
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+
+    <div id="login-view" class="min-h-screen flex flex-col items-center justify-center p-4">
+        <div class="w-full max-w-sm">
+            <div id="logo-container" class="text-center transform translate-y-0">
+                <img src="logo.png" alt="Logo FIC" class="mx-auto mb-4 w-48 h-auto">
+                <h1 id="app-title" class="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight opacity-0 transition-opacity duration-1000">
+                    FIC CANOTTAGGIO
+                </h1>
+            </div>
+
+            <div id="login-form-container" class="opacity-0 mt-8 w-full">
+                <form id="login-form" class="space-y-6">
+                    <div>
+                        <label for="email" class="block text-sm font-medium text-slate-400">Email Utente</label>
+                        <div class="mt-1">
+                            <input id="email" name="email" type="email" autocomplete="email" required
+                                   class="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none">
+                        </div>
+                    </div>
+                    <div>
+                        <label for="password" class="block text-sm font-medium text-slate-400">Password</label>
+                        <div class="mt-1">
+                            <input id="password" name="password" type="password" autocomplete="current-password" required
+                                   class="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none">
+                        </div>
+                    </div>
+                    <p id="error-message" class="text-red-500 text-sm text-center hidden"></p>
+                    <div>
+                        <button type="submit"
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500 transition-colors">
+                            Accedi
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div id="app-view" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
+         <div class="w-full flex justify-end mb-4">
+            <button id="logout-btn" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
+                Logout
+            </button>
+        </div>
+        <section id="home-page">
+            <div class="flex flex-col items-center justify-center min-h-[80vh]">
+                <h1 class="text-4xl md:text-6xl font-black tracking-tight text-slate-100 text-center mb-4">FIC - SQUADRA OLIMPICA</h1>
+                <p class="text-lg md:text-xl text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto w-full">
+                    <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 md:p-12 text-center">
+                        <div class="text-6xl md:text-7xl mb-4 md:mb-6">📥</div>
+                        <h2 class="text-3xl md:text-4xl font-bold text-white">Carica Dati</h2>
+                    </a>
+                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 md:p-12 text-center">
+                        <div class="text-6xl md:text-7xl mb-4 md:mb-6">📈</div>
+                        <h2 class="text-3xl md:text-4xl font-bold text-white">Visualizza Risultati</h2>
+                    </a>
+                    <a href="CALENDARIO/calendario_utente.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 md:p-12 text-center md:col-span-2">
+                        <div class="text-6xl md:text-7xl mb-4 md:mb-6">📅</div>
+                        <h2 class="text-3xl md:text-4xl font-bold text-white">Calendario</h2>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
+            authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
+            projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.appspot.com",
+            messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+
+        // Views
+        const loginView = document.getElementById('login-view');
+        const appView = document.getElementById('app-view');
+
+        // Login elements
+        const logoContainer = document.getElementById('logo-container');
+        const appTitle = document.getElementById('app-title');
+        const loginFormContainer = document.getElementById('login-form-container');
+        const loginForm = document.getElementById('login-form');
+        const errorMessage = document.getElementById('error-message');
+        
+        // App elements
+        const logoutBtn = document.getElementById('logout-btn');
+
+        // --- Auth State Logic ---
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // User is logged in
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+            } else {
+                // User is logged out
+                appView.classList.add('hidden');
+                loginView.classList.remove('hidden');
+                // Start animation for login page
+                startLoginAnimation();
+            }
+        });
+        
+        function startLoginAnimation() {
+             setTimeout(() => {
+                logoContainer.style.transform = 'translateY(-80%)';
+                appTitle.style.opacity = '1';
+                setTimeout(() => {
+                    loginFormContainer.style.opacity = '1';
+                }, 500);
+            }, 500);
+        }
+
+        // --- Event Listeners ---
+        loginForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            const email = loginForm.email.value;
+            const password = loginForm.password.value;
+            errorMessage.classList.add('hidden');
+
+            signInWithEmailAndPassword(auth, email, password)
+                .catch((error) => {
+                    console.error("Login Error:", error.code, error.message);
+                    errorMessage.textContent = "Credenziali non valide. Riprova.";
+                    errorMessage.classList.remove('hidden');
+                });
+        });
+
+        logoutBtn.addEventListener('click', () => {
+            signOut(auth).catch((error) => {
+                console.error('Logout Error', error);
+            });
+        });
+
+    </script>
+</body>
+</html>

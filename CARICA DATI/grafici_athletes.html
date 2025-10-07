@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analisi Intervalli Squadra</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN (Libreria per i grafici) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <!-- jsPDF, html2canvas, and AutoTable for PDF Generation -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+    <style>
+        /* Stili di sfondo e animazioni */
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* Slate 900 */
+            color: #E2E8F0; /* Slate 200 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-moz-osx-font-smoothing: grayscale;
+        }
+        .background-gradient {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(100px); z-index: -1;
+        }
+        .gradient-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%);
+            animation: pulse 10s infinite alternate;
+        }
+        .gradient-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
+            animation: pulse 12s infinite alternate-reverse;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(20deg); }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen">
+
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+
+    <div class="p-4 md:p-8 max-w-5xl mx-auto">
+        <!-- PULSANTE HOME -->
+        <div class="mb-8">
+            <a href="home_carica_dati.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Torna alla Home
+            </a>
+        </div>
+
+        <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-100 text-center mb-2">Analisi Allenamento per Squadra</h1>
+        <p class="text-md text-slate-400 text-center mb-8">Seleziona equipaggio e intervalli, inserisci il passo, poi genera e salva il grafico.</p>
+
+        <!-- SELETTORI DINAMICI E CONFIGURAZIONE -->
+        <div class="bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 mb-6 shadow-xl backdrop-blur-sm grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+            <div>
+                <label for="boat-selector" class="block text-sm font-medium text-slate-300 mb-1">1. Barca / Imbarcazione</label>
+                <select id="boat-selector" onchange="handleSelectionChange()" class="w-full p-2 bg-slate-700/70 border border-slate-600 rounded-lg text-white font-semibold">
+                    <option value="" disabled selected>Seleziona Barca</option>
+                    <!-- Opzioni popolate da JS -->
+                </select>
+            </div>
+            <div id="distance-wrapper" class="hidden">
+                <label for="distance-selector" class="block text-sm font-medium text-slate-300 mb-1">2. Distanza Intervallo (m)</label>
+                <select id="distance-selector" onchange="handleSelectionChange()" class="w-full p-2 bg-slate-700/70 border border-slate-600 rounded-lg text-white font-semibold">
+                    <!-- Opzioni popolate da JS -->
+                </select>
+            </div>
+            <div id="runs-wrapper" class="hidden">
+                <label for="runs-selector" class="block text-sm font-medium text-slate-300 mb-1">3. Numero di Intervalli</label>
+                <select id="runs-selector" onchange="handleSelectionChange()" class="w-full p-2 bg-slate-700/70 border border-slate-600 rounded-lg text-white font-semibold">
+                    <!-- Opzioni popolate da JS -->
+                </select>
+            </div>
+        </div>
+
+        <!-- SELETTORI ATLETI DINAMICI -->
+        <div id="athlete-selectors-container" class="bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 mb-8 shadow-xl backdrop-blur-sm hidden">
+            <h3 class="text-lg font-bold text-slate-100 mb-3">Seleziona Equipaggio</h3>
+            <div id="athlete-select-grid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+                <!-- Selettori Atleti Inseriti qui da JS -->
+            </div>
+        </div>
+
+        <!-- Contenitore per le Tabelle di Input Dinamiche -->
+        <div id="input-runs-container" class="space-y-6">
+            <div class="p-6 text-center text-slate-400 bg-slate-800/50 border border-slate-700/50 rounded-xl">
+                Seleziona Barca, Distanza e Numero Intervalli per inserire i dati.
+            </div>
+        </div>
+        
+        <!-- Pulsanti Azione -->
+        <div class="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
+            <button id="generate-chart-btn" onclick="generateChartAndSaveData(true)" disabled class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                Genera Grafico & Salva Dati
+            </button>
+            <button id="download-data-btn" onclick="downloadPdf()" disabled class="px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-500 disabled:cursor-not-allowed flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                Scarica Riepilogo (PDF)
+            </button>
+        </div>
+        
+        <!-- Contenitore Principale (Grafico) -->
+        <div id="chart-container" class="mt-8 bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 md:p-6 shadow-xl backdrop-blur-sm hidden">
+            <h2 class="text-xl font-bold text-slate-100 mb-4">Grafico Comparativo Intervalli (m/s vs Distanza)</h2>
+            <div class="h-64 md:h-96">
+                <canvas id="performanceChart"></canvas>
+            </div>
+        </div>
+
+        <!-- SEZIONE LEGEND/SUMMARY -->
+        <div id="summary-legend-container" class="mt-8 bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 md:p-6 hidden">
+            <h2 class="text-xl font-bold text-slate-100 mb-4">Riepilogo Intervalli</h2>
+            <div id="run-summary-list" class="space-y-4">
+                <!-- La legenda dinamica verrà inserita qui -->
+            </div>
+        </div>
+
+        <!-- Modale per Messaggi (sostituisce alert/confirm) -->
+        <div id="messageBox" class="fixed inset-0 bg-black bg-opacity-70 z-50 flex items-center justify-center hidden">
+            <div class="bg-slate-700 p-6 rounded-xl shadow-2xl max-w-sm w-full">
+                <h3 id="messageBoxTitle" class="text-lg font-bold text-slate-100 mb-3">Messaggio</h3>
+                <p id="messageBoxContent" class="text-slate-300 mb-4"></p>
+                <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2 rounded-lg transition-colors">OK</button>
+            </div>
+        </div>
+        
+    </div>
+
+    <script type="module">
+        // Importazioni Firebase
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
+        import { getAuth, signInAnonymously, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
+        import { getFirestore, collection, addDoc, getDocs, serverTimestamp, query, orderBy } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
+        
+        // --- CONFIGURAZIONE E VARIABILI GLOBALI ---
+        const AVAILABLE_DISTANCES = [500, 750, 1000, 1500, 2000];
+        const MAX_RUNS = 10;
+        const SEGMENT_DISTANCE = 100;
+        const PACE_REFERENCE_DISTANCE = 500;
+        const COLORS = [
+            '#4ADE80', '#0EA5E9', '#F472B6', '#FACC15', '#A78BFA',
+            '#FB923C', '#E11D48', '#14B8A6', '#64748B', '#A3E635',
+        ];
+
+        const BOATS = [
+            'M1X', 'M2X', 'M4X', 'M2-', 'M4-', 'M8+', 
+            'W1X', 'W2X', 'W4X', 'W2-', 'W4-', 'W8+'
+        ];
+
+        let chartInstance;
+        let selectedDistance = 2000; 
+        let selectedRuns = 1;
+        let athletesList = []; 
+        
+        // Variabili Firebase
+        let app;
+        let db;
+        let auth;
+        let isAuthReady = false;
+        
+        // Configurazione del TUO progetto Firebase
+        const FIREBASE_CONFIG = {
+          apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
+          authDomain: "database-atleti-fic.firebaseapp.com",
+          databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
+          projectId: "database-atleti-fic",
+          storageBucket: "database-atleti-fic.firebasestorage.app",
+          messagingSenderId: "860422140545",
+          appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+
+        // --- UTILITY E MODALS ---
+        const showMessageBox = (title, message) => {
+            document.getElementById('messageBoxTitle').textContent = title;
+            document.getElementById('messageBoxContent').textContent = message;
+            document.getElementById('messageBox').classList.remove('hidden');
+        };
+
+        // --- FUNZIONI FIREBASE ---
+        async function setupFirebase() {
+            if (!FIREBASE_CONFIG.apiKey) {
+                console.error("Configurazione Firebase personale mancante.");
+                showMessageBox("Errore di Configurazione", "Inserisci le tue credenziali Firebase nella variabile FIREBASE_CONFIG.");
+                return;
+            }
+            
+            try {
+                app = initializeApp(FIREBASE_CONFIG);
+                auth = getAuth(app);
+                db = getFirestore(app);
+                await setPersistence(auth, browserLocalPersistence);
+                await signInAnonymously(auth);
+
+                onAuthStateChanged(auth, (user) => {
+                    isAuthReady = true;
+                    console.log("Autenticazione Firebase completata. Pronto per caricare i dati.");
+                    fetchAthletes();
+                });
+
+            } catch (error) {
+                console.error("Errore di inizializzazione o autenticazione Firebase:", error);
+                showMessageBox("Errore di Sistema", `Impossibile connettersi a Firebase: ${error.message}`);
+            }
+        }
+
+        async function fetchAthletes() {
+            if (!db || !isAuthReady) {
+                 console.warn("Firestore non è pronto, attendo per caricare gli atleti...");
+                 return;
+            }
+            try {
+                const collectionPath = `atleti`; 
+                const q = query(collection(db, collectionPath), orderBy('cognome'));
+                const querySnapshot = await getDocs(q);
+
+                athletesList = [];
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    if (data.cognome) {
+                        athletesList.push({ 
+                            id: doc.id, 
+                            cognome: data.cognome, 
+                            nome: data.nome || '' 
+                        });
+                    }
+                });
+
+                console.log(`Caricati ${athletesList.length} atleti dal database e ordinati per cognome.`);
+                renderBoatSelector();
+                renderInitialAthleteMessage();
+
+            } catch (error) {
+                console.error("Errore nel recupero degli atleti:", error);
+                showMessageBox("Errore Dati Atleti", `Impossibile caricare la lista atleti dalla collezione 'atleti'. Errore: ${error.message}`);
+            }
+        }
+
+        async function saveRunData(dataToSave) {
+            if (!db || !isAuthReady) {
+                showMessageBox("Errore Firebase", "Il sistema non è pronto. Riprova tra un attimo.");
+                return;
+            }
+
+            const saveButton = document.getElementById('generate-chart-btn');
+            saveButton.disabled = true;
+            saveButton.textContent = "Salvataggio in corso...";
+
+            try {
+                const collectionPath = "graphics";
+                const graphicsCollectionRef = collection(db, collectionPath);
+                await addDoc(graphicsCollectionRef, dataToSave);
+
+                showMessageBox("Successo!", `Allenamento di ${dataToSave.distance}m per la barca ${dataToSave.boat} salvato nella raccolta 'graphics'.`);
+                saveButton.textContent = "Genera Grafico & Salva Dati";
+                document.getElementById('download-data-btn').disabled = false;
+
+            } catch (error) {
+                console.error("Errore durante il salvataggio dei dati:", error);
+                showMessageBox("Errore di Salvataggio", `Impossibile salvare i dati: ${error.message}`);
+                saveButton.disabled = false;
+                saveButton.textContent = "Genera Grafico & Salva Dati";
+            }
+        }
+        
+        // --- LOGICA SELETTORI DINAMICI ---
+        function getAthleteCount(boatCode) {
+            if (!boatCode) return 0;
+            const match = boatCode.match(/(\d)/);
+            return match ? parseInt(match[1], 10) : 0;
+        }
+
+        function renderBoatSelector() {
+            const boatSelector = document.getElementById('boat-selector');
+            boatSelector.innerHTML = '<option value="" disabled selected>Seleziona Barca</option>';
+            BOATS.forEach(boat => {
+                const option = document.createElement('option');
+                option.value = boat;
+                option.textContent = boat;
+                boatSelector.appendChild(option);
+            });
+            renderDistanceSelector();
+            renderRunsSelector();
+        }
+
+        function renderDistanceSelector() {
+            const distanceSelector = document.getElementById('distance-selector');
+            distanceSelector.innerHTML = '';
+            AVAILABLE_DISTANCES.forEach(dist => {
+                const option = document.createElement('option');
+                option.value = dist;
+                option.textContent = `${dist} metri`;
+                if (dist === selectedDistance) option.selected = true;
+                distanceSelector.appendChild(option);
+            });
+        }
+
+        function renderRunsSelector() {
+            const runsSelector = document.getElementById('runs-selector');
+            runsSelector.innerHTML = '';
+            for (let i = 1; i <= MAX_RUNS; i++) {
+                const option = document.createElement('option');
+                option.value = i;
+                option.textContent = i;
+                if (i === selectedRuns) option.selected = true;
+                runsSelector.appendChild(option);
+            }
+        }
+
+        function renderInitialAthleteMessage() {
+             if (!document.getElementById('boat-selector').value) {
+                 document.getElementById('athlete-selectors-container').classList.add('hidden');
+             }
+        }
+
+        function renderAthleteSelectors(boatCode) {
+            const container = document.getElementById('athlete-select-grid');
+            const mainContainer = document.getElementById('athlete-selectors-container');
+            container.innerHTML = '';
+            mainContainer.classList.add('hidden');
+            
+            const athleteCount = getAthleteCount(boatCode);
+            if (athleteCount === 0) return;
+
+            mainContainer.classList.remove('hidden');
+
+            const athleteOptions = athletesList.length > 0
+                ? athletesList.map(a => `<option value="${a.id}|${a.cognome}, ${a.nome || ''}">${a.cognome} ${a.nome.charAt(0) ? a.nome.charAt(0) : ''}.</option>`).join('')
+                : `<option value="" disabled>Nessun atleta caricato</option>`;
+
+            for (let i = 1; i <= athleteCount; i++) {
+                const div = document.createElement('div');
+                div.innerHTML = `
+                    <label for="athlete-selector-${i}" class="block text-sm font-medium text-slate-300 mb-1">Atleta ${i}</label>
+                    <select id="athlete-selector-${i}" data-position="${i}" class="athlete-selector w-full p-2 bg-slate-700/70 border border-slate-600 rounded-lg text-white font-semibold" ${athletesList.length === 0 ? 'disabled' : ''}>
+                        <option value="" disabled selected>Seleziona...</option>
+                        ${athleteOptions}
+                    </select>
+                `;
+                container.appendChild(div);
+            }
+        }
+        
+        window.handleSelectionChange = () => {
+            selectedDistance = parseInt(document.getElementById('distance-selector').value);
+            selectedRuns = parseInt(document.getElementById('runs-selector').value);
+            
+            document.getElementById('distance-wrapper').classList.remove('hidden');
+            document.getElementById('runs-wrapper').classList.remove('hidden');
+
+            renderAthleteSelectors(document.getElementById('boat-selector').value);
+            renderInputs();
+
+            document.getElementById('chart-container').classList.add('hidden');
+            document.getElementById('summary-legend-container').classList.add('hidden');
+            document.getElementById('download-data-btn').disabled = true;
+
+            checkGenerationReadiness();
+        };
+
+        function checkGenerationReadiness() {
+            const boatSelected = document.getElementById('boat-selector').value !== '';
+            const hasAthletes = athletesList.length > 0;
+            const allAthletesSelected = Array.from(document.querySelectorAll('.athlete-selector')).every(select => select.value !== '');
+            const inputsRendered = document.getElementById('input-runs-container').querySelectorAll('.pace-input').length > 0;
+            
+            document.getElementById('generate-chart-btn').disabled = !(boatSelected && allAthletesSelected && inputsRendered && hasAthletes);
+        }
+
+        // --- LOGICA DI ANALISI E GRAFICO ---
+
+        function paceToSeconds(paceString) {
+            if (!paceString) return 0;
+            paceString = paceString.trim().replace(',', '.');
+            const parts = paceString.split(':');
+            
+            if (parts.length === 1 && !isNaN(parseFloat(parts[0]))) {
+                return parseFloat(parts[0]) > 0 ? parseFloat(parts[0]) : 0;
+            } else if (parts.length !== 2) {
+                 return 0;
+            }
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseFloat(parts[1]);
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+
+        function paceToSpeedMps(paceSeconds) {
+            return paceSeconds > 0 ? PACE_REFERENCE_DISTANCE / paceSeconds : 0;
+        }
+        
+        function calculateSegmentTime(paceSeconds) {
+            return paceSeconds > 0 ? paceSeconds * (SEGMENT_DISTANCE / PACE_REFERENCE_DISTANCE) : 0;
+        }
+
+        function secondsToPaceString(totalSeconds) {
+            if (totalSeconds <= 0 || !isFinite(totalSeconds)) return 'N/A';
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const formattedSeconds = seconds.toFixed(1).padStart(4, '0');
+            return `${minutes}:${formattedSeconds}`;
+        }
+
+        window.handlePaste = (event, runId) => {
+            event.preventDefault();
+            const paste = event.clipboardData.getData('text');
+            const paceValues = paste.split(/[\n\r]+/).map(s => s.trim()).filter(s => s.length > 0);
+            const inputFields = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
+            paceValues.forEach((value, index) => {
+                if (inputFields[index]) inputFields[index].value = value;
+            });
+            updateAllData(false);
+        };
+
+        function renderInputs() {
+            const container = document.getElementById('input-runs-container');
+            container.innerHTML = ''; 
+            const numSegments = selectedDistance / SEGMENT_DISTANCE;
+            
+            if (!document.getElementById('boat-selector').value) {
+                container.innerHTML = '<div class="p-6 text-center text-slate-400 bg-slate-800/50 border border-slate-700/50 rounded-xl">Seleziona Barca, Distanza e Numero Intervalli per inserire i dati.</div>';
+                return;
+            }
+
+            for (let i = 1; i <= selectedRuns; i++) {
+                const runId = i, runColor = COLORS[i - 1];
+                const section = document.createElement('div');
+                section.className = 'bg-slate-800/70 border border-slate-700/50 rounded-xl shadow-xl backdrop-blur-sm p-4 md:p-6';
+                
+                let tableRows = '';
+                for (let j = 1; j <= numSegments; j++) {
+                    const distance = j * SEGMENT_DISTANCE;
+                    tableRows += `
+                        <tr class="hover:bg-slate-800/50 transition-colors">
+                            <td class="py-2 px-3 text-sm font-medium text-slate-300">${distance}</td>
+                            <td class="py-2 px-3 text-center">
+                                <input type="text" 
+                                    class="pace-input w-24 p-1 text-center bg-slate-700/70 border border-slate-600 rounded-md focus:ring-blue-500 focus:border-blue-500 text-sm text-white font-mono"
+                                    placeholder="1:45.0" data-run-id="${runId}" data-distance="${distance}"
+                                    oninput="updateAllData(false)" ${j === 1 ? `onpaste="handlePaste(event, ${runId})"` : ''}>
+                            </td>
+                            <td id="speed-${runId}-${distance}" class="py-2 px-3 text-center text-sm text-emerald-400 font-mono">-</td>
+                        </tr>`;
+                }
+
+                section.innerHTML = `
+                    <h3 class="text-lg font-bold text-slate-100 mb-4" style="color: ${runColor};">
+                        <span style="background-color: ${runColor}; width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px;"></span>
+                        Intervallo ${runId}
+                    </h3>
+                    <div class="overflow-x-auto">
+                        <table class="min-w-full divide-y divide-slate-700">
+                            <thead class="bg-slate-700/50">
+                                <tr>
+                                    <th class="py-3 px-3 text-left text-sm font-semibold text-slate-300">Distanza (m)</th>
+                                    <th class="py-3 px-3 text-center text-sm font-semibold text-slate-300">Passo/500m</th>
+                                    <th class="py-3 px-3 text-center text-sm font-semibold text-slate-300">Velocità (m/s)</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-slate-700">${tableRows}</tbody>
+                        </table>
+                    </div>`;
+                container.appendChild(section);
+            }
+            updateAllData(false);
+        }
+
+        function analyzeRunData(runId) {
+            const dataPoints = [];
+            let totalTimeSeconds = 0, validSegmentsCount = 0;
+            
+            const inputs = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
+            inputs.forEach(input => {
+                const distance = parseInt(input.dataset.distance);
+                const paceSeconds = paceToSeconds(input.value);
+                const speedDisplay = document.getElementById(`speed-${runId}-${distance}`);
+
+                if (paceSeconds > 0) {
+                    const speedMps = paceToSpeedMps(paceSeconds);
+                    speedDisplay.textContent = speedMps.toFixed(2);
+                    dataPoints.push({ 
+                        x: distance, y: parseFloat(speedMps.toFixed(3)),
+                        paceSeconds: paceSeconds, segmentTime: calculateSegmentTime(paceSeconds) 
+                    });
+                    totalTimeSeconds += calculateSegmentTime(paceSeconds);
+                    validSegmentsCount++;
+                } else {
+                    speedDisplay.textContent = '-';
+                }
+            });
+
+            if (validSegmentsCount < (selectedDistance / SEGMENT_DISTANCE)) return null;
+            if (dataPoints.length === 0) return null;
+
+            const maxSpeedSeg = dataPoints.reduce((max, p) => p.y > max.y ? p : max, { y: -1 });
+            
+            const relevantPointsForMin = dataPoints.filter(p => p.x > 200);
+            const minSpeedSeg = (relevantPointsForMin.length > 0 ? relevantPointsForMin : dataPoints)
+                .reduce((min, p) => p.y < min.y ? p : min, { y: Infinity });
+
+            return {
+                runId: runId, color: COLORS[runId - 1],
+                totalTimeSeconds: totalTimeSeconds, totalTimeString: secondsToPaceString(totalTimeSeconds),
+                speedData: dataPoints,
+                maxSpeedSegment: { x: maxSpeedSeg.x, y: maxSpeedSeg.y, paceString: secondsToPaceString(maxSpeedSeg.y > 0 ? PACE_REFERENCE_DISTANCE / maxSpeedSeg.y : 0) },
+                minSpeedSegment: { x: minSpeedSeg.x, y: minSpeedSeg.y, paceString: secondsToPaceString(minSpeedSeg.y > 0 ? PACE_REFERENCE_DISTANCE / minSpeedSeg.y : 0) },
+                averageSpeed: parseFloat((selectedDistance / totalTimeSeconds).toFixed(3)),
+            };
+        }
+
+        function updateAllData(shouldDrawChart) {
+            const allRunResults = [];
+            let allRunsValid = true;
+
+            for (let i = 1; i <= selectedRuns; i++) {
+                const result = analyzeRunData(i);
+                if (result) allRunResults.push(result);
+                else allRunsValid = false;
+            }
+            
+            const allAthletesSelected = Array.from(document.querySelectorAll('.athlete-selector')).every(s => s.value !== '');
+            document.getElementById('generate-chart-btn').disabled = !(allRunsValid && allAthletesSelected && allRunResults.length > 0);
+
+            if (shouldDrawChart) {
+                updateChart(allRunResults);
+                updateSummaryLegend(allRunResults);
+                document.getElementById('chart-container').classList.remove('hidden');
+                document.getElementById('summary-legend-container').classList.remove('hidden');
+            }
+            return allRunResults;
+        }
+
+        function updateChart(allRunResults) {
+            if (!chartInstance) return;
+
+            let overallMinSpeed = Infinity;
+            let overallMaxSpeed = -Infinity;
+            allRunResults.forEach(run => {
+                run.speedData.forEach(point => {
+                    if (point.y < overallMinSpeed) overallMinSpeed = point.y;
+                    if (point.y > overallMaxSpeed) overallMaxSpeed = point.y;
+                });
+            });
+
+            const newDatasets = [];
+            allRunResults.forEach(run => {
+                const pointRadii = [], pointStyles = [], pointBackgroundColors = [];
+                const maxSpeedValue = run.maxSpeedSegment.y;
+                const minSpeedValue = run.minSpeedSegment.y;
+                
+                run.speedData.forEach(point => {
+                    if (point.y === maxSpeedValue) {
+                        pointRadii.push(8); 
+                        pointStyles.push('star');
+                        pointBackgroundColors.push('#38BDF8'); // Ciano per velocità max
+                    } else if (point.y === minSpeedValue) {
+                        pointRadii.push(8);
+                        pointStyles.push('triangle');
+                        pointBackgroundColors.push('#F87171'); // Rosso chiaro
+                    } else {
+                        pointRadii.push(4);
+                        pointStyles.push('circle');
+                        pointBackgroundColors.push(run.color);
+                    }
+                });
+
+                newDatasets.push({
+                    label: `Intervallo ${run.runId}`,
+                    data: run.speedData,
+                    borderColor: run.color,
+                    tension: 0.4, 
+                    pointRadius: pointRadii,
+                    pointStyle: pointStyles,
+                    pointBackgroundColor: pointBackgroundColors,
+                    borderWidth: 3,
+                });
+
+                newDatasets.push({
+                    label: `Media Intervallo ${run.runId}`,
+                    data: [
+                        { x: run.speedData[0].x, y: run.averageSpeed },
+                        { x: run.speedData[run.speedData.length - 1].x, y: run.averageSpeed }
+                    ],
+                    borderColor: '#F472B6',
+                    borderWidth: 3, 
+                    borderDash: [5, 5],
+                    pointRadius: 0,
+                    fill: false,
+                });
+            });
+
+            chartInstance.data.datasets = newDatasets;
+            chartInstance.options.scales.x.max = selectedDistance;
+            chartInstance.options.scales.x.min = SEGMENT_DISTANCE;
+            
+            chartInstance.options.scales.y.min = Math.floor(overallMinSpeed * 10) / 10 - 0.1;
+            chartInstance.options.scales.y.max = Math.ceil(overallMaxSpeed * 10) / 10 + 0.1;
+
+            chartInstance.update();
+        }
+
+        function updateSummaryLegend(allRunResults) {
+            const summaryList = document.getElementById('run-summary-list');
+            summaryList.innerHTML = '';
+            if (allRunResults.length === 0) {
+                summaryList.innerHTML = '<p class="text-slate-400">Inserisci i dati completi per visualizzare il riepilogo.</p>';
+                return;
+            }
+            const fastestRun = allRunResults.reduce((min, run) => (run.totalTimeSeconds < min.totalTimeSeconds ? run : min), { totalTimeSeconds: Infinity });
+
+            allRunResults.forEach(run => {
+                const isFastest = run === fastestRun;
+                const summaryDiv = document.createElement('div');
+                summaryDiv.className = `p-3 rounded-lg border-l-4 ${isFastest ? 'border-green-400 bg-slate-700/50' : 'border-slate-600 bg-slate-700/30'}`;
+                
+                summaryDiv.innerHTML = `
+                    <div class="flex items-center justify-between">
+                        <p class="text-lg font-bold flex items-center" style="color: ${run.color};">
+                            <span style="background-color: ${run.color}; width: 10px; height: 10px; display: inline-block; border-radius: 50%; margin-right: 8px;"></span>
+                            Intervallo ${run.runId} ${isFastest ? '<span class="text-green-400 font-normal ml-2 text-sm">⚡️ PIÙ VELOCE</span>' : ''}
+                        </p>
+                        <div class="text-right">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Tempo Totale</p>
+                            <p class="text-xl font-extrabold text-white">${run.totalTimeString}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 pt-3 border-t border-slate-700/50 grid grid-cols-1 sm:grid-cols-3 gap-3 text-center">
+                        <div class="bg-slate-800/50 p-2 rounded-lg">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Velocità Media</p>
+                            <p class="text-2xl font-bold font-mono text-pink-400">${run.averageSpeed.toFixed(2)}</p>
+                            <p class="text-sm font-sans text-slate-400 -mt-1">m/s</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Velocità Max</p>
+                            <p class="text-2xl font-bold font-mono text-sky-400">${run.maxSpeedSegment.y.toFixed(2)}</p>
+                            <p class="text-xs text-slate-500">${run.maxSpeedSegment.paceString} @ ${run.maxSpeedSegment.x}m</p>
+                        </div>
+                        <div class="bg-slate-800/50 p-2 rounded-lg">
+                            <p class="text-xs font-semibold text-slate-400 uppercase">Velocità Min</p>
+                            <p class="text-2xl font-bold font-mono text-red-400">${run.minSpeedSegment.y.toFixed(2)}</p>
+                            <p class="text-xs text-slate-500">${run.minSpeedSegment.paceString} @ ${run.minSpeedSegment.x}m</p>
+                        </div>
+                    </div>`;
+                summaryList.appendChild(summaryDiv);
+            });
+        }
+
+        window.generateChartAndSaveData = (shouldSave) => {
+            const allRunResults = updateAllData(true);
+            if (allRunResults.length === 0 || allRunResults.length !== selectedRuns) {
+                showMessageBox("Attenzione", "Compila tutti i campi prima di generare o salvare i dati.");
+                return;
+            }
+            
+            const boat = document.getElementById('boat-selector').value;
+            const crewList = Array.from(document.querySelectorAll('.athlete-selector')).map(select => {
+                const [id, fullName] = select.value.split('|');
+                return {
+                    position: parseInt(select.dataset.position),
+                    athleteId: id,
+                    name: fullName ? fullName.trim() : ''
+                };
+            });
+
+            const dataToSave = {
+                boat: boat,
+                crew: crewList,
+                distance: selectedDistance,
+                runsCount: selectedRuns,
+                runs: allRunResults.map(run => ({
+                    runId: run.runId,
+                    totalTime: run.totalTimeString,
+                    averageSpeed_mps: run.averageSpeed,
+                    segments: run.speedData,
+                    maxSpeed: run.maxSpeedSegment,
+                    minSpeed: run.minSpeedSegment,
+                })),
+                timestamp: serverTimestamp(),
+                createdBy: auth.currentUser?.uid || 'anonymous'
+            };
+
+            if (shouldSave) {
+                saveRunData(dataToSave);
+            } else {
+                document.getElementById('download-data-btn').disabled = false;
+            }
+        };
+
+        window.downloadPdf = async () => {
+            const allRunResults = updateAllData(false);
+            if (allRunResults.length === 0) {
+                showMessageBox("Errore", "Nessun dato valido da scaricare.");
+                return;
+            }
+
+            const boat = document.getElementById('boat-selector').value;
+            const crewSurnames = Array.from(document.querySelectorAll('.athlete-selector'))
+                .map(s => {
+                    const fullName = s.value.split('|')[1];
+                    return fullName ? fullName.split(',')[0].trim().toUpperCase() : '';
+                })
+                .filter(Boolean)
+                .join('_');
+            const workoutString = `${selectedRuns}x${selectedDistance}m`;
+            const filename = `${crewSurnames}_${boat}_${workoutString}.pdf`;
+
+            // Prepara il grafico per la stampa (tema chiaro)
+            const originalChartColors = {
+                xTicks: chartInstance.options.scales.x.ticks.color,
+                xTitle: chartInstance.options.scales.x.title.color,
+                yTicks: chartInstance.options.scales.y.ticks.color,
+                yTitle: chartInstance.options.scales.y.title.color,
+                grid: chartInstance.options.scales.x.grid.color,
+                legend: chartInstance.options.plugins.legend.labels.color,
+            };
+
+            // Applica tema chiaro
+            chartInstance.options.plugins.legend.labels.color = '#000';
+            chartInstance.options.scales.x.ticks.color = '#000';
+            chartInstance.options.scales.x.title.color = '#000';
+            chartInstance.options.scales.y.ticks.color = '#000';
+            chartInstance.options.scales.y.title.color = '#000';
+            chartInstance.options.scales.x.grid.color = '#ccc';
+            chartInstance.options.scales.y.grid.color = '#ccc';
+            chartInstance.options.animation = false;
+            chartInstance.update();
+
+            const { jsPDF } = window.jspdf;
+            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            const chartCanvas = document.getElementById('performanceChart');
+            const chartImage = chartCanvas.toDataURL('image/png', 1.0);
+
+            // Ripristina il tema scuro subito dopo aver catturato l'immagine
+            chartInstance.options.plugins.legend.labels.color = originalChartColors.legend;
+            chartInstance.options.scales.x.ticks.color = originalChartColors.xTicks;
+            chartInstance.options.scales.x.title.color = originalChartColors.xTitle;
+            chartInstance.options.scales.y.ticks.color = originalChartColors.yTicks;
+            chartInstance.options.scales.y.title.color = originalChartColors.yTitle;
+            chartInstance.options.scales.x.grid.color = originalChartColors.grid;
+            chartInstance.options.scales.y.grid.color = originalChartColors.grid;
+            chartInstance.options.animation = {};
+            chartInstance.update();
+            
+            doc.setFontSize(20);
+            doc.text(`Analisi Intervalli: ${boat} - ${crewSurnames.replace(/_/g, ', ')} - ${workoutString}`, 14, 20);
+            doc.addImage(chartImage, 'PNG', 14, 30, 269, 120);
+
+            let yPosition = 160;
+
+            allRunResults.forEach(run => {
+                if (yPosition > 180) {
+                    doc.addPage();
+                    yPosition = 20;
+                }
+                doc.setFontSize(14);
+                doc.setTextColor(run.color);
+                doc.text(`Dettagli Intervallo ${run.runId} (Media: ${run.averageSpeed} m/s, Tempo: ${run.totalTimeString})`, 14, yPosition);
+                doc.setTextColor(0, 0, 0);
+                yPosition += 2;
+
+                const head = [['Distanza (m)', 'Passo/500m', 'Velocità (m/s)']];
+                const body = run.speedData.map(p => [
+                    p.x,
+                    secondsToPaceString(p.paceSeconds),
+                    p.y.toFixed(3)
+                ]);
+
+                doc.autoTable({
+                    startY: yPosition,
+                    head: head,
+                    body: body,
+                    theme: 'grid',
+                    headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
+                    styles: { fontSize: 9 },
+                    margin: { left: 14, right: 14 }
+                });
+                yPosition = doc.lastAutoTable.finalY + 10;
+            });
+
+            doc.save(filename);
+            showMessageBox("Successo", "Il PDF è stato generato e scaricato.");
+        };
+
+        // --- INIZIALIZZAZIONE ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupFirebase();
+            document.getElementById('messageBoxOkBtn').addEventListener('click', () => {
+                document.getElementById('messageBox').classList.add('hidden');
+            });
+
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'line', data: { datasets: [] },
+                options: {
+                    responsive: true, maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            type: 'linear', title: { display: true, text: 'Distanza (metri)', color: '#94A3B8' },
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }, 
+                            ticks: { color: '#CBD5E1', stepSize: 100 }
+                        },
+                        y: {
+                            title: { display: true, text: 'Velocità (m/s)', color: '#94A3B8' }, beginAtZero: false,
+                            grid: { color: 'rgba(255, 255, 255, 0.1)' }, ticks: { color: '#CBD5E1', callback: v => v.toFixed(2) }
+                        }
+                    },
+                    plugins: {
+                        legend: {
+                            labels: {
+                                color: '#E2E8F0', usePointStyle: true,
+                                filter: (legendItem) => !legendItem.text.startsWith('Media')
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => {
+                                    if(ctx.dataset.label.startsWith('Media')) return null;
+                                    const speed = ctx.parsed.y;
+                                    const pace = speed > 0 ? PACE_REFERENCE_DISTANCE / speed : 0;
+                                    return [ `Velocità: ${speed.toFixed(3)} m/s`, `Passo/500m: ${secondsToPaceString(pace)}` ];
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+            renderBoatSelector();
+        });
+        
+        // Espone le funzioni globalmente
+        window.handleSelectionChange = handleSelectionChange;
+        window.generateChartAndSaveData = generateChartAndSaveData;
+        window.downloadPdf = downloadPdf;
+        window.handlePaste = handlePaste;
+        window.updateAllData = updateAllData;
+    </script>
+</body>
+</html>
+

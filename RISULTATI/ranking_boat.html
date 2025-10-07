@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Allenamenti Barca - FIC Canottaggio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .background-gradient { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: blur(100px); z-index: -1; }
+        .gradient-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%); animation: pulse 10s infinite alternate; }
+        .gradient-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%); animation: pulse 12s infinite alternate-reverse; }
+        @keyframes pulse { 0% { transform: scale(0.9) rotate(0deg); } 100% { transform: scale(1.2) rotate(20deg); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p class="mt-4 text-slate-300">Caricamento ranking Barca...</p>
+    </div>
+
+    <div class="p-4 md:p-8 max-w-7xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-4">Ranking Allenamenti Barca 🚤</h1>
+        <div class="text-center mb-8">
+            <a href="home_ranking.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Torna alla Selezione
+            </a>
+        </div>
+
+        <div id="results-container" class="space-y-8"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        // Variabili globali per l'ambiente Canvas (non utilizzate qui per semplicità di test)
+        // const appId = typeof __app_id !== 'undefined' ? __app_id : 'default-app-id';
+        // const firebaseConfig = JSON.parse(__firebase_config);
+        
+        // CONFIGURAZIONE FIREBASE (Dati statici mantenuti per il funzionamento autonomo)
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const resultsContainer = document.getElementById('results-container');
+        let worldRecords = new Map();
+
+        // --- FUNZIONI DI CALCOLO E FORMATTAZIONE ---
+
+        function timeToSeconds(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+            const parts = timeStr.split(':');
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseFloat(parts[1].replace(',', '.'));
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+        
+        function secondsToTimeFormat(totalSeconds) {
+            if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00.0";
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${seconds.toFixed(1).padStart(4, '0')}`;
+        }
+
+        async function fetchWorldRecords() {
+            const snapshot = await firestore.collection('world_records').get();
+            snapshot.forEach(doc => {
+                worldRecords.set(doc.id, doc.data());
+            });
+        }
+
+        function calculateWorkoutData(workout, records) {
+            if (!Array.isArray(workout.intervalli)) {
+                console.warn('Dati intervalli mancanti o corrotti per l\'allenamento:', workout.id);
+                return { ...workout, ep: 'N/A', distanzaTotale: null, tempoTotale: null, epMessage: 'Dati intervalli corrotti' };
+            }
+
+            const boatType = workout.imbarcazione;
+            const worldRecordData = records.get(boatType);
+
+            let ep = 'N/A', distanzaTotale = null, tempoTotale = null, epMessage = null;
+
+            if (!worldRecordData) {
+                epMessage = `Record ${boatType} mancante`;
+            } else {
+                // CORREZIONE: Cerca il campo 'time' invece di 'tempo' per il record del mondo.
+                const recordWorldSeconds = timeToSeconds(worldRecordData.time);
+                if (recordWorldSeconds > 0) {
+                    const wattRecordMondiale = 2.8 * Math.pow(2000 / recordWorldSeconds, 3);
+                    if (wattRecordMondiale > 0) {
+                        let wattAllenamento = 0;
+                        const intervals = workout.intervalli.map(i => {
+                            const val = (typeof i === 'object' && i !== null && i['0']) ? i['0'] : i;
+                            return timeToSeconds(val) || parseFloat(String(val || '').replace(',', '.'));
+                        }).filter(n => !isNaN(n) && n > 0);
+                        
+                        if (intervals.length > 0) {
+                            const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+                            if (workout.modalita === 'tempo') {
+                                const mediaMetri = mediaIntervalli;
+                                const tempoSelezionatoSec = parseInt(workout.tempo, 10) * 60;
+                                if (tempoSelezionatoSec > 0) {
+                                    wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
+                                }
+                            } else if (workout.modalita === 'distanza') {
+                                const mediaTempoSec = mediaIntervalli;
+                                const distanzaSelezionata = parseInt(workout.distanza, 10);
+                                if (mediaTempoSec > 0) {
+                                    wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
+                                }
+                            }
+                            if (wattAllenamento > 0) {
+                                const epValue = (wattAllenamento / wattRecordMondiale) * 100;
+                                ep = `${epValue.toFixed(2)}%`;
+                            }
+                        }
+                    }
+                } else {
+                    epMessage = 'Record mondo invalido';
+                    // CORREZIONE: Aggiornato messaggio di debug.
+                    console.warn(`Record del mondo per '${boatType}' trovato, ma il campo 'time' è invalido o mancante. Dati ricevuti:`, worldRecordData);
+                }
+            }
+
+            // Calcolo Totali
+            const numberOfIntervals = workout.intervalli.length;
+            if (workout.modalita === 'tempo') {
+                const totalMeters = workout.intervalli.map(i => {
+                    const val = (typeof i === 'object' && i !== null && i['0']) ? i['0'] : i;
+                    return parseFloat(String(val || '').replace(',', '.'));
+                }).filter(n => !isNaN(n)).reduce((a, b) => a + b, 0);
+                distanzaTotale = `${totalMeters.toLocaleString('it-IT')}m`;
+                
+                const durationMinutes = parseInt(workout.tempo, 10);
+                if (!isNaN(durationMinutes) && numberOfIntervals > 0) {
+                    const totalMinutes = durationMinutes * numberOfIntervals;
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    let timeString = '';
+                    if (hours > 0) timeString += `${hours} ${hours > 1 ? 'ore' : 'ora'}`;
+                    if (minutes > 0) {
+                        if (hours > 0) timeString += ' e ';
+                        timeString += `${minutes} minuti`;
+                    }
+                    tempoTotale = timeString || null;
+                }
+
+            } else if (workout.modalita === 'distanza') {
+                const totalSeconds = workout.intervalli.map(i => {
+                    const val = (typeof i === 'object' && i !== null && i['0']) ? i['0'] : i;
+                    return timeToSeconds(val);
+                }).reduce((a, b) => a + b, 0);
+                tempoTotale = secondsToTimeFormat(totalSeconds);
+
+                const distanzaSelezionata = parseInt(workout.distanza, 10);
+                if (!isNaN(distanzaSelezionata) && numberOfIntervals > 0) {
+                    distanzaTotale = `${(distanzaSelezionata * numberOfIntervals).toLocaleString('it-IT')}m`;
+                }
+            }
+            
+            return { ...workout, ep, distanzaTotale, tempoTotale, epMessage };
+        }
+        
+        // --- LOGICA DI CARICAMENTO E RENDER ---
+
+        async function loadAndProcessWorkouts() {
+            try {
+                await fetchWorldRecords();
+                const snapshot = await firestore.collection('allenamenti').where('tipo', '==', 'BOAT').get();
+                
+                const workouts = snapshot.docs.map(doc => {
+                    try {
+                        const data = doc.data();
+
+                        // Verifica che ci sia l'equipaggio e che sia un array valido
+                        if (!data.equipaggio || !Array.isArray(data.equipaggio) || data.equipaggio.length === 0) {
+                             console.warn("Documento scartato: Equipaggio mancante o non valido:", doc.id, data);
+                             return null;
+                        }
+
+                        // Verifica altri campi necessari
+                        if (!data.data || !data.intervalli) {
+                            console.warn("Documento scartato per dati allenamento mancanti:", doc.id, data);
+                            return null;
+                        }
+
+                        // Estrae l'imbarcazione (dal primo atleta o dal campo principale)
+                        const imbarcazione = data.equipaggio[0].imbarcazione || data.imbarcazione;
+                        if (!imbarcazione) {
+                             console.warn("Documento scartato per imbarcazione mancante:", doc.id, data);
+                             return null;
+                        }
+
+                        // Crea una stringa con i nomi e cognomi di tutti gli atleti
+                        // Visto che "equipaggio" contiene i dati di tutti gli atleti
+                        const nomiCompleti = data.equipaggio
+                            .map(atleta => {
+                                // Preferisce nome + cognome, altrimenti solo cognome, altrimenti placeholder
+                                const nome = atleta.nomeAtleta || '';
+                                const cognome = atleta.cognomeAtleta || 'Atleta Sconosciuto';
+                                return `${nome} ${cognome}`.trim();
+                            })
+                            .join(', '); // Unisce tutti i nomi con una virgola
+
+                        // Prende il cognome del primo atleta per compatibilità con il codice EP esistente,
+                        // ma per la visualizzazione usiamo 'nomiCompleti'
+                        const primoAtletaCognome = data.equipaggio[0].cognomeAtleta || 'Equipaggio Sconosciuto';
+
+
+                        const workoutForCalc = {
+                            ...data,
+                            id: doc.id,
+                            // Nuovi campi per l'equipaggio completo e il nome da visualizzare
+                            nomiEquipaggio: nomiCompleti, 
+                            imbarcazione: imbarcazione,
+                            // Manteniamo questi per compatibilità con la logica calculateWorkoutData (anche se non usati per il display del nome)
+                            atletaId: data.equipaggio[0].atletaId, 
+                            cognomeAtleta: primoAtletaCognome,
+                        };
+                        
+                        return calculateWorkoutData(workoutForCalc, worldRecords);
+                    } catch (e) {
+                        console.error("Errore nell'elaborazione del documento:", doc.id, e);
+                        return null;
+                    }
+                }).filter(Boolean);
+
+                const groupedByDate = workouts.reduce((acc, workout) => {
+                    const date = workout.data;
+                    const groupKey = workout.modalita === 'distanza' ? `${workout.distanza}m` : `${workout.tempo}min`;
+                    
+                    if (!acc[date]) acc[date] = {};
+                    if (!acc[date][groupKey]) acc[date][groupKey] = [];
+                    
+                    acc[date][groupKey].push(workout);
+                    return acc;
+                }, {});
+
+                for (const date in groupedByDate) {
+                    for (const group in groupedByDate[date]) {
+                        groupedByDate[date][group].sort((a, b) => {
+                            const epA = parseFloat(a.ep) || 0;
+                            const epB = parseFloat(b.ep) || 0;
+                            return epB - epA;
+                        });
+                    }
+                }
+                
+                renderRanking(groupedByDate);
+
+            } catch (error) {
+                console.error("Errore nel caricamento: ", error);
+                resultsContainer.innerHTML = `<p class="text-center text-red-400">Impossibile caricare i risultati.</p>`;
+            } finally {
+                loaderOverlay.classList.add('hidden');
+            }
+        }
+
+        function renderRanking(groupedWorkouts) {
+            resultsContainer.innerHTML = '';
+            const sortedDates = Object.keys(groupedWorkouts).sort((a, b) => new Date(b) - new Date(a));
+
+            if (sortedDates.length === 0) {
+                resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-8">Nessun allenamento in barca trovato.</p>`;
+                return;
+            }
+
+            sortedDates.forEach(date => {
+                const workoutsByGroup = groupedWorkouts[date];
+                const formattedDate = new Date(date).toLocaleDateString('it-IT', { day: '2-digit', month: 'long', year: 'numeric' });
+                
+                const dayContainer = document.createElement('div');
+                dayContainer.className = 'bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6';
+                dayContainer.innerHTML = `<h2 class="text-3xl font-bold text-white mb-4 pb-4 border-b border-slate-600">${formattedDate}</h2>`;
+                
+                const dayContent = document.createElement('div');
+                dayContent.className = 'space-y-6';
+
+                const sortedGroups = Object.keys(workoutsByGroup).sort();
+
+                sortedGroups.forEach(groupKey => {
+                    const workoutsForGroup = workoutsByGroup[groupKey];
+                    const groupContainer = document.createElement('div');
+                    
+                    const groupTitle = document.createElement('h3');
+                    groupTitle.className = 'text-xl font-semibold text-sky-300 mb-3';
+                    groupTitle.textContent = `Classifica su ${groupKey}`;
+                    groupContainer.appendChild(groupTitle);
+
+                    const rankingList = document.createElement('div');
+                    rankingList.className = 'space-y-4';
+
+                    workoutsForGroup.forEach((workout, index) => {
+                        const card = document.createElement('div');
+                        card.className = 'bg-slate-800/50 p-4 rounded-lg';
+
+                        let epOrMessageBadge;
+                        if (workout.epMessage) {
+                            epOrMessageBadge = `<span class="text-base font-bold bg-red-500/20 text-red-400 px-3 py-1 rounded-full">${workout.epMessage}</span>`;
+                        } else if (workout.ep && workout.ep !== 'N/A') {
+                            epOrMessageBadge = `<span class="text-base font-bold bg-amber-500/20 text-amber-300 px-3 py-1 rounded-full">${workout.ep} EP</span>`;
+                        } else {
+                            epOrMessageBadge = '';
+                        }
+                        
+                        let rankClass = 'text-slate-600';
+                        if (index === 0) rankClass = 'text-amber-400';
+                        if (index === 1) rankClass = 'text-gray-300';
+                        if (index === 2) rankClass = 'text-yellow-600';
+                        const rankIndicator = `<span class="text-3xl font-black ${rankClass} w-12 text-center">${index + 1}°</span>`;
+
+                        const cardHeader = `
+                            <div class="flex flex-wrap justify-between items-center gap-4 mb-2">
+                                <div class="flex items-center gap-4">
+                                    ${rankIndicator}
+                                    <div>
+                                        <!-- MODIFICA: Spostato prima dei nomi e aggiunto mb-2 per separazione -->
+                                        <span class="text-base font-semibold bg-green-500/20 text-green-300 px-3 py-1 rounded-md mb-2 inline-block">${workout.imbarcazione}</span>
+                                        <!-- Mostra tutti i nomi dell'equipaggio -->
+                                        <h4 class="text-xl font-bold text-white">${workout.nomiEquipaggio}</h4>
+                                    </div>
+                                </div>
+                                ${epOrMessageBadge}
+                            </div>
+                            <!-- Aggiunto un separatore per migliorare la leggibilità tra nome ed intervalli -->
+                            <hr class="border-slate-700/50 mb-4"/>
+                            `;
+                        
+                        let totalInfo = '';
+                        if (workout.distanzaTotale) {
+                            totalInfo += `<p class="mt-1"><strong class="text-slate-400">Distanza Totale:</strong> ${workout.distanzaTotale}</p>`;
+                        }
+                        if (workout.tempoTotale) {
+                            totalInfo += `<p class="mt-1"><strong class="text-slate-400">Tempo Totale:</strong> ${workout.tempoTotale}</p>`;
+                        }
+                        
+                        const intervalsList = (workout.intervalli || []).map((interval, i) => {
+                             const val = (typeof interval === 'object' && interval !== null && interval['0']) ? interval['0'] : interval;
+                             return `<li class="bg-slate-700 rounded-md px-3 py-1.5"><strong class="text-slate-500">#${i + 1}:</strong> ${val}</li>`
+                        }).join('');
+
+                        // Spostato il pl-16 al contenitore interno per allineare meglio il testo
+                        const cardBody = `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div class="pl-16">${totalInfo}</div>
+                                <div>
+                                    <h5 class="font-bold text-slate-300 mb-2">Intervalli (${(workout.intervalli || []).length})</h5>
+                                    <ul class="flex flex-wrap gap-2 text-sm font-mono">${intervalsList}</ul>
+                                </div>
+                            </div>`;
+                        
+                        card.innerHTML = cardHeader + cardBody;
+                        rankingList.appendChild(card);
+                    });
+                    groupContainer.appendChild(rankingList);
+                    dayContent.appendChild(groupContainer);
+                });
+
+                dayContainer.appendChild(dayContent);
+                resultsContainer.appendChild(dayContainer);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAndProcessWorkouts);
+    </script>
+</body>
+</html>

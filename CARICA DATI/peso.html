@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inserimento Dati - FIC Canottaggio</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Inter -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A; /* Slate 900 */
+            color: #E2E8F0; /* Slate 200 */
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .background-gradient {
+            position: fixed;
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(100px);
+            z-index: -1;
+        }
+        .gradient-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%);
+            animation: pulse 10s infinite alternate;
+        }
+        .gradient-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
+            animation: pulse 12s infinite alternate-reverse;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(20deg); }
+        }
+        /* Stile loader */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader {
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+
+    <!-- Loader Overlay -->
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex-col justify-center items-center z-50 hidden">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p class="mt-4 text-slate-300">Caricamento...</p>
+    </div>
+
+    <div class="p-4 md:p-8 max-w-2xl mx-auto">
+        <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-4">Area Atleti</h1>
+        <p class="text-lg text-slate-400 text-center mb-12">Inserisci i tuoi dati di allenamento giornalieri.</p>
+
+        <!-- Form Container -->
+        <div id="form-container" class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
+            
+            <h2 class="text-2xl font-bold text-white border-b border-slate-700 pb-4">Aggiornamento Peso</h2>
+            
+            <div>
+                <label for="athleteSelect" class="block mb-2 font-medium text-slate-300">Seleziona il tuo cognome</label>
+                <select id="athleteSelect" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="">Caricamento atleti...</option>
+                </select>
+            </div>
+            
+            <div>
+                <label for="weightInput" class="block mb-2 font-medium text-slate-300">Peso odierno (kg)</label>
+                <input type="number" id="weightInput" step="0.1" min="40" max="150" placeholder="Es. 85.5" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+            </div>
+
+            <div class="pt-4">
+                <button id="saveWeightBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                    Salva Peso
+                </button>
+            </div>
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="../index.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Torna alla Home
+            </a>
+        </div>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
+        <p id="messageText" class="mb-6 text-lg"></p>
+        <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+    </div>
+
+    <!-- Script Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+        const auth = firebase.auth();
+
+        // Elementi DOM
+        const athleteSelect = document.getElementById('athleteSelect');
+        const weightInput = document.getElementById('weightInput');
+        const saveWeightBtn = document.getElementById('saveWeightBtn');
+        const loaderOverlay = document.getElementById('loader-overlay');
+
+        // Funzioni Modals
+        function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
+        function hideModal(modal) { document.getElementById('modal-backdrop').classList.add('hidden'); modal.classList.add('hidden'); }
+        function showMessageBox(message) {
+            document.getElementById('messageText').textContent = message;
+            showModal(document.getElementById('messageBox'));
+        }
+
+        // Funzione per eseguire il login anonimo
+        async function signInAnonymously() {
+            try {
+                await auth.signInAnonymously();
+                console.log("Accesso anonimo effettuato con successo.");
+            } catch (error) {
+                console.error("Errore di autenticazione anonima: ", error);
+                showMessageBox("Errore di autenticazione. Le modifiche non verranno salvate.");
+                saveWeightBtn.disabled = true; // Disabilita il salvataggio se l'auth fallisce
+            }
+        }
+        
+        // Funzione per caricare gli atleti nel dropdown
+        async function loadAthletes() {
+            loaderOverlay.style.display = 'flex';
+            try {
+                const snapshot = await firestore.collection('atleti').orderBy('cognome').get();
+                athleteSelect.innerHTML = '<option value="">-- Seleziona atleta --</option>'; // Pulisce e aggiunge opzione default
+                if (snapshot.empty) {
+                    athleteSelect.innerHTML = '<option value="">Nessun atleta nel database</option>';
+                    return;
+                }
+                snapshot.forEach(doc => {
+                    const athlete = doc.data();
+                    const option = document.createElement('option');
+                    option.value = doc.id; // Salva l'ID del documento
+                    option.textContent = athlete.cognome;
+                    athleteSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Errore nel caricamento degli atleti: ", error);
+                showMessageBox("Impossibile caricare la lista degli atleti. Riprova più tardi.");
+                athleteSelect.innerHTML = '<option value="">Errore di caricamento</option>';
+            } finally {
+                loaderOverlay.style.display = 'none';
+            }
+        }
+        
+        // Funzione per salvare il peso
+        async function saveWeight() {
+            const athleteId = athleteSelect.value;
+            const weightValue = weightInput.value;
+
+            // Validazione
+            if (!athleteId) {
+                showMessageBox("Per favore, seleziona un atleta.");
+                return;
+            }
+            if (!weightValue) {
+                showMessageBox("Per favore, inserisci il tuo peso.");
+                return;
+            }
+
+            const weight = parseFloat(weightValue);
+            if (isNaN(weight) || weight <= 0) {
+                 showMessageBox("Per favore, inserisci un valore di peso valido.");
+                return;
+            }
+
+            saveWeightBtn.disabled = true;
+            saveWeightBtn.textContent = 'Salvataggio in corso...';
+            
+            try {
+                // Aggiorna il documento dell'atleta in Firestore
+                await firestore.collection('atleti').doc(athleteId).update({
+                    peso: weight
+                });
+                showMessageBox("Peso aggiornato con successo!");
+                // Resetta i campi
+                athleteSelect.value = "";
+                weightInput.value = "";
+            } catch (error) {
+                console.error("Errore nell'aggiornamento del peso: ", error);
+                showMessageBox("Si è verificato un errore durante il salvataggio. Assicurati di essere connesso a internet e riprova.");
+            } finally {
+                saveWeightBtn.disabled = false;
+                saveWeightBtn.textContent = 'Salva Peso';
+            }
+        }
+
+        // Event Listeners
+        document.addEventListener('DOMContentLoaded', async () => {
+            await signInAnonymously(); // Esegui l'accesso prima di caricare i dati
+            loadAthletes();
+            saveWeightBtn.addEventListener('click', saveWeight);
+            document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
+        });
+    </script>
+</body>
+</html>
+

@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>FIC - Visualizza Ranking</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            color: #E2E8F0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+        .background-gradient {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(100px); z-index: -1;
+        }
+        .gradient-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%);
+            animation: pulse 10s infinite alternate;
+        }
+        .gradient-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
+            animation: pulse 12s infinite alternate-reverse;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(20deg); }
+        }
+        .nav-card {
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .nav-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+
+    <div class="p-4 md:p-8 max-w-7xl mx-auto">
+        <div class="mb-8">
+            <a href="../index.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Torna alla Home
+            </a>
+        </div>
+        <section id="ranking-page">
+            <div class="flex flex-col items-center justify-center">
+                <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Visualizza Ranking</h1>
+                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-8 w-full">
+                    <a href="ranking_boat.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
+                        <div class="text-6xl mb-4">🚤</div> <h3 class="text-2xl font-bold text-white">Ranking Barca</h3>
+                        <p class="text-slate-400 mt-2">Classifiche degli allenamenti in barca.</p>
+                    </a>
+                    <a href="ranking_ergo.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
+                        <div class="text-6xl mb-4">🚣‍♂️</div> <h3 class="text-2xl font-bold text-white">Ranking RowErg</h3>
+                        <p class="text-slate-400 mt-2">Classifiche al remoergometro.</p>
+                    </a>
+                    <a href="ranking_bike.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
+                        <div class="text-6xl mb-4">🚴‍♂️</div> <h3 class="text-2xl font-bold text-white">Ranking BikeErg</h3>
+                        <p class="text-slate-400 mt-2">Classifiche sulla bike.</p>
+                    </a>
+                    <a href="ranking_generale.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
+                        <div class="text-6xl mb-4">🏆</div>
+                        <h3 class="text-2xl font-bold text-white">Ranking Generale</h3>
+                        <p class="text-slate-400 mt-2">Classifica combinata dei risultati.</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </div>
+
+</body>
+</html>
+

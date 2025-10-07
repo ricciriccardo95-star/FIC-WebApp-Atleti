@@ -1,0 +1,290 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carica Allenamento RowErg - FIC Canottaggio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .background-gradient { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: blur(100px); z-index: -1; }
+        .gradient-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%); animation: pulse 10s infinite alternate; }
+        .gradient-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%); animation: pulse 12s infinite alternate-reverse; }
+        @keyframes pulse { 0% { transform: scale(0.9) rotate(0deg); } 100% { transform: scale(1.2) rotate(20deg); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        .form-input, .form-select { width: 100%; background-color: #1E293B; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; }
+        .dynamic-field { display: none; }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex-col justify-center items-center z-50 hidden">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p class="mt-4 text-slate-300">Caricamento...</p>
+    </div>
+    <div class="p-4 md:p-8 max-w-3xl mx-auto">
+        <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">🚣‍♂️ Allenamento RowErg</h1>
+        <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
+            <div>
+                <label for="athleteSelect" class="form-label">Atleta</label>
+                <select id="athleteSelect" class="form-select"></select>
+            </div>
+            <div>
+                <label for="workoutMode" class="form-label">Modalità Allenamento</label>
+                <select id="workoutMode" class="form-select">
+                    <option value="">-- Seleziona modalità --</option>
+                    <option value="distanza">Distanza</option>
+                    <option value="tempo">Tempo</option>
+                </select>
+            </div>
+            <!-- Campi Dinamici -->
+            <div id="distanza-fields" class="dynamic-field space-y-6">
+                <div>
+                    <label for="distanzaSelect" class="form-label">Distanza</label>
+                    <select id="distanzaSelect" class="form-select"></select>
+                </div>
+            </div>
+            <div id="tempo-fields" class="dynamic-field space-y-6">
+                <div>
+                    <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
+                    <select id="tempoSelect" class="form-select">
+                        <option value="">-- Seleziona tempo --</option>
+                        <option value="30">30 minuti</option>
+                        <option value="45">45 minuti</option>
+                    </select>
+                </div>
+            </div>
+            <div id="intervalli-common" class="dynamic-field space-y-6">
+                 <div>
+                    <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
+                    <select id="intervalliNumero" class="form-select">
+                        <option value="">-- Seleziona numero --</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                        <option value="5">5</option>
+                        <option value="6">6</option>
+                        <option value="7">7</option>
+                        <option value="8">8</option>
+                        <option value="9">9</option>
+                        <option value="10">10</option>
+                        <option value="11">11</option>
+                        <option value="12">12</option>
+                        <option value="13">13</option>
+                        <option value="14">14</option>
+                        <option value="15">15</option>
+                        <option value="16">16</option>
+                        <option value="17">17</option>
+                        <option value="18">18</option>
+                        <option value="19">19</option>
+                        <option value="20">20</option>
+                    </select>
+                </div>
+                <div id="intervalli-inputs-container" class="space-y-4"></div>
+            </div>
+            <!-- Fine Campi Dinamici -->
+            <div class="pt-4">
+                <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
+            </div>
+        </div>
+        <div class="text-center mt-8">
+            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
+                ← Torna alla Selezione
+            </a>
+        </div>
+    </div>
+    
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
+        <p id="messageText" class="mb-6 text-lg"></p>
+        <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+        const auth = firebase.auth();
+        
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const workoutType = 'ergo'; // Hardcoded for this specific module
+
+        // --- FUNZIONI DI UTILITÀ ---
+        function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
+        function hideModal(modal) { document.getElementById('modal-backdrop').classList.add('hidden'); modal.classList.add('hidden'); }
+        function showMessageBox(message) {
+            document.getElementById('messageText').textContent = message;
+            showModal(document.getElementById('messageBox'));
+        }
+        async function signInAnonymously() {
+            try { await auth.signInAnonymously(); } catch (error) { console.error("Auth Error: ", error); showMessageBox("Errore di autenticazione."); }
+        }
+
+        // --- LOGICA DI SETUP PAGINA ---
+        async function setupPage() {
+            loaderOverlay.style.display = 'flex';
+
+            // Popola dropdown distanze
+            const distanze = [500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 20000];
+            const distanzaSelect = document.getElementById('distanzaSelect');
+            distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
+            distanze.forEach(d => distanzaSelect.innerHTML += `<option value="${d}">${d}m</option>`);
+
+            // Popola atleti
+            try {
+                const athleteSelect = document.getElementById('athleteSelect');
+                const athletesSnapshot = await firestore.collection('atleti').orderBy('cognome').get();
+                athleteSelect.innerHTML = '<option value="">-- Seleziona atleta --</option>';
+                athletesSnapshot.forEach(doc => {
+                    const athlete = doc.data();
+                    athleteSelect.innerHTML += `<option value="${doc.id}">${athlete.cognome}</option>`;
+                });
+            } catch (error) { console.error("Error loading athletes: ", error); }
+            
+            loaderOverlay.style.display = 'none';
+        }
+
+        // --- GESTIONE DINAMICA FORM ---
+        function updateFormVisibility() {
+            const mode = document.getElementById('workoutMode').value;
+            document.getElementById('distanza-fields').style.display = mode === 'distanza' ? 'block' : 'none';
+            document.getElementById('tempo-fields').style.display = mode === 'tempo' ? 'block' : 'none';
+            document.getElementById('intervalli-common').style.display = mode ? 'block' : 'none';
+            generateIntervalliInputs();
+        }
+
+        function generateIntervalliInputs() {
+            const container = document.getElementById('intervalli-inputs-container');
+            const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
+            const mode = document.getElementById('workoutMode').value;
+            container.innerHTML = '';
+
+            if (numero > 0 && numero <= 20) {
+                for (let i = 1; i <= numero; i++) {
+                    const inputType = mode === 'distanza' ? 'text' : 'number';
+                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore';
+                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i}</label>`;
+                    const input = `<input type="${inputType}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${mode === 'distanza' ? 'oninput="formatTimeInput(event)" maxlength="7"' : ''}>`;
+                    container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
+                }
+            }
+        }
+        
+        function formatTimeInput(event) {
+            const input = event.target;
+            let value = input.value.replace(/\D/g, '');
+            if (value.length > 5) value = value.substring(0, 5);
+            let f = value;
+            if (value.length > 2) f = `${value.substring(0, 2)}:${value.substring(2)}`;
+            if (value.length > 4) f = `${value.substring(0, 2)}:${value.substring(2, 4)}.${value.substring(4)}`;
+            input.value = f;
+        }
+        
+        // --- SALVATAGGIO DATI ---
+        async function saveWorkout() {
+            const btn = document.getElementById('saveWorkoutBtn');
+            btn.disabled = true;
+            btn.textContent = 'Salvataggio in corso...';
+            
+            const mode = document.getElementById('workoutMode').value;
+            const athleteSelect = document.getElementById('athleteSelect');
+            
+            const workoutData = {
+                tipo: workoutType.toUpperCase(),
+                atletaId: athleteSelect.value,
+                cognomeAtleta: athleteSelect.options[athleteSelect.selectedIndex].text,
+                modalita: mode,
+                data: new Date().toISOString().split('T')[0],
+                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                intervalli: []
+            };
+
+            // Validazione base
+            if (!workoutData.atletaId || !mode) {
+                showMessageBox("Seleziona atleta e modalità.");
+                btn.disabled = false;
+                btn.textContent = 'Salva Allenamento';
+                return;
+            }
+
+            if (mode === 'distanza') {
+                workoutData.distanza = document.getElementById('distanzaSelect').value;
+                if (!workoutData.distanza) {
+                     showMessageBox("Seleziona una distanza.");
+                     btn.disabled = false;
+                     btn.textContent = 'Salva Allenamento';
+                     return;
+                }
+            } else { // tempo
+                workoutData.tempo = document.getElementById('tempoSelect').value;
+                 if (!workoutData.tempo) {
+                     showMessageBox("Seleziona una durata.");
+                     btn.disabled = false;
+                     btn.textContent = 'Salva Allenamento';
+                     return;
+                }
+            }
+
+            const intervalliInputs = document.querySelectorAll('.intervallo-input');
+            let allIntervalsValid = true;
+            intervalliInputs.forEach(input => {
+                if (input.value) {
+                    workoutData.intervalli.push(input.value);
+                } else {
+                    allIntervalsValid = false;
+                }
+            });
+
+            if (!allIntervalsValid || intervalliInputs.length === 0) {
+                showMessageBox("Compila tutti i campi degli intervalli.");
+                 btn.disabled = false;
+                btn.textContent = 'Salva Allenamento';
+                return;
+            }
+
+            try {
+                await firestore.collection('allenamenti').add(workoutData);
+                showMessageBox("Allenamento salvato con successo!");
+                // Reset form
+                document.getElementById('athleteSelect').value = "";
+                document.getElementById('workoutMode').value = "";
+                updateFormVisibility();
+            } catch (error) {
+                console.error("Errore salvataggio: ", error);
+                showMessageBox("Si è verificato un errore durante il salvataggio.");
+            } finally {
+                btn.disabled = false;
+                btn.textContent = 'Salva Allenamento';
+            }
+        }
+
+        // --- EVENT LISTENERS ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            await signInAnonymously();
+            await setupPage();
+            
+            document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
+            document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
+            document.getElementById('saveWorkoutBtn').addEventListener('click', saveWorkout);
+            document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
+        });
+    </script>
+</body>
+</html>
