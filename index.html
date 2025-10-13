@@ -50,8 +50,6 @@
         #login-form-container {
             transition: opacity 1s ease-in;
         }
-        /* Rimosso lo stile position: absolute/fixed per il logout, ora è gestito nel flusso normale */
-        
     </style>
     
     <meta name="apple-mobile-web-app-capable" content="yes">
@@ -110,10 +108,7 @@
         
         <!-- HEADER con Benvenuto e Logout -->
         <div class="flex justify-between items-center mb-10">
-            <!-- Messaggio di benvenuto a sinistra -->
             <p id="welcome-message" class="text-xl md:text-2xl font-semibold text-sky-400"></p>
-            
-            <!-- Pulsante Logout a destra -->
             <button id="logout-btn" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                 Logout
@@ -122,43 +117,47 @@
 
         <section id="home-page">
             <div class="flex flex-col items-center justify-center min-h-[70vh]">
-                <h1 class="text-4xl md:text-6xl font-black tracking-tight text-slate-100 text-center mb-4">FIC - SQUADRA OLIMPICA</h1>
-                <p class="text-lg md:text-xl text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 max-w-4xl mx-auto w-full">
+                <h1 class="text-3xl md:text-6xl font-black tracking-tight text-slate-100 text-center mb-4">FIC - SQUADRA OLIMPICA</h1>
+                <p class="text-base md:text-xl text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
+                
+                <div class="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto w-full">
                     
-                    <!-- Riquadri di navigazione standard -->
-                    <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 md:p-12 text-center">
-                        <div class="text-6xl md:text-7xl mb-4 md:mb-6">📥</div>
-                        <h2 class="text-3xl md:text-4xl font-bold text-white">Carica Dati</h2>
+                    <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
+                        <div class="text-5xl md:text-7xl mb-4">📥</div>
+                        <h2 class="text-xl md:text-4xl font-bold text-white">Carica Dati</h2>
                     </a>
-                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 md:p-12 text-center">
-                        <div class="text-6xl md:text-7xl mb-4 md:mb-6">📈</div>
-                        <h2 class="text-3xl md:text-4xl font-bold text-white">Visualizza Risultati</h2>
+                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
+                        <div class="text-5xl md:text-7xl mb-4">📈</div>
+                        <h2 class="text-xl md:text-4xl font-bold text-white">Risultati</h2>
                     </a>
                     
-                    <!-- Il riquadro "Storico WO" verrà inserito qui dinamicamente -->
+                    <a href="storico_wo.html" id="storico-wo-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
+                        <div class="text-5xl md:text-7xl mb-4">📖</div>
+                        <h2 class="text-xl md:text-4xl font-bold text-white">Storico WO</h2>
+                    </a>
                     
-                    <!-- Riquadro Calendario: ha col-span-2 se gli elementi sono 3, altrimenti diventa 1 colonna -->
-                    <a href="CALENDARIO/calendario_utente.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 md:p-12 text-center md:col-span-2">
-                        <div class="text-6xl md:text-7xl mb-4 md:mb-6">📅</div>
-                        <h2 class="text-3xl md:text-4xl font-bold text-white">Calendario</h2>
+                    <a href="gym.html" id="gym-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
+                        <div class="text-5xl md:text-7xl mb-4">🏋️</div>
+                        <h2 class="text-xl md:text-4xl font-bold text-white">Gym</h2>
+                    </a>
+                </div>
+
+                <div class="max-w-4xl mx-auto w-full mt-4 md:mt-8">
+                    <a href="CALENDARIO/calendario.html" id="calendario-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
+                        <div class="text-5xl md:text-7xl mb-4">📅</div>
+                        <h2 class="text-xl md:text-4xl font-bold text-white">Calendario</h2>
                     </a>
                 </div>
             </div>
         </section>
-        
-        <!-- Rimosso il contenitore posizionato in basso a destra -->
         
     </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        
-        // Importazioni per Cloud Firestore
         import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Configurazione Firebase (lasciata come fornita nel file originale)
         const firebaseConfig = {
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
             authDomain: "database-atleti-fic.firebaseapp.com",
@@ -171,41 +170,33 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app); // Inizializza Firestore
+        const db = getFirestore(app);
 
-        // Riferimenti agli elementi del DOM
         const loginView = document.getElementById('login-view');
         const appView = document.getElementById('app-view');
         const logoContainer = document.getElementById('logo-container');
-        const appTitle = document.getElementById('app-title');
-        const loginFormContainer = document.getElementById('login-form-container');
         const loginForm = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
         const logoutBtn = document.getElementById('logout-btn');
-        const gridContainer = document.querySelector('#home-page .grid');
-        // Riferimento al messaggio di benvenuto
         const welcomeMessage = document.getElementById('welcome-message');
-
-
-        // --- Logica di Autenticazione e Verifica Status ---
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Utente autenticato con successo. Verifica lo stato di atleta in Firestore.
-                checkAthleteStatus(user.email); 
+                loginView.classList.add('hidden');
+                appView.classList.remove('hidden');
+                checkAthleteStatus(user.email);
             } else {
-                // Utente disconnesso
                 appView.classList.add('hidden');
                 loginView.classList.remove('hidden');
-                // Pulisci il cognome e il messaggio di benvenuto al logout
                 sessionStorage.removeItem('atletaCognome');
-                welcomeMessage.textContent = ''; // Pulisce il messaggio
-                removeAthleteNavCard(); 
+                welcomeMessage.textContent = '';
                 startLoginAnimation();
             }
         });
         
         function startLoginAnimation() {
+            const appTitle = document.getElementById('app-title');
+            const loginFormContainer = document.getElementById('login-form-container');
              setTimeout(() => {
                 logoContainer.style.transform = 'translateY(-80%)';
                 appTitle.style.opacity = '1';
@@ -215,93 +206,28 @@
             }, 500);
         }
 
-        // Funzione per cercare l'email dell'utente nella collezione 'atleti' di Firestore
         async function checkAthleteStatus(email) {
             const userEmail = email.toLowerCase();
-            
             try {
-                // Query: cerca nella collezione 'atleti' per un documento con il campo 'email' corrispondente
                 const q = query(collection(db, "atleti"), where("email", "==", userEmail));
-                
                 const querySnapshot = await getDocs(q);
-
-                // Se querySnapshot non è vuota, l'utente è un atleta
-                const isAthlete = !querySnapshot.empty;
                 
-                if (isAthlete) {
-                    // Recupera il cognome dal primo (e unico) risultato
+                if (!querySnapshot.empty) {
                     const atletaData = querySnapshot.docs[0].data();
                     const cognome = atletaData.cognome; 
-
-                    // Salva il cognome in sessionStorage per l'uso nella pagina "Storico WO"
                     sessionStorage.setItem('atletaCognome', cognome);
-                    
-                    // IMPOSTA IL MESSAGGIO DI BENVENUTO
                     welcomeMessage.textContent = `Benvenuto ${cognome}!`;
-                    
-                    addAthleteNavCard(); // Mostra il riquadro "Storico WO"
                 } else {
-                    // Se l'utente NON è un atleta, mostra un benvenuto generico
-                    welcomeMessage.textContent = 'Benvenuto Utente!';
+                    welcomeMessage.textContent = 'Benvenuto!';
                     sessionStorage.removeItem('atletaCognome');
-                    removeAthleteNavCard(); // Nascondi il riquadro
                 }
-
-                // Passa alla vista dell'applicazione
-                loginView.classList.add('hidden');
-                appView.classList.remove('hidden');
-
             } catch (error) {
                 console.error("Errore durante la verifica dello stato di atleta in Firestore:", error);
-                // In caso di errore, si assume non atleta e si mostra la vista base
-                welcomeMessage.textContent = 'Benvenuto Utente!'; // Messaggio di fallback
+                welcomeMessage.textContent = 'Benvenuto!';
                 sessionStorage.removeItem('atletaCognome');
-                removeAthleteNavCard();
-                loginView.classList.add('hidden');
-                appView.classList.remove('hidden');
             }
         }
 
-        // Funzione per aggiungere dinamicamente il riquadro "Storico WO"
-        function addAthleteNavCard() {
-            const storicoWoId = 'storico-wo-card';
-            // Controlla se il riquadro non è già presente
-            if (gridContainer && !document.getElementById(storicoWoId)) {
-                const newCardHtml = `
-                    <a href="storico_wo.html" id="${storicoWoId}" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 md:p-12 text-center">
-                        <div class="text-6xl md:text-7xl mb-4 md:mb-6">📖</div>
-                        <h2 class="text-3xl md:text-4xl font-bold text-white">Storico WO</h2>
-                    </a>
-                `;
-                const calendarioCard = document.querySelector('[href="CALENDARIO/calendario_utente.html"]');
-
-                // Inserisce la nuova card prima del Calendario
-                if (calendarioCard) {
-                    calendarioCard.insertAdjacentHTML('beforebegin', newCardHtml);
-                    // Rimuove md:col-span-2 dal Calendario per creare un layout 2x2
-                    calendarioCard.classList.remove('md:col-span-2');
-                } else {
-                    // Aggiunge in coda se il Calendario non viene trovato
-                    gridContainer.insertAdjacentHTML('beforeend', newCardHtml);
-                }
-            }
-        }
-        
-        // Funzione per rimuovere il riquadro "Storico WO"
-        function removeAthleteNavCard() {
-            const storicoWoCard = document.getElementById('storico-wo-card');
-            if (storicoWoCard) {
-                storicoWoCard.remove();
-
-                // Ripristina md:col-span-2 sul Calendario se rimosso per ottimizzare il layout 3 elementi
-                const calendarioCard = document.querySelector('[href="CALENDARIO/calendario_utente.html"]');
-                if(calendarioCard) {
-                     calendarioCard.classList.add('md:col-span-2');
-                }
-            }
-        }
-
-        // --- Event Listeners ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = loginForm.email.value;
@@ -321,7 +247,7 @@
                 console.error('Logout Error', error);
             });
         });
-
     </script>
 </body>
 </html>
+
