@@ -50,12 +50,11 @@
     <div class="background-gradient gradient-2"></div>
 
     <div class="p-4 md:p-8 max-w-7xl mx-auto">
-        <div class="flex justify-between items-center mb-8">
+        <div class="mb-8">
             <a href="../index.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                 Torna alla Home
             </a>
-            <p id="welcome-message" class="text-xl font-semibold text-sky-400"></p>
         </div>
 
         <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-4">Carica Allenamenti</h1>
@@ -113,34 +112,30 @@
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
         
-        const welcomeMessage = document.getElementById('welcome-message');
         const cards = document.querySelectorAll('.workout-card');
 
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                // Utente loggato, recupera il cognome da sessionStorage
-                const cognome = sessionStorage.getItem('atletaCognome');
-                if (cognome) {
-                    welcomeMessage.textContent = `Benvenuto, ${cognome}!`;
-                } else {
-                    welcomeMessage.textContent = 'Benvenuto!';
-                }
+                // Utente loggato. Le card sono attive di default.
+                // Il cognome resta salvato in sessionStorage per essere usato dalle altre pagine.
             } else {
                 // Utente non loggato
-                welcomeMessage.textContent = 'Accesso non effettuato.';
-                // Opzionale: disabilita le card se l'utente non è loggato
                 cards.forEach(card => {
                     card.style.pointerEvents = 'none';
                     card.style.opacity = '0.5';
                 });
                 // Inserisci un messaggio più evidente
                 const mainDiv = document.querySelector('.max-w-7xl');
-                const warning = document.createElement('p');
-                warning.className = 'text-center text-red-400 text-lg -mt-8 mb-12';
-                warning.innerHTML = 'Devi effettuare il <a href="../index.html" class="underline">login</a> per continuare.';
-                mainDiv.insertBefore(warning, mainDiv.children[2]);
+                const existingWarning = mainDiv.querySelector('.login-warning');
+                if (!existingWarning) {
+                    const warning = document.createElement('p');
+                    warning.className = 'text-center text-red-400 text-lg -mt-8 mb-12 login-warning';
+                    warning.innerHTML = 'Devi effettuare il <a href="../index.html" class="underline">login</a> per continuare.';
+                    mainDiv.insertBefore(warning, mainDiv.children[2]);
+                }
             }
         });
     </script>
 </body>
 </html>
+
