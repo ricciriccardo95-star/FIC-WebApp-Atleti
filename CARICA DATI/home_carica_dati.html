@@ -50,18 +50,19 @@
     <div class="background-gradient gradient-2"></div>
 
     <div class="p-4 md:p-8 max-w-7xl mx-auto">
-        <div class="mb-8">
+        <div class="flex justify-between items-center mb-8">
             <a href="../index.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                 Torna alla Home
             </a>
+            <p id="welcome-message" class="text-xl font-semibold text-sky-400"></p>
         </div>
+
         <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-4">Carica Allenamenti</h1>
         <p class="text-lg text-slate-400 text-center mb-12">Seleziona il tipo di allenamento che vuoi registrare.</p>
 
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
             
-            <!-- Tasto Peso aggiunto -->
             <a href="peso.html" class="workout-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
                 <div class="text-6xl mb-4">⚖️</div>
                 <h2 class="text-3xl font-bold text-white">Peso</h2>
@@ -94,5 +95,52 @@
         </div>
 
     </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
+            authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
+            projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.appspot.com",
+            messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        
+        const welcomeMessage = document.getElementById('welcome-message');
+        const cards = document.querySelectorAll('.workout-card');
+
+        onAuthStateChanged(auth, (user) => {
+            if (user) {
+                // Utente loggato, recupera il cognome da sessionStorage
+                const cognome = sessionStorage.getItem('atletaCognome');
+                if (cognome) {
+                    welcomeMessage.textContent = `Benvenuto, ${cognome}!`;
+                } else {
+                    welcomeMessage.textContent = 'Benvenuto!';
+                }
+            } else {
+                // Utente non loggato
+                welcomeMessage.textContent = 'Accesso non effettuato.';
+                // Opzionale: disabilita le card se l'utente non è loggato
+                cards.forEach(card => {
+                    card.style.pointerEvents = 'none';
+                    card.style.opacity = '0.5';
+                });
+                // Inserisci un messaggio più evidente
+                const mainDiv = document.querySelector('.max-w-7xl');
+                const warning = document.createElement('p');
+                warning.className = 'text-center text-red-400 text-lg -mt-8 mb-12';
+                warning.innerHTML = 'Devi effettuare il <a href="../index.html" class="underline">login</a> per continuare.';
+                mainDiv.insertBefore(warning, mainDiv.children[2]);
+            }
+        });
+    </script>
 </body>
 </html>
