@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inserimento Dati - FIC Canottaggio</title>
+    <title>Inserimento Peso - FIC Canottaggio</title>
     <!-- Tailwind CSS CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- Google Fonts: Inter -->
@@ -53,42 +53,40 @@
     <div class="background-gradient gradient-2"></div>
 
     <!-- Loader Overlay -->
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex-col justify-center items-center z-50 hidden">
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50 hidden">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
 
     <div class="p-4 md:p-8 max-w-2xl mx-auto">
         <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-4">Area Atleti</h1>
-        <p class="text-lg text-slate-400 text-center mb-12">Inserisci i tuoi dati di allenamento giornalieri.</p>
+        <p class="text-lg text-slate-400 text-center mb-12">Inserisci i tuoi dati biometrici.</p>
 
         <!-- Form Container -->
         <div id="form-container" class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
             
             <h2 class="text-2xl font-bold text-white border-b border-slate-700 pb-4">Aggiornamento Peso</h2>
             
-            <div>
-                <label for="athleteSelect" class="block mb-2 font-medium text-slate-300">Seleziona il tuo cognome</label>
-                <select id="athleteSelect" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="">Caricamento atleti...</option>
-                </select>
+            <!-- Questo div mostrerà l'atleta loggato o un messaggio di errore -->
+            <div id="athlete-info-container">
+                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg"></p>
             </div>
             
             <div>
                 <label for="weightInput" class="block mb-2 font-medium text-slate-300">Peso odierno (kg)</label>
-                <input type="number" id="weightInput" step="0.1" min="40" max="150" placeholder="Es. 85.5" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500">
+                <input type="number" id="weightInput" step="0.1" min="40" max="150" placeholder="Es. 85.5" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
             </div>
 
             <div class="pt-4">
-                <button id="saveWeightBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed">
+                <button id="saveWeightBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
                     Salva Peso
                 </button>
             </div>
         </div>
 
         <div class="text-center mt-8">
-            <a href="../index.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
-                ← Torna alla Home
+            <a href="../CARICA DATI/home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+                ← Torna Indietro
             </a>
         </div>
     </div>
@@ -100,26 +98,33 @@
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
 
-    <!-- Script Firebase -->
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
-    <script>
+    <!-- Script Firebase (versione aggiornata e modulare) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
         const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
+            authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
+            projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.appspot.com",
+            messagingSenderId: "860422140545",
             appId: "1:860422140545:web:cd14c042a47f2650681380"
         };
-        firebase.initializeApp(firebaseConfig);
-        const firestore = firebase.firestore();
-        const auth = firebase.auth();
+        
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
 
         // Elementi DOM
-        const athleteSelect = document.getElementById('athleteSelect');
         const weightInput = document.getElementById('weightInput');
         const saveWeightBtn = document.getElementById('saveWeightBtn');
         const loaderOverlay = document.getElementById('loader-overlay');
+        const athleteInfo = document.getElementById('athlete-info');
+
+        let currentAthleteId = null; // Variabile per salvare l'ID dell'atleta loggato
 
         // Funzioni Modals
         function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
@@ -128,63 +133,59 @@
             document.getElementById('messageText').textContent = message;
             showModal(document.getElementById('messageBox'));
         }
+        
+        // Controlla lo stato dell'autenticazione
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                // L'utente è loggato
+                loaderOverlay.style.display = 'flex';
+                try {
+                    const userEmail = user.email.toLowerCase();
+                    const q = query(collection(db, "atleti"), where("email", "==", userEmail));
+                    const querySnapshot = await getDocs(q);
 
-        // Funzione per eseguire il login anonimo
-        async function signInAnonymously() {
-            try {
-                await auth.signInAnonymously();
-                console.log("Accesso anonimo effettuato con successo.");
-            } catch (error) {
-                console.error("Errore di autenticazione anonima: ", error);
-                showMessageBox("Errore di autenticazione. Le modifiche non verranno salvate.");
-                saveWeightBtn.disabled = true; // Disabilita il salvataggio se l'auth fallisce
-            }
-        }
-        
-        // Funzione per caricare gli atleti nel dropdown
-        async function loadAthletes() {
-            loaderOverlay.style.display = 'flex';
-            try {
-                const snapshot = await firestore.collection('atleti').orderBy('cognome').get();
-                athleteSelect.innerHTML = '<option value="">-- Seleziona atleta --</option>'; // Pulisce e aggiunge opzione default
-                if (snapshot.empty) {
-                    athleteSelect.innerHTML = '<option value="">Nessun atleta nel database</option>';
-                    return;
+                    if (!querySnapshot.empty) {
+                        const athleteDoc = querySnapshot.docs[0];
+                        const athleteData = athleteDoc.data();
+                        currentAthleteId = athleteDoc.id; // Salva l'ID del documento
+                        
+                        athleteInfo.innerHTML = `Stai inserendo il peso per: <strong class="text-sky-400">${athleteData.cognome}</strong>`;
+                        weightInput.disabled = false;
+                        saveWeightBtn.disabled = false;
+                    } else {
+                        athleteInfo.textContent = "Profilo atleta non trovato. Contatta l'amministratore.";
+                    }
+                } catch (error) {
+                    console.error("Errore nel recupero dati atleta:", error);
+                    athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
+                } finally {
+                    loaderOverlay.style.display = 'none';
                 }
-                snapshot.forEach(doc => {
-                    const athlete = doc.data();
-                    const option = document.createElement('option');
-                    option.value = doc.id; // Salva l'ID del documento
-                    option.textContent = athlete.cognome;
-                    athleteSelect.appendChild(option);
-                });
-            } catch (error) {
-                console.error("Errore nel caricamento degli atleti: ", error);
-                showMessageBox("Impossibile caricare la lista degli atleti. Riprova più tardi.");
-                athleteSelect.innerHTML = '<option value="">Errore di caricamento</option>';
-            } finally {
-                loaderOverlay.style.display = 'none';
+
+            } else {
+                // L'utente non è loggato
+                athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire il peso.';
+                weightInput.disabled = true;
+                saveWeightBtn.disabled = true;
             }
-        }
+        });
         
-        // Funzione per salvare il peso
+        // Funzione per salvare il peso nello storico
         async function saveWeight() {
-            const athleteId = athleteSelect.value;
             const weightValue = weightInput.value;
 
             // Validazione
-            if (!athleteId) {
-                showMessageBox("Per favore, seleziona un atleta.");
+            if (!currentAthleteId) {
+                showMessageBox("Impossibile identificare l'atleta. Effettua nuovamente il login.");
                 return;
             }
             if (!weightValue) {
                 showMessageBox("Per favore, inserisci il tuo peso.");
                 return;
             }
-
             const weight = parseFloat(weightValue);
             if (isNaN(weight) || weight <= 0) {
-                 showMessageBox("Per favore, inserisci un valore di peso valido.");
+                showMessageBox("Per favore, inserisci un valore di peso valido.");
                 return;
             }
 
@@ -192,16 +193,26 @@
             saveWeightBtn.textContent = 'Salvataggio in corso...';
             
             try {
-                // Aggiorna il documento dell'atleta in Firestore
-                await firestore.collection('atleti').doc(athleteId).update({
-                    peso: weight
+                // Crea un ID per il documento basato sulla data odierna (YYYY-MM-DD)
+                const today = new Date();
+                const yyyy = today.getFullYear();
+                const mm = String(today.getMonth() + 1).padStart(2, '0'); // Mesi partono da 0
+                const dd = String(today.getDate()).padStart(2, '0');
+                const dateId = `${yyyy}-${mm}-${dd}`;
+
+                // Crea il riferimento al documento del giorno nella sottocollezione "storico_peso"
+                const dailyWeightRef = doc(db, "atleti", currentAthleteId, "storico_peso", dateId);
+
+                // Usa setDoc per creare o sovrascrivere il dato del giorno
+                await setDoc(dailyWeightRef, {
+                    peso: weight,
+                    data: serverTimestamp() // Salva la data esatta del server
                 });
-                showMessageBox("Peso aggiornato con successo!");
-                // Resetta i campi
-                athleteSelect.value = "";
-                weightInput.value = "";
+                
+                showMessageBox("Peso salvato con successo per la giornata di oggi!");
+                weightInput.value = ""; // Pulisce il campo dopo il salvataggio
             } catch (error) {
-                console.error("Errore nell'aggiornamento del peso: ", error);
+                console.error("Errore nel salvataggio dello storico del peso: ", error);
                 showMessageBox("Si è verificato un errore durante il salvataggio. Assicurati di essere connesso a internet e riprova.");
             } finally {
                 saveWeightBtn.disabled = false;
@@ -210,12 +221,8 @@
         }
 
         // Event Listeners
-        document.addEventListener('DOMContentLoaded', async () => {
-            await signInAnonymously(); // Esegui l'accesso prima di caricare i dati
-            loadAthletes();
-            saveWeightBtn.addEventListener('click', saveWeight);
-            document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
-        });
+        saveWeightBtn.addEventListener('click', saveWeight);
+        document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
     </script>
 </body>
 </html>
