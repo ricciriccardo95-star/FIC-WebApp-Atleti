@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIC - SQUADRA OLIMPICA</title>
+    <title>FIC Canottaggio - Accesso</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -16,7 +16,6 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
-        /* Effetti di sfondo e animazione */
         .background-gradient {
             position: fixed; top: 50%; left: 50%;
             transform: translate(-50%, -50%);
@@ -36,28 +35,14 @@
             0% { transform: scale(0.9) rotate(0deg); }
             100% { transform: scale(1.2) rotate(20deg); }
         }
-        /* Stile delle card di navigazione */
-        .nav-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
-        }
-        .nav-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        }
-        #logo-container {
-            transition: transform 1s ease-in-out;
-        }
-        #login-form-container {
-            transition: opacity 1s ease-in;
-        }
+        #logo-container { transition: transform 1s ease-in-out; }
+        #login-form-container { transition: opacity 1s ease-in; }
     </style>
-    
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FIC Canottaggio">
-    <link rel="apple-touch-icon" href="logo-fic (1) copia.png"> 
+    <link rel="apple-touch-icon" href="logo-fic (1) copia.png">
     <link rel="manifest" href="manifest.json">
-
 </head>
 <body class="antialiased">
 
@@ -103,60 +88,9 @@
         </div>
     </div>
 
-    <!-- Vista Principale App -->
-    <div id="app-view" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
-        
-        <!-- HEADER con Benvenuto e Logout -->
-        <div class="flex justify-between items-center mb-10">
-            <p id="welcome-message" class="text-xl md:text-2xl font-semibold text-sky-400"></p>
-            <button id="logout-btn" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
-                Logout
-            </button>
-        </div>
-
-        <section id="home-page">
-            <div class="flex flex-col items-center justify-center min-h-[70vh]">
-                <h1 class="text-3xl md:text-6xl font-black tracking-tight text-slate-100 text-center mb-4">FIC - SQUADRA OLIMPICA</h1>
-                <p class="text-base md:text-xl text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
-                
-                <div class="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto w-full">
-                    
-                    <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">📥</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Carica Dati</h2>
-                    </a>
-                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">📈</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Risultati</h2>
-                    </a>
-                    
-                    <a href="storico_wo.html" id="storico-wo-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">📖</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Storico WO</h2>
-                    </a>
-                    
-                    <a href="gym.html" id="gym-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">🏋️</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Gym</h2>
-                    </a>
-                </div>
-
-                <div class="max-w-4xl mx-auto w-full mt-4 md:mt-8">
-                    <a href="CALENDARIO/calendario.html" id="calendario-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">📅</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Calendario</h2>
-                    </a>
-                </div>
-            </div>
-        </section>
-        
-    </div>
-
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
@@ -170,31 +104,22 @@
 
         const app = initializeApp(firebaseConfig);
         const auth = getAuth(app);
-        const db = getFirestore(app);
 
-        const loginView = document.getElementById('login-view');
-        const appView = document.getElementById('app-view');
-        const logoContainer = document.getElementById('logo-container');
         const loginForm = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
-        const logoutBtn = document.getElementById('logout-btn');
-        const welcomeMessage = document.getElementById('welcome-message');
 
+        // Controlla lo stato di autenticazione. Se l'utente è già loggato, reindirizzalo alla home.
         onAuthStateChanged(auth, (user) => {
             if (user) {
-                loginView.classList.add('hidden');
-                appView.classList.remove('hidden');
-                checkAthleteStatus(user.email);
+                window.location.href = 'home.html';
             } else {
-                appView.classList.add('hidden');
-                loginView.classList.remove('hidden');
-                sessionStorage.removeItem('atletaCognome');
-                welcomeMessage.textContent = '';
+                // Se non è loggato, mostra l'animazione di login
                 startLoginAnimation();
             }
         });
         
         function startLoginAnimation() {
+            const logoContainer = document.getElementById('logo-container');
             const appTitle = document.getElementById('app-title');
             const loginFormContainer = document.getElementById('login-form-container');
              setTimeout(() => {
@@ -204,28 +129,6 @@
                     loginFormContainer.style.opacity = '1';
                 }, 500);
             }, 500);
-        }
-
-        async function checkAthleteStatus(email) {
-            const userEmail = email.toLowerCase();
-            try {
-                const q = query(collection(db, "atleti"), where("email", "==", userEmail));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    const atletaData = querySnapshot.docs[0].data();
-                    const cognome = atletaData.cognome; 
-                    sessionStorage.setItem('atletaCognome', cognome);
-                    welcomeMessage.textContent = `Benvenuto ${cognome}!`;
-                } else {
-                    welcomeMessage.textContent = 'Benvenuto!';
-                    sessionStorage.removeItem('atletaCognome');
-                }
-            } catch (error) {
-                console.error("Errore durante la verifica dello stato di atleta in Firestore:", error);
-                welcomeMessage.textContent = 'Benvenuto!';
-                sessionStorage.removeItem('atletaCognome');
-            }
         }
 
         loginForm.addEventListener('submit', (e) => {
@@ -241,13 +144,6 @@
                     errorMessage.classList.remove('hidden');
                 });
         });
-
-        logoutBtn.addEventListener('click', () => {
-            signOut(auth).catch((error) => {
-                console.error('Logout Error', error);
-            });
-        });
     </script>
 </body>
 </html>
-
