@@ -90,7 +90,7 @@
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         const firebaseConfig = {
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
@@ -108,15 +108,27 @@
         const loginForm = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
 
-        // Controlla lo stato di autenticazione. Se l'utente è già loggato, reindirizzalo alla home.
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                window.location.href = 'home.html';
-            } else {
-                // Se non è loggato, mostra l'animazione di login
-                startLoginAnimation();
+        // Funzione asincrona per gestire l'autenticazione
+        async function handleAuth() {
+            try {
+                // **LA MODIFICA CHIAVE È QUI**
+                // Impostiamo esplicitamente la persistenza prima di controllare lo stato
+                await setPersistence(auth, browserLocalPersistence);
+
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        window.location.href = 'home.html';
+                    } else {
+                        startLoginAnimation();
+                    }
+                });
+
+            } catch (error) {
+                console.error("Errore nell'impostare la persistenza:", error);
+                errorMessage.textContent = "Errore di configurazione dell'app. Contatta il supporto.";
+                errorMessage.classList.remove('hidden');
             }
-        });
+        }
         
         function startLoginAnimation() {
             const logoContainer = document.getElementById('logo-container');
@@ -144,6 +156,9 @@
                     errorMessage.classList.remove('hidden');
                 });
         });
+
+        // Avvia la gestione dell'autenticazione
+        handleAuth();
     </script>
 </body>
 </html>
