@@ -25,74 +25,60 @@
 <body class="antialiased">
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex-col justify-center items-center z-50 hidden">
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50 hidden">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
         <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">🚣‍♂️ Allenamento RowErg</h1>
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
-            <div>
-                <label for="athleteSelect" class="form-label">Atleta</label>
-                <select id="athleteSelect" class="form-select"></select>
+            
+            <!-- Contenitore per info atleta loggato -->
+            <div id="athlete-info-container">
+                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
             </div>
-            <div>
-                <label for="workoutMode" class="form-label">Modalità Allenamento</label>
-                <select id="workoutMode" class="form-select">
-                    <option value="">-- Seleziona modalità --</option>
-                    <option value="distanza">Distanza</option>
-                    <option value="tempo">Tempo</option>
-                </select>
-            </div>
-            <!-- Campi Dinamici -->
-            <div id="distanza-fields" class="dynamic-field space-y-6">
+            
+            <!-- Contenuto del form, nascosto finché l'utente non è verificato -->
+            <div id="form-content" class="hidden space-y-6">
                 <div>
-                    <label for="distanzaSelect" class="form-label">Distanza</label>
-                    <select id="distanzaSelect" class="form-select"></select>
-                </div>
-            </div>
-            <div id="tempo-fields" class="dynamic-field space-y-6">
-                <div>
-                    <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
-                    <select id="tempoSelect" class="form-select">
-                        <option value="">-- Seleziona tempo --</option>
-                        <option value="30">30 minuti</option>
-                        <option value="45">45 minuti</option>
+                    <label for="workoutMode" class="form-label">Modalità Allenamento</label>
+                    <select id="workoutMode" class="form-select">
+                        <option value="">-- Seleziona modalità --</option>
+                        <option value="distanza">Distanza</option>
+                        <option value="tempo">Tempo</option>
                     </select>
                 </div>
-            </div>
-            <div id="intervalli-common" class="dynamic-field space-y-6">
-                 <div>
-                    <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
-                    <select id="intervalliNumero" class="form-select">
-                        <option value="">-- Seleziona numero --</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                        <option value="5">5</option>
-                        <option value="6">6</option>
-                        <option value="7">7</option>
-                        <option value="8">8</option>
-                        <option value="9">9</option>
-                        <option value="10">10</option>
-                        <option value="11">11</option>
-                        <option value="12">12</option>
-                        <option value="13">13</option>
-                        <option value="14">14</option>
-                        <option value="15">15</option>
-                        <option value="16">16</option>
-                        <option value="17">17</option>
-                        <option value="18">18</option>
-                        <option value="19">19</option>
-                        <option value="20">20</option>
-                    </select>
+                <!-- Campi Dinamici -->
+                <div id="distanza-fields" class="dynamic-field space-y-6">
+                    <div>
+                        <label for="distanzaSelect" class="form-label">Distanza</label>
+                        <select id="distanzaSelect" class="form-select"></select>
+                    </div>
                 </div>
-                <div id="intervalli-inputs-container" class="space-y-4"></div>
-            </div>
-            <!-- Fine Campi Dinamici -->
-            <div class="pt-4">
-                <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
+                <div id="tempo-fields" class="dynamic-field space-y-6">
+                    <div>
+                        <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
+                        <select id="tempoSelect" class="form-select">
+                            <option value="">-- Seleziona tempo --</option>
+                            <option value="30">30 minuti</option>
+                            <option value="45">45 minuti</option>
+                        </select>
+                    </div>
+                </div>
+                <div id="intervalli-common" class="dynamic-field space-y-6">
+                     <div>
+                        <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
+                        <select id="intervalliNumero" class="form-select">
+                            <option value="">-- Seleziona numero --</option>
+                            {[...Array(20)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                        </select>
+                    </div>
+                    <div id="intervalli-inputs-container" class="space-y-4"></div>
+                </div>
+                <!-- Fine Campi Dinamici -->
+                <div class="pt-4">
+                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
+                </div>
             </div>
         </div>
         <div class="text-center mt-8">
@@ -108,23 +94,28 @@
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-    <script>
         const firebaseConfig = {
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
             databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
+            storageBucket: "database-atleti-fic.appspot.com", messagingSenderId: "860422140545",
             appId: "1:860422140545:web:cd14c042a47f2650681380"
         };
-        firebase.initializeApp(firebaseConfig);
-        const firestore = firebase.firestore();
-        const auth = firebase.auth();
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
         
         const loaderOverlay = document.getElementById('loader-overlay');
-        const workoutType = 'ergo'; // Hardcoded for this specific module
+        const athleteInfo = document.getElementById('athlete-info');
+        const formContent = document.getElementById('form-content');
+        const workoutType = 'ergo'; 
+
+        let currentAthleteId = null;
+        let currentAthleteCognome = null;
 
         // --- FUNZIONI DI UTILITÀ ---
         function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
@@ -133,38 +124,23 @@
             document.getElementById('messageText').textContent = message;
             showModal(document.getElementById('messageBox'));
         }
-        async function signInAnonymously() {
-            try { await auth.signInAnonymously(); } catch (error) { console.error("Auth Error: ", error); showMessageBox("Errore di autenticazione."); }
-        }
 
-        // --- FUNZIONI DI CALCOLO EP (trasferite dal ranking_ergo.html) ---
-
-        /**
-         * Converte una stringa di tempo (mm:ss.d) in secondi totali.
-         * @param {string} timeStr - Stringa tempo.
-         * @returns {number} Secondi totali.
-         */
+        // --- FUNZIONI DI CALCOLO EP ---
         function timeToSeconds(timeStr) {
             if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
             const minutes = parseInt(parts[0], 10);
-            // Sostituisce la virgola con il punto e converte in float per i decimali di secondo
             const seconds = parseFloat(parts[1].replace(',', '.')); 
             if (isNaN(minutes) || isNaN(seconds)) return 0;
             return (minutes * 60) + seconds;
         }
 
-        /**
-         * Carica il record RowErg di un atleta.
-         * @param {string} athleteId - ID del documento dell'atleta.
-         * @returns {object | null} Dati dell'atleta o null.
-         */
         async function fetchAthleteRecord(athleteId) {
             try {
-                const docRef = firestore.collection('atleti').doc(athleteId);
-                const doc = await docRef.get();
-                if (doc.exists) {
-                    return doc.data();
+                const docRef = doc(db, 'atleti', athleteId);
+                const docSnap = await getDoc(docRef);
+                if (docSnap.exists()) {
+                    return docSnap.data();
                 }
             } catch (error) {
                 console.error("Error fetching athlete record:", error);
@@ -172,86 +148,49 @@
             return null;
         }
 
-        /**
-         * Calcola l'Efficiency Percentage (EP) per un allenamento RowErg.
-         * @param {object} workoutData - Dati dell'allenamento.
-         * @param {object} athleteData - Dati dell'atleta contenenti il record 'rowerg'.
-         * @returns {number | null} Il valore EP calcolato (in percentuale) o null se il calcolo fallisce.
-         */
         function calculateErgoEP(workoutData, athleteData) {
             if (!athleteData || !athleteData.rowerg) return null;
             if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) return null;
 
             const recordErgoSeconds = timeToSeconds(athleteData.rowerg);
-
             if (recordErgoSeconds <= 0) {
                 console.warn("Record RowErg non valido o assente per l'atleta.");
                 return null;
             }
             
-            // Calcolo Watt record personale (basato su 2000m standard)
             const wattRecordPersonale = 2.8 * Math.pow(2000 / recordErgoSeconds, 3);
-
             if (wattRecordPersonale <= 0) return null;
 
             let wattAllenamento = 0;
             const intervals = workoutData.intervalli.map(i => timeToSeconds(i) || parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n) && n > 0);
-            
             if (intervals.length === 0) return null;
 
             const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
 
             if (workoutData.modalita === 'tempo') {
-                // Modalità tempo: L'input è la Distanza percorsa nell'intervallo (es. 2500m)
                 const mediaMetri = mediaIntervalli; 
-                const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60; // Durata del singolo intervallo (es. 30 min)
-                
-                if (tempoSelezionatoSec > 0) {
-                    // W = 2.8 * (D/T)^3
-                    wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
-                }
+                const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60;
+                if (tempoSelezionatoSec > 0) wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
             } else if (workoutData.modalita === 'distanza') {
-                // Modalità distanza: L'input è il Tempo (mm:ss.d) impiegato per percorrere la distanza selezionata (es. 2000m)
                 const mediaTempoSec = mediaIntervalli; 
                 const distanzaSelezionata = parseInt(workoutData.distanza, 10); 
-                
-                if (mediaTempoSec > 0) {
-                    // W = 2.8 * (D/T)^3
-                    wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
-                }
+                if (mediaTempoSec > 0) wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
             }
 
             if (wattAllenamento > 0) {
-                const epValue = (wattAllenamento / wattRecordPersonale) * 100;
-                return epValue;
+                return (wattAllenamento / wattRecordPersonale) * 100;
             }
             
-            return null; // Calcolo fallito
+            return null;
         }
 
 
         // --- LOGICA DI SETUP PAGINA ---
-        async function setupPage() {
-            loaderOverlay.style.display = 'flex';
-
-            // Popola dropdown distanze
+        function setupPage() {
             const distanze = [500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 20000];
             const distanzaSelect = document.getElementById('distanzaSelect');
             distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
             distanze.forEach(d => distanzaSelect.innerHTML += `<option value="${d}">${d}m</option>`);
-
-            // Popola atleti
-            try {
-                const athleteSelect = document.getElementById('athleteSelect');
-                const athletesSnapshot = await firestore.collection('atleti').orderBy('cognome').get();
-                athleteSelect.innerHTML = '<option value="">-- Seleziona atleta --</option>';
-                athletesSnapshot.forEach(doc => {
-                    const athlete = doc.data();
-                    athleteSelect.innerHTML += `<option value="${doc.id}">${athlete.cognome}</option>`;
-                });
-            } catch (error) { console.error("Error loading athletes: ", error); }
-            
-            loaderOverlay.style.display = 'none';
         }
 
         // --- GESTIONE DINAMICA FORM ---
@@ -280,7 +219,7 @@
             }
         }
         
-        function formatTimeInput(event) {
+        window.formatTimeInput = function(event) {
             const input = event.target;
             let value = input.value.replace(/\D/g, '');
             if (value.length > 5) value = value.substring(0, 5);
@@ -290,36 +229,37 @@
             input.value = f;
         }
         
-        // --- SALVATAGGIO DATI (AGGIORNATO CON CALCOLO EP) ---
+        // --- SALVATAGGIO DATI ---
         async function saveWorkout() {
             const btn = document.getElementById('saveWorkoutBtn');
             btn.disabled = true;
             btn.textContent = 'Salvataggio in corso...';
             
+            if (!currentAthleteId) {
+                showMessageBox("Impossibile identificare l'atleta. Effettua nuovamente il login.");
+                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
+            }
+
             const mode = document.getElementById('workoutMode').value;
-            const athleteSelect = document.getElementById('athleteSelect');
-            const athleteId = athleteSelect.value;
-            
             const workoutData = {
                 tipo: workoutType.toUpperCase(),
-                atletaId: athleteId,
-                cognomeAtleta: athleteSelect.options[athleteSelect.selectedIndex].text,
+                atletaId: currentAthleteId,
+                cognomeAtleta: currentAthleteCognome,
                 modalita: mode,
                 data: new Date().toISOString().split('T')[0],
-                timestamp: firebase.firestore.FieldValue.serverTimestamp(),
+                timestamp: serverTimestamp(),
                 intervalli: [],
-                ep: null // Inizializzato a null
+                ep: null
             };
 
-            // 1. Validazioni
-            if (!athleteId || !mode) {
-                showMessageBox("Seleziona atleta e modalità.");
+            if (!mode) {
+                showMessageBox("Seleziona una modalità di allenamento.");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             if (mode === 'distanza') {
                 workoutData.distanza = document.getElementById('distanzaSelect').value;
                 if (!workoutData.distanza) { showMessageBox("Seleziona una distanza."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-            } else { // tempo
+            } else {
                 workoutData.tempo = document.getElementById('tempoSelect').value;
                  if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
             }
@@ -328,7 +268,6 @@
             let allIntervalsValid = true;
             intervalliInputs.forEach(input => {
                 if (input.value) {
-                    // Controlla il formato se è modalità distanza (tempo)
                     if (mode === 'distanza' && !/^\d{1,2}:\d{2}\.\d{1}$/.test(input.value)) {
                          allIntervalsValid = false;
                     }
@@ -343,15 +282,8 @@
                  btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             
-            // 2. Carica i record dell'atleta
-            let athleteData = null;
-            try {
-                athleteData = await fetchAthleteRecord(athleteId);
-            } catch (error) {
-                console.error("Errore caricamento record atleta:", error);
-            }
+            const athleteData = await fetchAthleteRecord(currentAthleteId);
 
-            // 3. Calcola l'EP
             if (athleteData) {
                 const epValueToSave = calculateErgoEP(workoutData, athleteData);
                 if (epValueToSave !== null && epValueToSave > 0) {
@@ -360,16 +292,12 @@
                     console.warn("EP non calcolato. Controlla che 'rowerg' sia presente e valido nei dati dell'atleta.");
                 }
             } else {
-                console.warn(`Record atleta ${athleteId} non trovato. L'EP non può essere calcolato.`);
+                console.warn(`Record atleta ${currentAthleteId} non trovato. L'EP non può essere calcolato.`);
             }
 
-            // 4. Salva in Firestore
             try {
-                await firestore.collection('allenamenti').add(workoutData);
-                showMessageBox("Allenamento salvato con successo! (EP calcolato)");
-                
-                // Reset form
-                document.getElementById('athleteSelect').value = "";
+                await addDoc(collection(db, 'allenamenti'), workoutData);
+                showMessageBox("Allenamento salvato con successo!");
                 document.getElementById('workoutMode').value = "";
                 document.getElementById('intervalliNumero').value = "";
                 updateFormVisibility();
@@ -382,11 +310,41 @@
             }
         }
 
+        // --- GESTIONE AUTENTICAZIONE E AVVIO ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                loaderOverlay.style.display = 'flex';
+                try {
+                    const userEmail = user.email.toLowerCase();
+                    const q = query(collection(db, "atleti"), where("email", "==", userEmail));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        const athleteDoc = querySnapshot.docs[0];
+                        const athleteData = athleteDoc.data();
+                        currentAthleteId = athleteDoc.id;
+                        currentAthleteCognome = athleteData.cognome;
+                        
+                        athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athleteData.cognome}</strong>`;
+                        formContent.classList.remove('hidden');
+                    } else {
+                        athleteInfo.textContent = "Profilo atleta non trovato. Contatta l'amministratore.";
+                    }
+                } catch (error) {
+                    console.error("Errore nel recupero dati atleta:", error);
+                    athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
+                } finally {
+                    loaderOverlay.style.display = 'none';
+                }
+            } else {
+                athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire i dati.';
+                formContent.classList.add('hidden');
+            }
+        });
+        
         // --- EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', async () => {
-            await signInAnonymously();
-            await setupPage();
-            
+        document.addEventListener('DOMContentLoaded', () => {
+            setupPage();
             document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
             document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
             document.getElementById('saveWorkoutBtn').addEventListener('click', saveWorkout);
