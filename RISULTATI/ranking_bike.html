@@ -120,10 +120,6 @@
             </a>
         </div>
         
-        <div id="reads-counter" class="text-center text-slate-400 mb-8 font-medium hidden">
-            Letture totali generate da Firestore per questa operazione: <span id="reads-count" class="text-sky-300 text-xl font-extrabold tracking-wider">0</span>
-        </div>
-
         <div id="results-container" class="space-y-10"></div>
     </div>
 
@@ -142,9 +138,6 @@
 
         const loaderOverlay = document.getElementById('loader-overlay');
         const resultsContainer = document.getElementById('results-container');
-        // Elementi per il contatore
-        const readsCounterElement = document.getElementById('reads-counter');
-        const readsCountSpan = document.getElementById('reads-count');
         
         // La mappa athleteRecords non è più necessaria per il calcolo dell'EP,
         // ma la manteniamo per recuperare nome e cognome
@@ -202,12 +195,10 @@
             
             // LOG DELLE LETTURE ATLETI
             const readsCount = snapshot.docs.length;
-            console.log(`[Firestore Reads] Collezione 'atleti': ${readsCount} documenti letti.`);
             
             snapshot.forEach(doc => {
                 athleteRecords.set(doc.id, doc.data());
             });
-            return readsCount; // Ritorna il conteggio delle letture
         }
 
         /**
@@ -281,8 +272,6 @@
 
         async function loadAndProcessWorkouts() {
             loaderOverlay.classList.remove('hidden');
-            readsCounterElement.classList.add('hidden'); // Nasconde il contatore durante il caricamento
-            let totalReads = 0; // Contatore totale delle letture
             
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
@@ -312,26 +301,18 @@
 
                 const snapshot = await query.get();
                 
-                // LOG DELLE LETTURE ALLENAMENTI
                 const readsAllenamenti = snapshot.docs.length;
-                totalReads += (readsAllenamenti > 0) ? readsAllenamenti : 1; 
-                console.log(`[Firestore Reads] Collezione 'allenamenti' (filtrata): ${readsAllenamenti} documenti letti. Costo parziale: ${totalReads} letture.`);
 
 
                 // 3. CONTROLLO CONDIZIONALE PER EVITARE LA LETTURA DEGLI ATLETI
                 if (readsAllenamenti === 0) {
                     resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-8 text-xl">Nessun allenamento Bike trovato per l'intervallo selezionato.</p>`;
-                     // MOSTRA IL TOTALE DELLE LETTURE (che sarà solo 1)
-                    readsCountSpan.textContent = totalReads.toLocaleString('it-IT');
-                    readsCounterElement.classList.remove('hidden');
                     loaderOverlay.classList.add('hidden');
                     return; // Interrompe il processo qui
                 }
                 
                 // 4. Caricamento record atleti (Lettura #2) - Mantenuto per nome/cognome
-                const readsAtleti = await fetchAllAthleteRecords();
-                totalReads += readsAtleti;
-                console.log(`[Firestore Reads] Totale parziale (Allenamenti + Atleti): ${totalReads}`);
+                await fetchAllAthleteRecords();
 
 
                 // 5. Elaborazione e preparazione dei dati (SENZA AGGIORNAMENTO EP NEL DB)
@@ -355,10 +336,6 @@
                         console.error("Errore nell'elaborazione del documento:", doc.id, e);
                     }
                 });
-
-                // NON ASPETTIAMO NESSUN AGGIORNAMENTO
-                console.log(`[Firestore Reads] Totale dopo elaborazione (nessun aggiornamento): ${totalReads}`);
-
 
                 // 6. Raggruppamento e ordinamento (eseguito lato client)
                 const groupedByDate = workouts.reduce((acc, workout) => {
@@ -384,12 +361,6 @@
                 }
                 
                 renderRanking(groupedByDate);
-                
-                // MOSTRA IL TOTALE DELLE LETTURE ALLA FINE
-                readsCountSpan.textContent = totalReads.toLocaleString('it-IT');
-                readsCounterElement.classList.remove('hidden');
-                console.log(`[Firestore Reads] Totale Operazione Finale: ${totalReads} documenti letti.`);
-
 
             } catch (error) {
                 console.error("Errore nel caricamento: ", error);

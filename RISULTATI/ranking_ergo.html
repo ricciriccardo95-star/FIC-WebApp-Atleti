@@ -120,10 +120,6 @@
             </a>
         </div>
         
-        <div id="reads-counter" class="text-center text-slate-400 mb-8 font-medium hidden">
-            Letture totali generate da Firestore per questa operazione: <span id="reads-count" class="text-sky-300 text-xl font-extrabold tracking-wider">0</span>
-        </div>
-
         <div id="results-container" class="space-y-10"></div>
     </div>
 
@@ -142,8 +138,6 @@
 
         const loaderOverlay = document.getElementById('loader-overlay');
         const resultsContainer = document.getElementById('results-container');
-        const readsCounterElement = document.getElementById('reads-counter');
-        const readsCountSpan = document.getElementById('reads-count');
         let athleteRecords = new Map();
 
         // Elementi Data e Bottone Filtro
@@ -169,7 +163,7 @@
          * @returns {number} Secondi totali.
          */
         function timeToSeconds(timeStr) {
-            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+            if (!timeStr || typeof timeStr !== 'string' || !timeTome.includes(':')) return 0;
             const parts = timeStr.split(':');
             const minutes = parseInt(parts[0], 10);
             const seconds = parseFloat(parts[1].replace(',', '.'));
@@ -191,14 +185,11 @@
         }
 
         async function fetchAllAthleteRecords() {
-            // Mantenuto per il conteggio letture e per recuperare nome/cognome atleta (non più per record/calcolo EP)
+            // Mantenuto per recuperare nome/cognome atleta (non più per record/calcolo EP)
             const snapshot = await firestore.collection('atleti').get();
-            const readsCount = snapshot.docs.length;
-            
             snapshot.forEach(doc => {
                 athleteRecords.set(doc.id, doc.data());
             });
-            return readsCount;
         }
 
         /**
@@ -262,8 +253,6 @@
 
         async function loadAndProcessWorkouts() {
             loaderOverlay.classList.remove('hidden');
-            readsCounterElement.classList.add('hidden');
-            let totalReads = 0; 
 
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
@@ -283,7 +272,7 @@
             }
 
             try {
-                // 2. Query allenamenti ERGO (Lettura #1: 1 lettura + N documenti)
+                // 2. Query allenamenti ERGO
                 let query = firestore.collection('allenamenti')
                     .where('tipo', '==', 'ERGO')
                     .where('data', '>=', startDate) 
@@ -292,24 +281,15 @@
 
                 const snapshot = await query.get();
                 
-                const readsAllenamenti = snapshot.docs.length;
-                totalReads += (readsAllenamenti > 0) ? readsAllenamenti : 1;
-                console.log(`[Firestore Reads] Collezione 'allenamenti' (filtrata): ${readsAllenamenti} documenti letti. Costo parziale: ${totalReads} letture.`);
-
-
-                // 3. CONTROLLO CONDIZIONALE: Se 0 allenamenti, ferma e mostra solo il costo della query.
-                if (readsAllenamenti === 0) {
+                // 3. CONTROLLO CONDIZIONALE: Se 0 allenamenti, ferma.
+                if (snapshot.docs.length === 0) {
                     resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-8 text-xl">Nessun allenamento Ergo trovato per l'intervallo selezionato.</p>`;
-                    readsCountSpan.textContent = totalReads.toLocaleString('it-IT');
-                    readsCounterElement.classList.remove('hidden');
                     loaderOverlay.classList.add('hidden');
                     return; 
                 }
                 
-                // 4. SOLO SE CI SONO ALLENAMENTI: Caricamento Record Atleti (Lettura #2) - Mantenuto solo per nome/cognome
-                const readsRecords = await fetchAllAthleteRecords();
-                totalReads += readsRecords;
-                console.log(`[Firestore Reads] Totale parziale (Allenamenti + Atleti): ${totalReads}`);
+                // 4. SOLO SE CI SONO ALLENAMENTI: Caricamento Record Atleti - Mantenuto solo per nome/cognome
+                await fetchAllAthleteRecords();
 
 
                 // 5. Elaborazione e preparazione dei dati (SENZA CALCOLO O AGGIORNAMENTO EP NEL DB)
@@ -327,8 +307,6 @@
                         // Elabora i dati (recupera EP esistente e formatta totali)
                         const processedWorkout = calculateWorkoutData({ id: doc.id, ...data }, athleteRecords);
                         
-                        // NON SALVIAMO L'EP: rimossa la logica di updatePromises
-
                         // Aggiungi l'allenamento elaborato alla lista
                         workouts.push(processedWorkout);
 
@@ -336,8 +314,6 @@
                         console.error("Errore nell'elaborazione del documento:", doc.id, e);
                     }
                 });
-
-                // NON ASPETTIAMO NESSUN AGGIORNAMENTO
 
                 // 6. Raggruppamento, Ordinamento e Render (lato client)
                 const groupedByDate = workouts.reduce((acc, workout) => {
@@ -363,12 +339,6 @@
                 }
                 
                 renderRanking(groupedByDate);
-
-                // MOSTRA IL TOTALE DELLE LETTURE ALLA FINE
-                readsCountSpan.textContent = totalReads.toLocaleString('it-IT');
-                readsCounterElement.classList.remove('hidden');
-                console.log(`[Firestore Reads] Totale Operazione Finale: ${totalReads} documenti letti.`);
-
 
             } catch (error) {
                 console.error("Errore nel caricamento: ", error);
