@@ -70,7 +70,12 @@
                         <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
-                            {[...Array(20)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                            <!-- 
+                                ERRORE PRECEDENTE: La riga sottostante era sintassi JSX (React) e non HTML/JS valido.
+                                {[...Array(20)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
+                                
+                                SOLUZIONE: Rimossa e spostata la logica nello script JS (funzione setupPage).
+                            -->
                         </select>
                     </div>
                     <div id="intervalli-inputs-container" class="space-y-4"></div>
@@ -99,6 +104,7 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // NOTA: La tua API Key è visibile qui. Considera l'uso di Firebase App Check o regole di sicurezza più rigide.
         const firebaseConfig = {
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
             databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
@@ -187,10 +193,21 @@
 
         // --- LOGICA DI SETUP PAGINA ---
         function setupPage() {
+            // Popola distanze
             const distanze = [500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 20000];
             const distanzaSelect = document.getElementById('distanzaSelect');
             distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
             distanze.forEach(d => distanzaSelect.innerHTML += `<option value="${d}">${d}m</option>`);
+
+            // --- FIX: Popola dinamicamente il select "Numero di Intervalli" ---
+            const intervalliSelect = document.getElementById('intervalliNumero');
+            let intervalliHTML = '';
+            for (let i = 1; i <= 20; i++) {
+                intervalliHTML += `<option value="${i}">${i}</option>`;
+            }
+            // Aggiunge le opzioni generate dopo quella di default
+            intervalliSelect.innerHTML += intervalliHTML;
+            // --- FINE FIX ---
         }
 
         // --- GESTIONE DINAMICA FORM ---
@@ -210,23 +227,47 @@
 
             if (numero > 0 && numero <= 20) {
                 for (let i = 1; i <= numero; i++) {
-                    const inputType = mode === 'distanza' ? 'text' : 'number';
-                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore (es. 2500m)';
-                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} ${mode === 'distanza' ? '(Tempo)' : '(Distanza)'}</label>`;
-                    const input = `<input type="${inputType}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${mode === 'distanza' ? 'oninput="formatTimeInput(event)" maxlength="7"' : ''}>`;
+                    // Determina il tipo di input e il placeholder in base alla modalità
+                    const isDistanceMode = mode === 'distanza';
+                    const inputType = isDistanceMode ? 'text' : 'number'; // 'text' per formattazione tempo
+                    const placeholder = isDistanceMode ? 'mm:ss.d' : 'Inserisci distanza (es. 12500)';
+                    const labelText = isDistanceMode ? 'Tempo' : 'Distanza';
+                    
+                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} (${labelText})</label>`;
+                    
+                    // Aggiunge la formattazione automatica solo per la modalità distanza (tempo)
+                    const inputAttributes = isDistanceMode 
+                        ? 'oninput="formatTimeInput(event)" maxlength="7"' 
+                        : 'step="any"'; // Permette numeri decimali per la distanza se necessario
+
+                    const input = `<input type="${inputType}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${inputAttributes}>`;
+                    
                     container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
                 }
             }
         }
         
+        // Funzione helper per formattare l'input del tempo
         window.formatTimeInput = function(event) {
             const input = event.target;
-            let value = input.value.replace(/\D/g, '');
-            if (value.length > 5) value = value.substring(0, 5);
-            let f = value;
-            if (value.length > 2) f = `${value.substring(0, 2)}:${value.substring(2)}`;
-            if (value.length > 4) f = `${value.substring(0, 2)}:${value.substring(2, 4)}.${value.substring(4)}`;
-            input.value = f;
+            let value = input.value.replace(/[^\d]/g, ''); // Rimuove tutto tranne i numeri
+            
+            // Limita la lunghezza per mmssd (5 cifre)
+            if (value.length > 5) {
+                value = value.substring(0, 5); // mmssd
+            }
+
+            let formattedValue = value;
+            if (value.length > 2) {
+                // mm:ss
+                formattedValue = `${value.substring(0, 2)}:${value.substring(2)}`;
+            }
+            if (value.length > 4) {
+                // mm:ss.d
+                formattedValue = `${value.substring(0, 2)}:${value.substring(2, 4)}.${value.substring(4)}`;
+            }
+            
+            input.value = formattedValue;
         }
         
         // --- SALVATAGGIO DATI ---
@@ -266,41 +307,67 @@
 
             const intervalliInputs = document.querySelectorAll('.intervallo-input');
             let allIntervalsValid = true;
+
+            if (intervalliInputs.length === 0) {
+                 showMessageBox("Seleziona un numero di intervalli e compilali.");
+                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
+            }
+
             intervalliInputs.forEach(input => {
-                if (input.value) {
-                    if (mode === 'distanza' && !/^\d{1,2}:\d{2}\.\d{1}$/.test(input.value)) {
+                const value = input.value.trim();
+                if (value) {
+                    if (mode === 'distanza' && !/^\d{1,2}:\d{2}\.\d{1}$/.test(value)) {
+                         // Validazione per mm:ss.d
                          allIntervalsValid = false;
+                    } else if (mode === 'tempo' && (isNaN(parseFloat(value)) || parseFloat(value) <= 0)) {
+                        // Validazione per distanza (deve essere un numero > 0)
+                        allIntervalsValid = false;
                     }
-                    workoutData.intervalli.push(input.value);
+                    workoutData.intervalli.push(value);
                 } else {
+                    // Campo vuoto
                     allIntervalsValid = false;
                 }
             });
 
-            if (!allIntervalsValid || intervalliInputs.length === 0) {
-                showMessageBox("Compila tutti i campi degli intervalli in modo corretto (es. mm:ss.d per il tempo).");
+            if (!allIntervalsValid) {
+                const errorMsg = mode === 'distanza' 
+                    ? "Compila tutti i campi intervallo nel formato corretto (mm:ss.d)."
+                    : "Compila tutti i campi intervallo con un valore numerico valido (es. 12500).";
+                showMessageBox(errorMsg);
                  btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             
+            // Prova a calcolare l'EP
             const athleteData = await fetchAthleteRecord(currentAthleteId);
 
             if (athleteData) {
-                const epValueToSave = calculateErgoEP(workoutData, athleteData);
-                if (epValueToSave !== null && epValueToSave > 0) {
-                    workoutData.ep = parseFloat(epValueToSave.toFixed(2));
-                } else {
-                    console.warn("EP non calcolato. Controlla che 'rowerg' sia presente e valido nei dati dell'atleta.");
+                try {
+                    const epValueToSave = calculateErgoEP(workoutData, athleteData);
+                    if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
+                        workoutData.ep = parseFloat(epValueToSave.toFixed(2));
+                    } else {
+                        console.warn("EP non calcolato o non valido. Controlla che 'rowerg' sia presente e valido nei dati dell'atleta e che i dati inseriti siano corretti.");
+                    }
+                } catch(epError) {
+                     console.error("Errore durante il calcolo EP:", epError);
                 }
             } else {
                 console.warn(`Record atleta ${currentAthleteId} non trovato. L'EP non può essere calcolato.`);
             }
 
+            // Procedi al salvataggio
             try {
                 await addDoc(collection(db, 'allenamenti'), workoutData);
                 showMessageBox("Allenamento salvato con successo!");
+                
+                // Resetta il form
                 document.getElementById('workoutMode').value = "";
+                document.getElementById('distanzaSelect').value = "";
+                document.getElementById('tempoSelect').value = "";
                 document.getElementById('intervalliNumero').value = "";
-                updateFormVisibility();
+                updateFormVisibility(); // Questo nasconderà i campi e pulirà gli input degli intervalli
+
             } catch (error) {
                 console.error("Errore salvataggio: ", error);
                 showMessageBox("Si è verificato un errore durante il salvataggio.");
@@ -315,6 +382,7 @@
             if (user) {
                 loaderOverlay.style.display = 'flex';
                 try {
+                    // Cerca l'atleta usando l'email (ignorando maiuscole/minuscole)
                     const userEmail = user.email.toLowerCase();
                     const q = query(collection(db, "atleti"), where("email", "==", userEmail));
                     const querySnapshot = await getDocs(q);
@@ -328,15 +396,19 @@
                         athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athleteData.cognome}</strong>`;
                         formContent.classList.remove('hidden');
                     } else {
+                        // Email loggata ma non trovata nel DB atleti
                         athleteInfo.textContent = "Profilo atleta non trovato. Contatta l'amministratore.";
+                        formContent.classList.add('hidden'); // Nasconde il form se l'atleta non è valido
                     }
                 } catch (error) {
                     console.error("Errore nel recupero dati atleta:", error);
                     athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
+                    formContent.classList.add('hidden');
                 } finally {
                     loaderOverlay.style.display = 'none';
                 }
             } else {
+                // Utente non loggato
                 athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire i dati.';
                 formContent.classList.add('hidden');
             }
@@ -344,7 +416,7 @@
         
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
-            setupPage();
+            setupPage(); // Chiamato al caricamento per popolare i dropdown
             document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
             document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
             document.getElementById('saveWorkoutBtn').addEventListener('click', saveWorkout);
