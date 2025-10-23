@@ -1,0 +1,523 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ranking Allenamenti Bike - FIC Canottaggio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <style>
+        /* Configurazioni di base per il tema scuro */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #020617; /* Scurisco lo sfondo a Slate-950 per più contrasto */
+            color: #E2E8F0; 
+            -webkit-font-smoothing: antialiased; 
+            -moz-osx-font-smoothing: grayscale; 
+            overflow-x: hidden; /* Prevenire scroll orizzontale */
+        }
+        /* Style per lo sfondo con effetto sfocato */
+        .background-gradient { 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            filter: blur(150px); /* Aumento il blur per un effetto più soft */
+            opacity: 0.4; /* Diminuisco l'opacità */
+            z-index: -1; 
+        }
+        .gradient-1 { 
+            width: 600px; /* Aumento la dimensione */
+            height: 600px; 
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.4), transparent 70%); /* Blu più saturo (Blue-600) */
+            animation: pulse 10s infinite alternate; 
+        }
+        .gradient-2 { 
+            width: 500px; 
+            height: 500px; 
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3), transparent 70%); /* Viola più chiaro (Violet-500) */
+            animation: pulse 12s infinite alternate-reverse; 
+            top: 60%; /* Sposto leggermente la seconda sfumatura */
+            left: 40%;
+        }
+        @keyframes pulse { 
+            0% { transform: translate(-50%, -50%) scale(0.9) rotate(0deg); } 
+            100% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); } /* Rotazione meno aggressiva */
+        }
+        @keyframes spin { 
+            to { transform: rotate(360deg); } 
+        }
+        .loader { 
+            border-top-color: #3B82F6; /* Blu di Tailwind */
+            animation: spin 1s linear infinite; 
+        }
+        /* Stile migliorato per gli input di data, con focus state */
+        .date-input { 
+            background-color: #1E293B; 
+            border: 1px solid #334155; 
+            border-radius: 0.5rem; 
+            padding: 0.5rem 1rem; 
+            color: #E2E8F0; 
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .date-input:focus {
+            border-color: #3B82F6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Ring per focus */
+        }
+        /* Nasconde la freccia standard di tipo number (in alcuni browser) */
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1); /* Rende l'icona bianca su sfondo scuro in WebKit */
+            cursor: pointer;
+        }
+        .ranking-card {
+            background-color: #1E293B; /* Sfondo della card più chiaro per separarlo dal contenitore */
+            border: 1px solid #334155;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        .ranking-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+    </style>
+</head>
+<body class="antialiased">
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-950/90 flex flex-col justify-center items-center z-50 transition-opacity duration-500">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p class="mt-4 text-slate-300 font-medium">Caricamento ranking Bike...</p>
+    </div>
+
+    <div class="p-4 md:p-10 max-w-7xl mx-auto relative z-10">
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-300 text-center mb-6 pt-4">
+            Ranking Allenamenti Bike 🚴‍♂️
+        </h1>
+        
+        <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-2xl p-6 mb-12 flex flex-wrap justify-center items-center gap-6">
+            <div class="flex items-center gap-3">
+                <label for="startDate" class="text-slate-300 font-semibold">Dal:</label>
+                <input type="date" id="startDate" class="date-input w-40">
+            </div>
+            <div class="flex items-center gap-3">
+                <label for="endDate" class="text-slate-300 font-semibold">Al:</label>
+                <input type="date" id="endDate" class="date-input w-40">
+            </div>
+            <button id="filterBtn" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/50">
+                Filtra <span class="ml-1">→</span>
+            </button>
+        </div>
+
+        <div class="text-center mb-10">
+            <a href="home_ranking.html" class="inline-flex items-center bg-slate-800/70 hover:bg-slate-700/70 text-slate-300 font-medium py-2.5 px-6 rounded-xl transition-colors duration-300 border border-slate-700">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                </svg>
+                Torna alla Selezione
+            </a>
+        </div>
+        
+        <div id="results-container" class="space-y-10"></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const resultsContainer = document.getElementById('results-container');
+        let athleteRecords = new Map(); 
+
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const filterBtn = document.getElementById('filterBtn');
+
+        // --- MAPPA PER I TITOLI POLARIZZATI ---
+        const polarizzatoTitleMap = new Map([
+            ['500', '500 pol (50%)'],
+            ['750', '750 pol (33,3%)'],
+            ['1000', '1000 pol (25%)'],
+            ['1500', '1500 pol (16,6%)'],
+            ['2000', '2000 pol (12%)'],
+            ['3000', '3000 pol (8,33%)'],
+            ['4000', '4000 pol (6,25%)'],
+            ['5000', '5000 pol (5%)'],
+            ['6000', '6000 pol (4,16%)'],
+            ['10000', '10000 pol (2,5%)']
+        ]);
+        // Priorità per ordinare i tipi di lavoro
+        const typeSortPriority = { 
+            'polarizzato': 1, 
+            'steady_state': 2, 
+            'tempo': 3, 
+            'distanza_generica': 4, // Fallback per vecchi dati "distanza"
+            'altro': 5 
+        };
+
+
+        function getTodayDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        // --- FUNZIONI DI FORMATTAZIONE (INVARIATE) ---
+        function timeToSeconds(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+            const parts = timeStr.split(':');
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseFloat(parts[1].replace(',', '.')); 
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+        
+        function secondsToTimeFormat(totalSeconds) {
+            if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00.0";
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            return `${String(minutes).padStart(2, '0')}:${seconds.toFixed(1).padStart(4, '0')}`;
+        }
+
+        async function fetchAllAthleteRecords() {
+            const snapshot = await firestore.collection('atleti').get();
+            snapshot.forEach(doc => {
+                athleteRecords.set(doc.id, doc.data());
+            });
+        }
+
+        /**
+         * Elabora i dati dell'allenamento. (INVARIATO)
+         * Recupera il valore EP esistente dal database (workout.ep).
+         * Calcola i totali (tempo/distanza) per la visualizzazione.
+         */
+        function calculateWorkoutData(workout, records) {
+            if (!Array.isArray(workout.intervalli)) {
+                console.warn('Dati intervalli mancanti o corrotti per l\'allenamento:', workout.id);
+                return { ...workout, ep: 'N/A', distanzaTotale: null, tempoTotale: null, epMessage: 'Dati intervalli corrotti' };
+            }
+
+            // const athleteData = records.get(workout.atletaId); // Non più necessario per il calcolo
+            let distanzaTotale = null;
+            let tempoTotale = null;
+            let epValue = workout.ep || null; 
+
+            const epDisplay = (epValue !== null) ? `${epValue.toFixed(2)}%` : 'N/A';
+            const epMessage = (epValue === null || epValue === 0) ? 'EP non disponibile' : null;
+
+            const numberOfIntervals = workout.intervalli.length;
+            if (workout.modalita === 'tempo') {
+                const totalMeters = workout.intervalli.map(i => parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n)).reduce((a, b) => a + b, 0);
+                distanzaTotale = `${totalMeters.toLocaleString('it-IT')}m`;
+                
+                const durationMinutes = parseInt(workout.tempo, 10);
+                if (!isNaN(durationMinutes) && numberOfIntervals > 0) {
+                    const totalMinutes = durationMinutes * numberOfIntervals;
+                    const hours = Math.floor(totalMinutes / 60);
+                    const minutes = totalMinutes % 60;
+                    let timeString = '';
+                    if (hours > 0) timeString += `${hours} ${hours > 1 ? 'ore' : 'ora'}`;
+                    if (minutes > 0) {
+                        if (hours > 0) timeString += ' e ';
+                        timeString += `${minutes} minuti`;
+                    }
+                    tempoTotale = timeString || null;
+                }
+
+            } else if (workout.modalita === 'distanza') {
+                const totalSeconds = workout.intervalli.map(timeToSeconds).reduce((a, b) => a + b, 0);
+                tempoTotale = secondsToTimeFormat(totalSeconds);
+                
+                const distanzaSelezionata = parseInt(workout.distanza, 10);
+                if (!isNaN(distanzaSelezionata) && numberOfIntervals > 0) {
+                    distanzaTotale = `${(distanzaSelezionata * numberOfIntervals).toLocaleString('it-IT')}m`;
+                }
+            }
+            
+            return { 
+                ...workout, 
+                ep: epDisplay, 
+                epValue: epValue, 
+                distanzaTotale, 
+                tempoTotale, 
+                epMessage 
+            };
+        }
+        
+        // --- LOGICA DI CARICAMENTO E RENDER OTTIMIZZATA ---
+
+        async function loadAndProcessWorkouts() {
+            loaderOverlay.classList.remove('hidden');
+            
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (!startDate || !endDate) {
+                resultsContainer.innerHTML = `<p class="text-center text-yellow-400 py-8 text-xl font-medium">Seleziona un intervallo di date valido.</p>`;
+                loaderOverlay.classList.add('hidden');
+                return;
+            }
+            if (new Date(startDate) > new Date(endDate)) {
+                 resultsContainer.innerHTML = `<p class="text-center text-red-400 py-8 text-xl font-medium">La data di inizio non può essere successiva alla data di fine.</p>`;
+                loaderOverlay.classList.add('hidden');
+                return;
+            }
+
+            try {
+                // 2. Query ottimale - AGGIORNATA PER 'BIKE'
+                let query = firestore.collection('allenamenti')
+                    .where('tipo', '==', 'BIKE') // <-- MODIFICATO
+                    .where('data', '>=', startDate) 
+                    .where('data', '<=', endDate)   
+                    .orderBy('data', 'asc');       
+
+                const snapshot = await query.get();
+                
+                if (snapshot.docs.length === 0) {
+                    resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-8 text-xl">Nessun allenamento Bike trovato per l'intervallo selezionato.</p>`;
+                    loaderOverlay.classList.add('hidden');
+                    return; 
+                }
+                
+                await fetchAllAthleteRecords();
+
+                const workouts = [];
+                snapshot.docs.forEach(doc => {
+                    try {
+                        const data = doc.data();
+                        // Controllo di integrità dati
+                        if (!data.data || !data.intervalli || !data.atletaId || !data.cognomeAtleta) {
+                             console.warn("Documento scartato per dati atleta mancanti:", doc.id, data);
+                             return;
+                        }
+                        const processedWorkout = calculateWorkoutData({ id: doc.id, ...data }, athleteRecords);
+                        workouts.push(processedWorkout);
+                    } catch (e) {
+                        console.error("Errore nell'elaborazione del documento:", doc.id, e);
+                    }
+                });
+
+                // --- NUOVA LOGICA DI RAGGRUPPAMENTO A 3 LIVELLI ---
+                const groupedByDate = workouts.reduce((acc, workout) => {
+                    const date = workout.data;
+                    const modalita = workout.modalita;
+                    let tipoLavoroKey = 'altro'; // Fallback
+                    let groupKey = 'generico'; // Fallback
+
+                    if (modalita === 'tempo') {
+                        tipoLavoroKey = 'tempo';
+                        groupKey = `${workout.tempo}min`;
+                    } else if (modalita === 'distanza') {
+                        // Usa il nuovo campo 'tipoLavoro', con fallback per vecchi dati
+                        tipoLavoroKey = workout.tipoLavoro || 'distanza_generica';
+                        groupKey = workout.distanza; // Es. '500', '2000'
+                    }
+                    
+                    if (!acc[date]) acc[date] = {};
+                    if (!acc[date][tipoLavoroKey]) acc[date][tipoLavoroKey] = {};
+                    if (!acc[date][tipoLavoroKey][groupKey]) acc[date][tipoLavoroKey][groupKey] = [];
+                    
+                    acc[date][tipoLavoroKey][groupKey].push(workout);
+                    return acc;
+                }, {});
+
+                // --- NUOVA LOGICA DI ORDINAMENTO (dopo il raggruppamento) ---
+                for (const date in groupedByDate) {
+                    for (const tipo in groupedByDate[date]) {
+                        for (const group in groupedByDate[date][tipo]) {
+                            // Ordina l'array finale di atleti per EP
+                            groupedByDate[date][tipo][group].sort((a, b) => {
+                                const epA = a.epValue || 0;
+                                const epB = b.epValue || 0;
+                                return epB - epA; // Decrescente
+                            });
+                        }
+                    }
+                }
+                
+                renderRanking(groupedByDate);
+
+            } catch (error) {
+                console.error("Errore nel caricamento: ", error);
+                resultsContainer.innerHTML = `<div class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">
+                    <p class="font-bold text-2xl mb-3">⚠️ ERRORE: INDICE MANCANTE</p>
+                    <p class="text-lg">La query ottimizzata che hai tentato di eseguire richiede un **indice composto** di Cloud Firestore. </p>
+                    <p class="mt-4 text-lg">L'indice necessario è: <code>allenamenti</code> > <code>tipo</code> (Asc), <code>data</code> (Asc). Crealo sulla console Firebase.</p>
+                </div>`;
+            } finally {
+                loaderOverlay.classList.add('hidden');
+            }
+        }
+
+        /**
+         * Renderizza il ranking con la nuova struttura a 3 livelli
+         */
+        function renderRanking(groupedWorkouts) {
+            resultsContainer.innerHTML = '';
+            // Ordina le date (Loop 1)
+            const sortedDates = Object.keys(groupedWorkouts).sort((a, b) => new Date(b) - new Date(a));
+
+            if (sortedDates.length === 0) {
+                resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-8 text-xl">Nessun allenamento Bike trovato per l'intervallo selezionato.</p>`;
+                return;
+            }
+
+            sortedDates.forEach(date => {
+                const workoutsByTipo = groupedWorkouts[date];
+                const formattedDate = new Date(date).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
+                
+                const dayContainer = document.createElement('div');
+                dayContainer.className = 'bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-2xl p-6';
+                dayContainer.innerHTML = `<h2 class="text-3xl font-extrabold text-white mb-6 pb-4 border-b-2 border-slate-700">${formattedDate}</h2>`;
+                
+                const dayContent = document.createElement('div');
+                dayContent.className = 'space-y-8';
+
+                // Ordina i tipi di lavoro per priorità (Loop 2)
+                const sortedTipoKeys = Object.keys(workoutsByTipo).sort((a, b) => (typeSortPriority[a] || 99) - (typeSortPriority[b] || 99));
+
+                sortedTipoKeys.forEach(tipoLavoroKey => {
+                    const workoutsByGroup = workoutsByTipo[tipoLavoroKey];
+                    
+                    // Crea il contenitore e il titolo per il TIPO di lavoro
+                    const tipoContainer = document.createElement('div');
+                    const tipoTitle = document.createElement('h2');
+                    tipoTitle.className = 'text-4xl font-bold text-blue-400 mb-5 mt-8'; // Titolo principale per tipo
+                    
+                    // Assegna il titolo corretto al tipo di lavoro
+                    if (tipoLavoroKey === 'polarizzato') tipoTitle.textContent = '🏆 Lavori Polarizzati';
+                    else if (tipoLavoroKey === 'steady_state') tipoTitle.textContent = '⏱️ Lavori Steady State';
+                    else if (tipoLavoroKey === 'tempo') tipoTitle.textContent = '🕒 Lavori a Tempo';
+                    else if (tipoLavoroKey === 'distanza_generica') tipoTitle.textContent = '🏁 Lavori a Distanza (Generici)';
+                    else tipoTitle.textContent = 'Altro';
+                    
+                    tipoContainer.appendChild(tipoTitle);
+
+                    // Ordina i gruppi specifici (Loop 3)
+                    const sortedGroups = Object.keys(workoutsByGroup).sort((a, b) => parseFloat(a) - parseFloat(b));
+
+                    sortedGroups.forEach(groupKey => {
+                        const workoutsForGroup = workoutsByGroup[groupKey];
+                        const groupContainer = document.createElement('div');
+                        
+                        const groupTitle = document.createElement('h3');
+                        groupTitle.className = 'text-2xl font-bold text-sky-400 mb-4 border-l-4 border-sky-400 pl-3';
+                        
+                        // Crea il titolo specifico per il gruppo
+                        let groupTitleText = '';
+                        if (tipoLavoroKey === 'polarizzato') {
+                            groupTitleText = polarizzatoTitleMap.get(groupKey) || `${groupKey}m (Pol)`; // Usa la mappa
+                        } else if (tipoLavoroKey === 'steady_state') {
+                            groupTitleText = `${groupKey}m (SS)`;
+                        } else if (tipoLavoroKey === 'tempo') {
+                            groupTitleText = `Classifica su ${groupKey}`; // es. 30min
+                        } else {
+                            groupTitleText = `Classifica su ${groupKey}m`;
+                        }
+                        
+                        if(tipoLavoroKey !== 'tempo') groupTitleText = `Classifica su ${groupTitleText}`;
+                        
+                        groupTitle.textContent = groupTitleText;
+                        groupContainer.appendChild(groupTitle);
+
+                        const rankingList = document.createElement('div');
+                        rankingList.className = 'space-y-4';
+
+                        // Loop 4: Atleti (logica card invariata)
+                        workoutsForGroup.forEach((workout, index) => {
+                            const card = document.createElement('div');
+                            card.className = 'ranking-card p-4 md:p-6 rounded-lg shadow-md';
+
+                            let epOrMessageBadge;
+                            if (workout.epMessage) {
+                                epOrMessageBadge = `<span class="text-sm font-semibold bg-red-600/30 text-red-300 px-3 py-1 rounded-full whitespace-nowrap">${workout.epMessage}</span>`;
+                            } else if (workout.ep && workout.ep !== 'N/A') {
+                                epOrMessageBadge = `<span class="text-lg font-extrabold bg-amber-600/30 text-amber-300 px-3 py-1 rounded-full whitespace-nowrap">${workout.ep} EP</span>`;
+                            } else {
+                                epOrMessageBadge = '';
+                            }
+                            
+                            let rankClass = 'text-slate-600';
+                            if (index === 0) rankClass = 'text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]';
+                            if (index === 1) rankClass = 'text-gray-300';
+                            if (index === 2) rankClass = 'text-amber-700';
+                            const rankIndicator = `<span class="text-4xl font-black ${rankClass} w-16 md:w-20 text-center leading-none">${index + 1}°</span>`;
+
+                            const cardHeader = `
+                                <div class="flex flex-wrap justify-between items-center gap-4 mb-4 pb-2 border-b border-slate-700/50">
+                                    <div class="flex items-center gap-4">
+                                        ${rankIndicator}
+                                        <h4 class="text-3xl font-extrabold text-white tracking-tight">${workout.cognomeAtleta}</h4>
+                                    </div>
+                                    ${epOrMessageBadge}
+                                </div>`;
+                            
+                            let totalInfo = '';
+                            const infoClass = "text-md text-slate-300";
+                            const strongClass = "font-semibold text-slate-400 mr-2";
+
+                            if (workout.distanzaTotale) {
+                                totalInfo += `<p class="${infoClass}"><strong class="${strongClass}">Distanza Totale:</strong> <span class="text-lg font-bold text-sky-300">${workout.distanzaTotale}</span></p>`;
+                            }
+                            if (workout.tempoTotale) {
+                                totalInfo += `<p class="${infoClass} mt-1"><strong class="${strongClass}">Tempo Totale:</strong> <span class="text-lg font-bold text-sky-300">${workout.tempoTotale}</span></p>`;
+                            }
+
+                            // Titolo intervalli corretto
+                            let intervalTitleBase = groupKey;
+                            if (workout.modalita === 'distanza') intervalTitleBase += 'm';
+                            else if (workout.modalita === 'tempo') intervalTitleBase = groupKey; // es. 30min
+                            
+                            const intervalsList = (workout.intervalli || []).map((interval, i) => `<li class="bg-slate-700 hover:bg-slate-600 rounded-md px-3 py-1.5 transition-colors"><strong class="text-slate-500">#${i + 1}:</strong> ${interval}</li>`).join('');
+                            const cardBody = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pl-16">
+                                    <div class="md:col-span-1 space-y-2">${totalInfo}</div>
+                                    <div class="md:col-span-2">
+                                        <h5 class="font-bold text-slate-300 mb-2">Intervalli (${(workout.intervalli || []).length} x ${intervalTitleBase})</h5>
+                                        <ul class="flex flex-wrap gap-3 text-sm font-mono text-white">
+                                            ${intervalsList}
+                                        </ul>
+                                    </div>
+                                </div>`;
+                            
+                            card.innerHTML = cardHeader + cardBody;
+                            rankingList.appendChild(card);
+                        });
+                        
+                        groupContainer.appendChild(rankingList);
+                        tipoContainer.appendChild(groupContainer);
+                    });
+                    
+                    dayContent.appendChild(tipoContainer);
+                });
+
+                dayContainer.appendChild(dayContent);
+                resultsContainer.appendChild(dayContainer);
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const today = getTodayDateString();
+            startDateInput.value = today;
+            endDateInput.value = today;
+            
+            filterBtn.addEventListener('click', loadAndProcessWorkouts);
+            
+            // Carica i dati del giorno corrente all'avvio
+            loadAndProcessWorkouts();
+        });
+    </script>
+</body>
+</html>
