@@ -19,6 +19,7 @@
         .form-input, .form-select { width: 100%; background-color: #1E293B; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; }
         .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; }
+        /* Aggiunto per nascondere i campi dinamicamente */
         .dynamic-field { display: none; }
     </style>
 </head>
@@ -40,6 +41,8 @@
             
             <!-- Contenuto del form, nascosto finché l'utente non è verificato -->
             <div id="form-content" class="hidden space-y-6">
+                
+                <!-- 1. SCELTA PRINCIPALE -->
                 <div>
                     <label for="workoutMode" class="form-label">Modalità Allenamento</label>
                     <select id="workoutMode" class="form-select">
@@ -48,13 +51,30 @@
                         <option value="tempo">Tempo</option>
                     </select>
                 </div>
-                <!-- Campi Dinamici -->
-                <div id="distanza-fields" class="dynamic-field space-y-6">
+
+                <!-- 2. SCELTA TIPO DI LAVORO (per Distanza) -->
+                <div id="tipo-lavoro-fields" class="dynamic-field space-y-6">
                     <div>
-                        <label for="distanzaSelect" class="form-label">Distanza</label>
-                        <select id="distanzaSelect" class="form-select"></select>
+                        <label for="tipoLavoroSelect" class="form-label">Tipo di Lavoro (Distanza)</label>
+                        <select id="tipoLavoroSelect" class="form-select">
+                            <option value="">-- Seleziona tipo di lavoro --</option>
+                            <option value="polarizzato">Lavoro Polarizzato</option>
+                            <option value="steady_state">Lavoro Steady State</option>
+                        </select>
                     </div>
                 </div>
+
+                <!-- 3. CAMPI DINAMICI PER DISTANZA (Polarizzato o Steady State) -->
+                <div id="distanza-fields" class="dynamic-field space-y-6">
+                    <div>
+                        <label for="distanzaSelect" class="form-label">Distanza Specifica</label>
+                        <select id="distanzaSelect" class="form-select">
+                            <option value="">-- Seleziona prima il tipo di lavoro --</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- 4. CAMPI DINAMICI PER TEMPO (Logica invariata) -->
                 <div id="tempo-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
@@ -65,22 +85,20 @@
                         </select>
                     </div>
                 </div>
+
+                <!-- 5. CAMPI COMUNI (Intervalli) -->
                 <div id="intervalli-common" class="dynamic-field space-y-6">
                      <div>
                         <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
-                            <!-- 
-                                ERRORE PRECEDENTE: La riga sottostante era sintassi JSX (React) e non HTML/JS valido.
-                                {[...Array(20)].map((_, i) => `<option value="${i + 1}">${i + 1}</option>`).join('')}
-                                
-                                SOLUZIONE: Rimossa e spostata la logica nello script JS (funzione setupPage).
-                            -->
+                            <!-- Popolato da JS -->
                         </select>
                     </div>
                     <div id="intervalli-inputs-container" class="space-y-4"></div>
                 </div>
                 <!-- Fine Campi Dinamici -->
+                
                 <div class="pt-4">
                     <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
                 </div>
@@ -104,7 +122,6 @@
         import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
         import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // NOTA: La tua API Key è visibile qui. Considera l'uso di Firebase App Check o regole di sicurezza più rigide.
         const firebaseConfig = {
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
             databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
@@ -123,6 +140,30 @@
         let currentAthleteId = null;
         let currentAthleteCognome = null;
 
+        // --- DEFINIZIONE DISTANZE ---
+        const distanzePolarizzate = [
+            { value: '500', text: '500 pol (50%)' },
+            { value: '750', text: '750 pol (33,3%)' },
+            { value: '1000', text: '1000 pol (25%)' },
+            { value: '1500', text: '1500 pol (16,6%)' },
+            { value: '2000', text: '2000 pol (12%)' },
+            { value: '3000', text: '3000 pol (8,33%)' },
+            { value: '4000', text: '4000 pol (6,25%)' },
+            { value: '5000', text: '5000 pol (5%)' },
+            { value: '6000', text: '6000 pol (4,16%)' },
+            { value: '10000', text: '10000 pol (2,5%)' }
+        ];
+
+        const distanzeSteadyState = [
+            { value: '2000', text: '2000' },
+            { value: '4000', text: '4000' },
+            { value: '5000', text: '5000' },
+            { value: '6000', text: '6000' },
+            { value: '10000', text: '10000' },
+            { value: '16000', text: '16000' },
+            { value: '20000', text: '20000' }
+        ];
+
         // --- FUNZIONI DI UTILITÀ ---
         function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
         function hideModal(modal) { document.getElementById('modal-backdrop').classList.add('hidden'); modal.classList.add('hidden'); }
@@ -131,7 +172,7 @@
             showModal(document.getElementById('messageBox'));
         }
 
-        // --- FUNZIONI DI CALCOLO EP ---
+        // --- FUNZIONI DI CALCOLO EP (INVARIATE) ---
         function timeToSeconds(timeStr) {
             if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
@@ -155,6 +196,8 @@
         }
 
         function calculateErgoEP(workoutData, athleteData) {
+            // Questa funzione rimane invariata.
+            // Gestirà 'distanza' o 'tempo' in base a workoutData.modalita
             if (!athleteData || !athleteData.rowerg) return null;
             if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) return null;
 
@@ -193,52 +236,91 @@
 
         // --- LOGICA DI SETUP PAGINA ---
         function setupPage() {
-            // Popola distanze
-            const distanze = [500, 750, 1000, 1500, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 20000];
-            const distanzaSelect = document.getElementById('distanzaSelect');
-            distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
-            distanze.forEach(d => distanzaSelect.innerHTML += `<option value="${d}">${d}m</option>`);
-
-            // --- FIX: Popola dinamicamente il select "Numero di Intervalli" ---
+            // Popola dinamicamente il select "Numero di Intervalli"
             const intervalliSelect = document.getElementById('intervalliNumero');
             let intervalliHTML = '';
             for (let i = 1; i <= 20; i++) {
                 intervalliHTML += `<option value="${i}">${i}</option>`;
             }
-            // Aggiunge le opzioni generate dopo quella di default
             intervalliSelect.innerHTML += intervalliHTML;
-            // --- FINE FIX ---
         }
 
         // --- GESTIONE DINAMICA FORM ---
+
+        /**
+         * Gestisce la visualizzazione dei campi in base alla modalità principale (Distanza/Tempo)
+         */
         function updateFormVisibility() {
             const mode = document.getElementById('workoutMode').value;
-            document.getElementById('distanza-fields').style.display = mode === 'distanza' ? 'block' : 'none';
-            document.getElementById('tempo-fields').style.display = mode === 'tempo' ? 'block' : 'none';
-            document.getElementById('intervalli-common').style.display = mode ? 'block' : 'none';
+            
+            // Nascondi tutti i campi dipendenti
+            document.getElementById('tempo-fields').style.display = 'none';
+            document.getElementById('tipo-lavoro-fields').style.display = 'none';
+            document.getElementById('distanza-fields').style.display = 'none';
+            document.getElementById('intervalli-common').style.display = 'none';
+            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona prima il tipo di lavoro --</option>'; // Reset
+
+            if (mode === 'distanza') {
+                // Se 'Distanza', mostra solo il selettore del TIPO LAVORO
+                document.getElementById('tipo-lavoro-fields').style.display = 'block';
+            } else if (mode === 'tempo') {
+                // Se 'Tempo', mostra i campi del TEMPO e degli INTERVALLI
+                document.getElementById('tempo-fields').style.display = 'block';
+                document.getElementById('intervalli-common').style.display = 'block';
+            }
+            
+            // Rigenera gli input degli intervalli (necessario se si passa da Distanza a Tempo)
             generateIntervalliInputs();
         }
 
+        /**
+         * Popola il menu delle distanze specifiche in base al tipo di lavoro (Polarizzato/Steady)
+         */
+        function updateDistanceOptions() {
+            const tipoLavoro = document.getElementById('tipoLavoroSelect').value;
+            const distanzaSelect = document.getElementById('distanzaSelect');
+            
+            // Svuota le opzioni esistenti
+            distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
+            
+            let optionsArray = [];
+            if (tipoLavoro === 'polarizzato') {
+                optionsArray = distanzePolarizzate;
+            } else if (tipoLavoro === 'steady_state') {
+                optionsArray = distanzeSteadyState;
+            }
+
+            // Popola con le nuove opzioni
+            optionsArray.forEach(opt => {
+                distanzaSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
+            });
+
+            // Mostra i campi per selezionare la distanza e gli intervalli
+            document.getElementById('distanza-fields').style.display = 'block';
+            document.getElementById('intervalli-common').style.display = 'block';
+        }
+
+        /**
+         * Genera i campi di input per i singoli intervalli
+         */
         function generateIntervalliInputs() {
             const container = document.getElementById('intervalli-inputs-container');
             const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
-            const mode = document.getElementById('workoutMode').value;
+            const mode = document.getElementById('workoutMode').value; // Legge la modalità principale
             container.innerHTML = '';
 
             if (numero > 0 && numero <= 20) {
                 for (let i = 1; i <= numero; i++) {
-                    // Determina il tipo di input e il placeholder in base alla modalità
                     const isDistanceMode = mode === 'distanza';
-                    const inputType = isDistanceMode ? 'text' : 'number'; // 'text' per formattazione tempo
+                    const inputType = isDistanceMode ? 'text' : 'number'; 
                     const placeholder = isDistanceMode ? 'mm:ss.d' : 'Inserisci distanza (es. 12500)';
                     const labelText = isDistanceMode ? 'Tempo' : 'Distanza';
                     
                     const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} (${labelText})</label>`;
                     
-                    // Aggiunge la formattazione automatica solo per la modalità distanza (tempo)
                     const inputAttributes = isDistanceMode 
                         ? 'oninput="formatTimeInput(event)" maxlength="7"' 
-                        : 'step="any"'; // Permette numeri decimali per la distanza se necessario
+                        : 'step="any"'; 
 
                     const input = `<input type="${inputType}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${inputAttributes}>`;
                     
@@ -250,20 +332,17 @@
         // Funzione helper per formattare l'input del tempo
         window.formatTimeInput = function(event) {
             const input = event.target;
-            let value = input.value.replace(/[^\d]/g, ''); // Rimuove tutto tranne i numeri
+            let value = input.value.replace(/[^\d]/g, ''); 
             
-            // Limita la lunghezza per mmssd (5 cifre)
             if (value.length > 5) {
                 value = value.substring(0, 5); // mmssd
             }
 
             let formattedValue = value;
             if (value.length > 2) {
-                // mm:ss
                 formattedValue = `${value.substring(0, 2)}:${value.substring(2)}`;
             }
             if (value.length > 4) {
-                // mm:ss.d
                 formattedValue = `${value.substring(0, 2)}:${value.substring(2, 4)}.${value.substring(4)}`;
             }
             
@@ -290,21 +369,26 @@
                 data: new Date().toISOString().split('T')[0],
                 timestamp: serverTimestamp(),
                 intervalli: [],
-                ep: null
+                ep: null,
+                tipoLavoro: null // Nuovo campo
             };
 
             if (!mode) {
-                showMessageBox("Seleziona una modalità di allenamento.");
+                showMessageBox("Seleziona una modalità di allenamento (Distanza o Tempo).");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
+
             if (mode === 'distanza') {
+                workoutData.tipoLavoro = document.getElementById('tipoLavoroSelect').value;
                 workoutData.distanza = document.getElementById('distanzaSelect').value;
-                if (!workoutData.distanza) { showMessageBox("Seleziona una distanza."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-            } else {
+                if (!workoutData.tipoLavoro) { showMessageBox("Seleziona un tipo di lavoro (Polarizzato o Steady State)."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
+                if (!workoutData.distanza) { showMessageBox("Seleziona una distanza specifica."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
+            } else { // mode === 'tempo'
                 workoutData.tempo = document.getElementById('tempoSelect').value;
-                 if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
+                if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
             }
 
+            // Raccolta intervalli (logica invariata)
             const intervalliInputs = document.querySelectorAll('.intervallo-input');
             let allIntervalsValid = true;
 
@@ -317,15 +401,12 @@
                 const value = input.value.trim();
                 if (value) {
                     if (mode === 'distanza' && !/^\d{1,2}:\d{2}\.\d{1}$/.test(value)) {
-                         // Validazione per mm:ss.d
                          allIntervalsValid = false;
                     } else if (mode === 'tempo' && (isNaN(parseFloat(value)) || parseFloat(value) <= 0)) {
-                        // Validazione per distanza (deve essere un numero > 0)
                         allIntervalsValid = false;
                     }
                     workoutData.intervalli.push(value);
                 } else {
-                    // Campo vuoto
                     allIntervalsValid = false;
                 }
             });
@@ -338,7 +419,7 @@
                  btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             
-            // Prova a calcolare l'EP
+            // Calcolo EP (logica invariata)
             const athleteData = await fetchAthleteRecord(currentAthleteId);
 
             if (athleteData) {
@@ -347,26 +428,27 @@
                     if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
                         workoutData.ep = parseFloat(epValueToSave.toFixed(2));
                     } else {
-                        console.warn("EP non calcolato o non valido. Controlla che 'rowerg' sia presente e valido nei dati dell'atleta e che i dati inseriti siano corretti.");
+                        console.warn("EP non calcolato o non valido.");
                     }
                 } catch(epError) {
-                     console.error("Errore durante il calcolo EP:", epError);
+                     console.error("Errore during EP calculation:", epError);
                 }
             } else {
                 console.warn(`Record atleta ${currentAthleteId} non trovato. L'EP non può essere calcolato.`);
             }
 
-            // Procedi al salvataggio
+            // Salvataggio
             try {
                 await addDoc(collection(db, 'allenamenti'), workoutData);
                 showMessageBox("Allenamento salvato con successo!");
                 
-                // Resetta il form
+                // Reset form
                 document.getElementById('workoutMode').value = "";
+                document.getElementById('tipoLavoroSelect').value = "";
                 document.getElementById('distanzaSelect').value = "";
                 document.getElementById('tempoSelect').value = "";
                 document.getElementById('intervalliNumero').value = "";
-                updateFormVisibility(); // Questo nasconderà i campi e pulirà gli input degli intervalli
+                updateFormVisibility(); // Nasconde tutti i campi dinamici
 
             } catch (error) {
                 console.error("Errore salvataggio: ", error);
@@ -377,12 +459,11 @@
             }
         }
 
-        // --- GESTIONE AUTENTICAZIONE E AVVIO ---
+        // --- GESTIONE AUTENTICAZIONE E AVVIO (INVARIATO) ---
         onAuthStateChanged(auth, async (user) => {
             if (user) {
                 loaderOverlay.style.display = 'flex';
                 try {
-                    // Cerca l'atleta usando l'email (ignorando maiuscole/minuscole)
                     const userEmail = user.email.toLowerCase();
                     const q = query(collection(db, "atleti"), where("email", "==", userEmail));
                     const querySnapshot = await getDocs(q);
@@ -396,9 +477,8 @@
                         athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athleteData.cognome}</strong>`;
                         formContent.classList.remove('hidden');
                     } else {
-                        // Email loggata ma non trovata nel DB atleti
                         athleteInfo.textContent = "Profilo atleta non trovato. Contatta l'amministratore.";
-                        formContent.classList.add('hidden'); // Nasconde il form se l'atleta non è valido
+                        formContent.classList.add('hidden');
                     }
                 } catch (error) {
                     console.error("Errore nel recupero dati atleta:", error);
@@ -408,7 +488,6 @@
                     loaderOverlay.style.display = 'none';
                 }
             } else {
-                // Utente non loggato
                 athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire i dati.';
                 formContent.classList.add('hidden');
             }
@@ -416,9 +495,14 @@
         
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
-            setupPage(); // Chiamato al caricamento per popolare i dropdown
+            setupPage();
+            // Listener per la modalità principale (Distanza/Tempo)
             document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
+            // NUOVO Listener per il tipo di lavoro (Polarizzato/Steady)
+            document.getElementById('tipoLavoroSelect').addEventListener('change', updateDistanceOptions);
+            // Listener per il numero di intervalli
             document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
+            // Listener per il salvataggio
             document.getElementById('saveWorkoutBtn').addEventListener('click', saveWorkout);
             document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
         });
