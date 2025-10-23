@@ -83,23 +83,19 @@
 
         <p id="info-atleta" class="text-xl font-semibold text-slate-300 mb-6"></p>
 
-        <!-- Controlli di Filtro -->
         <div class="bg-slate-900/50 p-4 sm:p-6 rounded-xl mb-8 border border-slate-700/50">
             <h2 class="text-xl font-bold mb-4 text-white">Filtra Allenamenti</h2>
             <div class="grid grid-cols-1 sm:grid-cols-4 gap-4 items-end">
-                <!-- Selettore Data Inizio -->
                 <div class="col-span-1">
                     <label for="startDate" class="block text-sm font-medium text-slate-400 mb-1">Dal:</label>
                     <input type="date" id="startDate" class="input-dark">
                 </div>
                 
-                <!-- Selettore Data Fine -->
                 <div class="col-span-1">
                     <label for="endDate" class="block text-sm font-medium text-slate-400 mb-1">Al:</label>
                     <input type="date" id="endDate" class="input-dark">
                 </div>
 
-                <!-- Filtro Tipo Allenamento -->
                 <div class="col-span-1">
                     <label for="tipoFilter" class="block text-sm font-medium text-slate-400 mb-1">Tipo:</label>
                     <select id="tipoFilter" class="input-dark appearance-none">
@@ -110,14 +106,12 @@
                     </select>
                 </div>
                 
-                <!-- Pulsante Applica Filtri -->
                 <button id="applyFiltersBtn" class="w-full sm:col-span-1 py-2 px-4 border border-transparent rounded-lg shadow-sm text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 transition-colors mt-2 sm:mt-0">
                     Applica Filtri
                 </button>
             </div>
         </div>
 
-        <!-- Lista dei Workout -->
         <div id="workout-list" class="space-y-6">
             <p id="loading-message" class="text-slate-400 text-center">Caricamento storico allenamenti...</p>
             <p id="error-message" class="text-red-400 text-center hidden">Si è verificato un errore nel caricamento dei dati.</p>
@@ -201,10 +195,11 @@
             }
         }
         
+        // --- FUNZIONE CORRETTA ---
         function formatWorkoutData(data) {
-            // Aggiungo 'ep' ai valori di default e lo estraggo dai dati
-            const defaultValues = { tipo: 'N/A', modalita: 'N/A', distanza: 'N/A', ep: null, data: 'N/A', timestamp: null, intervalli: [] };
-            const { tipo, modalita, distanza, ep, data: formattedDateString, timestamp, intervalli } = { ...defaultValues, ...data };
+            // Aggiungo 'ep' e 'tempo' ai valori di default
+            const defaultValues = { tipo: 'N/A', modalita: 'N/A', distanza: null, tempo: null, ep: null, data: 'N/A', timestamp: null, intervalli: [] };
+            const { tipo, modalita, distanza, tempo, ep, data: formattedDateString, timestamp, intervalli } = { ...defaultValues, ...data };
 
             let intervalsHtml = '';
             if (intervalli && intervalli.length > 0) {
@@ -237,6 +232,23 @@
                     </div>
                 `;
             }
+
+            // --- LOGICA CORRETTA PER DISTANZA/TEMPO ---
+            let mainMetricHtml = '';
+            if (modalita === 'distanza' && distanza) {
+                mainMetricHtml = `
+                    <div class="flex justify-between text-slate-300">
+                        <p>Distanza:</p>
+                        <span class="font-semibold text-white">${distanza}m</span>
+                    </div>`;
+            } else if (modalita === 'tempo' && tempo) {
+                mainMetricHtml = `
+                    <div class="flex justify-between text-slate-300">
+                        <p>Tempo:</p>
+                        <span class="font-semibold text-white">${tempo} min</span>
+                    </div>`;
+            }
+            // --- FINE LOGICA CORRETTA ---
             
             return `
                 <div class="wo-card ${borderClass} bg-slate-800 p-5 rounded-xl shadow-xl">
@@ -244,15 +256,14 @@
                         <span class="font-extrabold text-xl text-white mb-1 sm:mb-0">${tipo} (${modalita})</span>
                         <span class="text-sm text-slate-400 font-medium">${formattedDateString}</span>
                     </div>
-                    <div class="flex justify-between text-slate-300">
-                        <p>Distanza:</p>
-                        <span class="font-semibold text-white">${distanza}</span>
-                    </div>
+                    ${mainMetricHtml}
                     ${epHtml}
                     ${intervalsHtml}
                 </div>
             `;
         }
+        // --- FINE FUNZIONE CORRETTA ---
+
 
         // --- Funzione Principale di Caricamento ---
         
