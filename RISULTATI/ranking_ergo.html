@@ -145,6 +145,28 @@
         const endDateInput = document.getElementById('endDate');
         const filterBtn = document.getElementById('filterBtn');
 
+        // --- MAPPA PER I TITOLI POLARIZZATI ---
+        const polarizzatoTitleMap = new Map([
+            ['500', '500 pol (50%)'],
+            ['750', '750 pol (33,3%)'],
+            ['1000', '1000 pol (25%)'],
+            ['1500', '1500 pol (16,6%)'],
+            ['2000', '2000 pol (12%)'],
+            ['3000', '3000 pol (8,33%)'],
+            ['4000', '4000 pol (6,25%)'],
+            ['5000', '5000 pol (5%)'],
+            ['6000', '6000 pol (4,16%)'],
+            ['10000', '10000 pol (2,5%)']
+        ]);
+        // Priorità per ordinare i tipi di lavoro
+        const typeSortPriority = { 
+            'polarizzato': 1, 
+            'steady_state': 2, 
+            'tempo': 3, 
+            'distanza_generica': 4, // Fallback per vecchi dati "distanza"
+            'altro': 5 
+        };
+
 
         function getTodayDateString() {
             const now = new Date();
@@ -154,16 +176,10 @@
             return `${year}-${month}-${day}`;
         }
 
-        // --- FUNZIONI DI FORMATTAZIONE ---
-
-        /**
-         * Converte una stringa di tempo (min:sec.decimi) in secondi totali.
-         * Mantenuta per il calcolo del tempo totale di allenamento.
-         * @param {string} timeStr - Stringa nel formato "mm:ss.d"
-         * @returns {number} Secondi totali.
-         */
+        // --- FUNZIONI DI FORMATTAZIONE (INVARIATE) ---
         function timeToSeconds(timeStr) {
-            if (!timeStr || typeof timeStr !== 'string' || !timeTome.includes(':')) return 0;
+            // NOTA: Errore "timeTome" corretto in "timeStr"
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
             const minutes = parseInt(parts[0], 10);
             const seconds = parseFloat(parts[1].replace(',', '.'));
@@ -171,12 +187,6 @@
             return (minutes * 60) + seconds;
         }
         
-        /**
-         * Converte i secondi totali nel formato "mm:ss.d".
-         * Mantenuta per il calcolo del tempo totale di allenamento.
-         * @param {number} totalSeconds - Secondi totali.
-         * @returns {string} Stringa nel formato "mm:ss.d".
-         */
         function secondsToTimeFormat(totalSeconds) {
             if (isNaN(totalSeconds) || totalSeconds <= 0) return "00:00.0";
             const minutes = Math.floor(totalSeconds / 60);
@@ -185,22 +195,14 @@
         }
 
         async function fetchAllAthleteRecords() {
-            // Mantenuto per recuperare nome/cognome atleta (non più per record/calcolo EP)
             const snapshot = await firestore.collection('atleti').get();
             snapshot.forEach(doc => {
                 athleteRecords.set(doc.id, doc.data());
             });
         }
 
-        /**
-         * Elabora i dati dell'allenamento. 
-         * NON CALCOLA più l'EP, ma recupera il valore esistente dal database (workout.ep).
-         * Calcola i totali (tempo/distanza) per la visualizzazione.
-         * @param {object} workout - Dati dell'allenamento.
-         * @param {Map} records - Mappa dei record atleti (non usata per il calcolo).
-         * @returns {object} Allenamento elaborato.
-         */
         function calculateWorkoutData(workout, records) {
+            // (Logica invariata, recupera EP e calcola totali)
             if (!Array.isArray(workout.intervalli)) {
                 console.warn('Dati intervalli mancanti o corrotti per l\'allenamento:', workout.id);
                 return { ...workout, ep: 'N/A', epValue: null, distanzaTotale: null, tempoTotale: null, epMessage: 'Dati intervalli corrotti' };
@@ -208,14 +210,10 @@
 
             let distanzaTotale = null;
             let tempoTotale = null;
-            // Recupera il valore EP numerico già nel DB
             let epValue = workout.ep || null; 
-
-            // Formatta EP per il display e imposta il messaggio di errore se EP è assente
             const epDisplay = (epValue !== null) ? `${epValue.toFixed(2)}%` : 'N/A';
             const epMessage = (epValue === null || epValue === 0) ? 'EP non disponibile' : null;
 
-            // Calcolo Totali
             const numberOfIntervals = workout.intervalli.length;
             if (workout.modalita === 'tempo') {
                 const totalMeters = workout.intervalli.map(i => parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n)).reduce((a, b) => a + b, 0);
@@ -245,7 +243,6 @@
                 }
             }
             
-            // Ritorna epValue per l'ordinamento
             return { ...workout, ep: epDisplay, epValue, distanzaTotale, tempoTotale, epMessage };
         }
         
@@ -257,22 +254,19 @@
             const startDate = startDateInput.value;
             const endDate = endDateInput.value;
 
-            // 1. Validazione delle date
             if (!startDate || !endDate) {
                 resultsContainer.innerHTML = `<p class="text-center text-yellow-400 py-8 text-xl font-medium">Seleziona un intervallo di date valido.</p>`;
                 loaderOverlay.classList.add('hidden');
                 return;
             }
-
-            const endDateObject = new Date(endDate);
-            if (new Date(startDate) > endDateObject) {
+            if (new Date(startDate) > new Date(endDate)) {
                  resultsContainer.innerHTML = `<p class="text-center text-red-400 py-8 text-xl font-medium">La data di inizio non può essere successiva alla data di fine.</p>`;
                 loaderOverlay.classList.add('hidden');
                 return;
             }
 
             try {
-                // 2. Query allenamenti ERGO
+                // Query (invariata)
                 let query = firestore.collection('allenamenti')
                     .where('tipo', '==', 'ERGO')
                     .where('data', '>=', startDate) 
@@ -281,60 +275,64 @@
 
                 const snapshot = await query.get();
                 
-                // 3. CONTROLLO CONDIZIONALE: Se 0 allenamenti, ferma.
                 if (snapshot.docs.length === 0) {
                     resultsContainer.innerHTML = `<p class="text-center text-slate-400 py-8 text-xl">Nessun allenamento Ergo trovato per l'intervallo selezionato.</p>`;
                     loaderOverlay.classList.add('hidden');
                     return; 
                 }
                 
-                // 4. SOLO SE CI SONO ALLENAMENTI: Caricamento Record Atleti - Mantenuto solo per nome/cognome
                 await fetchAllAthleteRecords();
 
-
-                // 5. Elaborazione e preparazione dei dati (SENZA CALCOLO O AGGIORNAMENTO EP NEL DB)
                 const workouts = [];
-
                 snapshot.docs.forEach(doc => {
                     try {
                         const data = doc.data();
-                        
                         if (!data.data || !data.intervalli || !data.atletaId || !data.cognomeAtleta) {
                              console.warn("Documento scartato per dati atleta mancanti:", doc.id, data);
                              return;
                         }
-                        
-                        // Elabora i dati (recupera EP esistente e formatta totali)
                         const processedWorkout = calculateWorkoutData({ id: doc.id, ...data }, athleteRecords);
-                        
-                        // Aggiungi l'allenamento elaborato alla lista
                         workouts.push(processedWorkout);
-
                     } catch (e) {
                         console.error("Errore nell'elaborazione del documento:", doc.id, e);
                     }
                 });
 
-                // 6. Raggruppamento, Ordinamento e Render (lato client)
+                // --- NUOVA LOGICA DI RAGGRUPPAMENTO A 3 LIVELLI ---
                 const groupedByDate = workouts.reduce((acc, workout) => {
                     const date = workout.data;
-                    const groupKey = workout.modalita === 'distanza' ? `${workout.distanza}m` : `${workout.tempo}min`;
+                    const modalita = workout.modalita;
+                    let tipoLavoroKey = 'altro'; // Fallback
+                    let groupKey = 'generico'; // Fallback
+
+                    if (modalita === 'tempo') {
+                        tipoLavoroKey = 'tempo';
+                        groupKey = `${workout.tempo}min`;
+                    } else if (modalita === 'distanza') {
+                        // Usa il nuovo campo 'tipoLavoro', con fallback per vecchi dati
+                        tipoLavoroKey = workout.tipoLavoro || 'distanza_generica';
+                        groupKey = workout.distanza; // Es. '500', '2000'
+                    }
                     
                     if (!acc[date]) acc[date] = {};
-                    if (!acc[date][groupKey]) acc[date][groupKey] = [];
+                    if (!acc[date][tipoLavoroKey]) acc[date][tipoLavoroKey] = {};
+                    if (!acc[date][tipoLavoroKey][groupKey]) acc[date][tipoLavoroKey][groupKey] = [];
                     
-                    acc[date][groupKey].push(workout);
+                    acc[date][tipoLavoroKey][groupKey].push(workout);
                     return acc;
                 }, {});
 
+                // --- NUOVA LOGICA DI ORDINAMENTO (dopo il raggruppamento) ---
                 for (const date in groupedByDate) {
-                    for (const group in groupedByDate[date]) {
-                        groupedByDate[date][group].sort((a, b) => {
-                            // Usa epValue per l'ordinamento (EP esistente)
-                            const epA = a.epValue || 0;
-                            const epB = b.epValue || 0;
-                            return epB - epA;
-                        });
+                    for (const tipo in groupedByDate[date]) {
+                        for (const group in groupedByDate[date][tipo]) {
+                            // Ordina l'array finale di atleti per EP
+                            groupedByDate[date][tipo][group].sort((a, b) => {
+                                const epA = a.epValue || 0;
+                                const epB = b.epValue || 0;
+                                return epB - epA; // Decrescente
+                            });
+                        }
                     }
                 }
                 
@@ -342,8 +340,6 @@
 
             } catch (error) {
                 console.error("Errore nel caricamento: ", error);
-                
-                // Messaggio di errore indice composto
                 resultsContainer.innerHTML = `<div class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">
                     <p class="font-bold text-2xl mb-3">⚠️ ERRORE: INDICE MANCANTE</p>
                     <p class="text-lg">La query ottimizzata che hai tentato di eseguire richiede un **indice composto** di Cloud Firestore. </p>
@@ -354,8 +350,12 @@
             }
         }
 
+        /**
+         * Renderizza il ranking con la nuova struttura a 3 livelli
+         */
         function renderRanking(groupedWorkouts) {
             resultsContainer.innerHTML = '';
+            // Ordina le date (Loop 1)
             const sortedDates = Object.keys(groupedWorkouts).sort((a, b) => new Date(b) - new Date(a));
 
             if (sortedDates.length === 0) {
@@ -364,7 +364,7 @@
             }
 
             sortedDates.forEach(date => {
-                const workoutsByGroup = groupedWorkouts[date];
+                const workoutsByTipo = groupedWorkouts[date];
                 const formattedDate = new Date(date).toLocaleDateString('it-IT', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' });
                 
                 const dayContainer = document.createElement('div');
@@ -374,75 +374,120 @@
                 const dayContent = document.createElement('div');
                 dayContent.className = 'space-y-8';
 
-                const sortedGroups = Object.keys(workoutsByGroup).sort();
+                // Ordina i tipi di lavoro per priorità (Loop 2)
+                const sortedTipoKeys = Object.keys(workoutsByTipo).sort((a, b) => (typeSortPriority[a] || 99) - (typeSortPriority[b] || 99));
 
-                sortedGroups.forEach(groupKey => {
-                    const workoutsForGroup = workoutsByGroup[groupKey];
-                    const groupContainer = document.createElement('div');
+                sortedTipoKeys.forEach(tipoLavoroKey => {
+                    const workoutsByGroup = workoutsByTipo[tipoLavoroKey];
                     
-                    const groupTitle = document.createElement('h3');
-                    groupTitle.className = 'text-2xl font-bold text-sky-400 mb-4 border-l-4 border-sky-400 pl-3';
-                    groupTitle.textContent = `Classifica su ${groupKey}`;
-                    groupContainer.appendChild(groupTitle);
+                    // Crea il contenitore e il titolo per il TIPO di lavoro
+                    const tipoContainer = document.createElement('div');
+                    const tipoTitle = document.createElement('h2');
+                    tipoTitle.className = 'text-4xl font-bold text-blue-400 mb-5 mt-8'; // Titolo principale per tipo
+                    
+                    // Assegna il titolo corretto al tipo di lavoro
+                    if (tipoLavoroKey === 'polarizzato') tipoTitle.textContent = '🏆 Lavori Polarizzati';
+                    else if (tipoLavoroKey === 'steady_state') tipoTitle.textContent = '⏱️ Lavori Steady State';
+                    else if (tipoLavoroKey === 'tempo') tipoTitle.textContent = '🕒 Lavori a Tempo';
+                    else if (tipoLavoroKey === 'distanza_generica') tipoTitle.textContent = '🏁 Lavori a Distanza (Generici)';
+                    else tipoTitle.textContent = 'Altro';
+                    
+                    tipoContainer.appendChild(tipoTitle);
 
-                    const rankingList = document.createElement('div');
-                    rankingList.className = 'space-y-4';
+                    // Ordina i gruppi specifici (Loop 3)
+                    const sortedGroups = Object.keys(workoutsByGroup).sort((a, b) => parseFloat(a) - parseFloat(b));
 
-                    workoutsForGroup.forEach((workout, index) => {
-                        const card = document.createElement('div');
-                        card.className = 'ranking-card p-4 md:p-6 rounded-lg shadow-md';
-
-                        let epOrMessageBadge;
-                        if (workout.epMessage) {
-                            epOrMessageBadge = `<span class="text-sm font-semibold bg-red-600/30 text-red-300 px-3 py-1 rounded-full whitespace-nowrap">${workout.epMessage}</span>`;
-                        } else if (workout.ep && workout.ep !== 'N/A') {
-                            epOrMessageBadge = `<span class="text-lg font-extrabold bg-amber-600/30 text-amber-300 px-3 py-1 rounded-full whitespace-nowrap">${workout.ep} EP</span>`;
+                    sortedGroups.forEach(groupKey => {
+                        const workoutsForGroup = workoutsByGroup[groupKey];
+                        const groupContainer = document.createElement('div');
+                        
+                        const groupTitle = document.createElement('h3');
+                        groupTitle.className = 'text-2xl font-bold text-sky-400 mb-4 border-l-4 border-sky-400 pl-3';
+                        
+                        // Crea il titolo specifico per il gruppo
+                        let groupTitleText = '';
+                        if (tipoLavoroKey === 'polarizzato') {
+                            groupTitleText = polarizzatoTitleMap.get(groupKey) || `${groupKey}m (Pol)`; // Usa la mappa
+                        } else if (tipoLavoroKey === 'steady_state') {
+                            groupTitleText = `${groupKey}m (SS)`;
+                        } else if (tipoLavoroKey === 'tempo') {
+                            groupTitleText = `Classifica su ${groupKey}`; // es. 30min
                         } else {
-                            epOrMessageBadge = '';
+                            groupTitleText = `Classifica su ${groupKey}m`;
                         }
                         
-                        let rankClass = 'text-slate-600';
-                        if (index === 0) rankClass = 'text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]';
-                        if (index === 1) rankClass = 'text-gray-300';
-                        if (index === 2) rankClass = 'text-amber-700';
-                        const rankIndicator = `<span class="text-4xl font-black ${rankClass} w-16 md:w-20 text-center leading-none">${index + 1}°</span>`;
-
-                        const cardHeader = `
-                            <div class="flex flex-wrap justify-between items-center gap-4 mb-4 pb-2 border-b border-slate-700/50">
-                                <div class="flex items-center gap-4">
-                                    ${rankIndicator}
-                                    <h4 class="text-3xl font-extrabold text-white tracking-tight">${workout.cognomeAtleta}</h4>
-                                </div>
-                                ${epOrMessageBadge}
-                            </div>`;
+                        if(tipoLavoroKey !== 'tempo') groupTitleText = `Classifica su ${groupTitleText}`;
                         
-                        let totalInfo = '';
-                        const infoClass = "text-md text-slate-300";
-                        const strongClass = "font-semibold text-slate-400 mr-2";
+                        groupTitle.textContent = groupTitleText;
+                        groupContainer.appendChild(groupTitle);
 
-                        if (workout.distanzaTotale) {
-                            totalInfo += `<p class="${infoClass}"><strong class="${strongClass}">Distanza Totale:</strong> <span class="text-lg font-bold text-sky-300">${workout.distanzaTotale}</span></p>`;
-                        }
-                        if (workout.tempoTotale) {
-                            totalInfo += `<p class="${infoClass} mt-1"><strong class="${strongClass}">Tempo Totale:</strong> <span class="text-lg font-bold text-sky-300">${workout.tempoTotale}</span></p>`;
-                        }
+                        const rankingList = document.createElement('div');
+                        rankingList.className = 'space-y-4';
 
-                        const intervalsList = (workout.intervalli || []).map((interval, i) => `<li class="bg-slate-700 hover:bg-slate-600 rounded-md px-3 py-1.5 transition-colors"><strong class="text-slate-500">#${i + 1}:</strong> ${interval}</li>`).join('');
-                        const cardBody = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pl-16">
-                                <div class="md:col-span-1 space-y-2">${totalInfo}</div>
-                                <div class="md:col-span-2">
-                                    <h5 class="font-bold text-slate-300 mb-2">Intervalli (${(workout.intervalli || []).length} x ${groupKey})</h5>
-                                    <ul class="flex flex-wrap gap-3 text-sm font-mono text-white">
-                                        ${intervalsList}
-                                    </ul>
-                                </div>
-                            </div>`;
+                        // Loop 4: Atleti (logica card invariata)
+                        workoutsForGroup.forEach((workout, index) => {
+                            const card = document.createElement('div');
+                            card.className = 'ranking-card p-4 md:p-6 rounded-lg shadow-md';
+
+                            let epOrMessageBadge;
+                            if (workout.epMessage) {
+                                epOrMessageBadge = `<span class="text-sm font-semibold bg-red-600/30 text-red-300 px-3 py-1 rounded-full whitespace-nowrap">${workout.epMessage}</span>`;
+                            } else if (workout.ep && workout.ep !== 'N/A') {
+                                epOrMessageBadge = `<span class="text-lg font-extrabold bg-amber-600/30 text-amber-300 px-3 py-1 rounded-full whitespace-nowrap">${workout.ep} EP</span>`;
+                            } else {
+                                epOrMessageBadge = '';
+                            }
+                            
+                            let rankClass = 'text-slate-600';
+                            if (index === 0) rankClass = 'text-amber-400 drop-shadow-[0_0_5px_rgba(251,191,36,0.6)]';
+                            if (index === 1) rankClass = 'text-gray-300';
+                            if (index === 2) rankClass = 'text-amber-700';
+                            const rankIndicator = `<span class="text-4xl font-black ${rankClass} w-16 md:w-20 text-center leading-none">${index + 1}°</span>`;
+
+                            const cardHeader = `
+                                <div class="flex flex-wrap justify-between items-center gap-4 mb-4 pb-2 border-b border-slate-700/50">
+                                    <div class="flex items-center gap-4">
+                                        ${rankIndicator}
+                                        <h4 class="text-3xl font-extrabold text-white tracking-tight">${workout.cognomeAtleta}</h4>
+                                    </div>
+                                    ${epOrMessageBadge}
+                                </div>`;
+                            
+                            let totalInfo = '';
+                            const infoClass = "text-md text-slate-300";
+                            const strongClass = "font-semibold text-slate-400 mr-2";
+
+                            if (workout.distanzaTotale) {
+                                totalInfo += `<p class="${infoClass}"><strong class="${strongClass}">Distanza Totale:</strong> <span class="text-lg font-bold text-sky-300">${workout.distanzaTotale}</span></p>`;
+                            }
+                            if (workout.tempoTotale) {
+                                totalInfo += `<p class="${infoClass} mt-1"><strong class="${strongClass}">Tempo Totale:</strong> <span class="text-lg font-bold text-sky-300">${workout.tempoTotale}</span></p>`;
+                            }
+
+                            // Titolo intervalli corretto
+                            let intervalTitleBase = groupKey;
+                            if (workout.modalita === 'distanza') intervalTitleBase += 'm';
+                            
+                            const intervalsList = (workout.intervalli || []).map((interval, i) => `<li class="bg-slate-700 hover:bg-slate-600 rounded-md px-3 py-1.5 transition-colors"><strong class="text-slate-500">#${i + 1}:</strong> ${interval}</li>`).join('');
+                            const cardBody = `<div class="grid grid-cols-1 md:grid-cols-3 gap-6 pl-16">
+                                    <div class="md:col-span-1 space-y-2">${totalInfo}</div>
+                                    <div class="md:col-span-2">
+                                        <h5 class="font-bold text-slate-300 mb-2">Intervalli (${(workout.intervalli || []).length} x ${intervalTitleBase})</h5>
+                                        <ul class="flex flex-wrap gap-3 text-sm font-mono text-white">
+                                            ${intervalsList}
+                                        </ul>
+                                    </div>
+                                </div>`;
+                            
+                            card.innerHTML = cardHeader + cardBody;
+                            rankingList.appendChild(card);
+                        });
                         
-                        card.innerHTML = cardHeader + cardBody;
-                        rankingList.appendChild(card);
+                        groupContainer.appendChild(rankingList);
+                        tipoContainer.appendChild(groupContainer);
                     });
-                    groupContainer.appendChild(rankingList);
-                    dayContent.appendChild(groupContainer);
+                    
+                    dayContent.appendChild(tipoContainer);
                 });
 
                 dayContainer.appendChild(dayContent);
