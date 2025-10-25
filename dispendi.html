@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dispendi Energetici - FIC</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0F172A;
+            color: #E2E8F0;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+            min-height: 100vh;
+            padding-bottom: 2rem; /* Aggiunge spazio in fondo */
+        }
+        .background-gradient {
+            position: fixed; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            filter: blur(100px); z-index: -1;
+        }
+        .gradient-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%);
+            animation: pulse 10s infinite alternate;
+        }
+        .gradient-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
+            animation: pulse 12s infinite alternate-reverse;
+        }
+        @keyframes pulse {
+            0% { transform: scale(0.9) rotate(0deg); }
+            100% { transform: scale(1.2) rotate(20deg); }
+        }
+        .input-group { margin-bottom: 1.5rem; }
+        .input-group label {
+            display: block;
+            color: #94A3B8; /* slate-400 */
+            font-weight: 500; /* medium */
+            margin-bottom: 0.5rem;
+            text-align: left;
+        }
+        .input-group select {
+            width: 100%;
+            padding: 0.75rem 1rem; /* p-3 */
+            border-radius: 0.5rem; /* rounded-lg */
+            border: 1px solid #334155; /* border-slate-700 */
+            background-color: #1E293B; /* bg-slate-800 */
+            color: #E2E8F0; /* text-slate-200 */
+            outline: none;
+            cursor: pointer;
+            appearance: none; /* Nasconde freccia di default */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25em 1.25em;
+        }
+        .input-group select:focus {
+            border-color: #3B82F6; /* focus:border-sky-500 */
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Simula focus ring */
+        }
+        .result-container {
+            margin-top: 1rem;
+            padding: 1rem 1.5rem;
+            background-color: #1E293B; /* bg-slate-800 */
+            border: 1px solid #334155; /* border-slate-700 */
+            border-radius: 0.75rem; /* rounded-xl */
+            font-size: 1.125rem; /* text-lg */
+            font-weight: 600; /* semibold */
+            color: #E2E8F0; /* text-slate-200 */
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            transition: background-color 0.3s ease-in-out;
+        }
+        .result-label {
+            color: #94A3B8; /* slate-400 */
+            font-size: 0.875rem; /* text-sm */
+            margin-right: 1rem;
+        }
+        .result-value {
+            font-family: monospace;
+            font-weight: 700; /* bold */
+        }
+        .error-container {
+            background-color: rgba(239, 68, 68, 0.1); /* bg-red-500/10 */
+            color: #F87171; /* text-red-400 */
+            border-color: #EF4444; /* border-red-500 */
+        }
+         /* Stile loader */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader {
+            border-top-color: #3498db;
+            animation: spin 1s linear infinite;
+        }
+    </style>
+</head>
+<body class="antialiased">
+
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+
+    <!-- Loader Overlay -->
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p class="mt-4 text-slate-300">Caricamento dati atleta...</p>
+    </div>
+
+    <div class="p-4 md:p-8 max-w-2xl mx-auto relative z-10">
+        <header class="mb-8 flex justify-between items-center border-b border-slate-700 pb-4">
+             <h1 class="text-3xl md:text-4xl font-black text-slate-100">Dispendi Energetici</h1>
+            <a href="home.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors text-sm flex-shrink-0">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                Home
+            </a>
+        </header>
+
+        <!-- Container principale -->
+        <div id="main-content" class="hidden space-y-8">
+            <!-- Informazioni Atleta -->
+            <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6">
+                <h2 class="text-2xl font-bold text-white mb-4">Dati Atleta</h2>
+                <div id="athlete-info-container" class="space-y-3">
+                    <p id="athlete-cognome" class="text-lg"><span class="font-medium text-slate-400">Cognome:</span> <span class="font-bold text-sky-400">Caricamento...</span></p>
+                    <p id="record-rowerg" class="text-lg"><span class="font-medium text-slate-400">Record RowErg (2000m):</span> <span class="font-bold">N/D</span></p>
+                    <p id="record-bikeerg" class="text-lg"><span class="font-medium text-slate-400">Record BikeErg (4000m):</span> <span class="font-bold">N/D</span></p>
+                </div>
+            </div>
+
+            <!-- Calcolatore Dispendi RowErg -->
+            <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6">
+                <h2 class="text-2xl font-bold text-white mb-6">🚣‍♂️ Calcolo Dispendi RowErg</h2>
+                <div id="rowerg-record-summary" class="mb-6 space-y-2 hidden">
+                    <div id="record-time-rowerg-container" class="result-container">
+                        <span class="result-label">Record RowErg (2k):</span>
+                        <span class="result-value">-</span>
+                    </div>
+                     <div id="record-media-rowerg-container" class="result-container">
+                        <span class="result-label">Media /500m:</span>
+                        <span class="result-value">-</span>
+                    </div>
+                    <div id="record-watt-rowerg-container" class="result-container">
+                         <span class="result-label">Watt Record:</span>
+                         <span class="result-value">-</span>
+                    </div>
+                </div>
+                 <p id="record-rowerg-missing-message" class="text-center text-yellow-400 bg-yellow-900/30 p-4 rounded-lg mb-6 hidden">
+                    Record RowErg mancante nel profilo atleta. Impossibile calcolare.
+                </p>
+                <div class="input-group">
+                    <label for="percentageSelectRowerg">Seleziona una percentuale:</label>
+                    <select id="percentageSelectRowerg" class="w-full" onchange="calculatePercentageRowerg()" disabled>
+                        <option value="">Seleziona...</option>
+                        <!-- Opzioni Percentuali -->
+                        <script>
+                            const percentages = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130];
+                            percentages.forEach(p => document.write(`<option value="${p}">${p}%</option>`));
+                        </script>
+                    </select>
+                </div>
+                <div id="percentage-rowerg-results" class="space-y-2 hidden">
+                    <div id="percentage-watt-rowerg-container" class="result-container">
+                        <span class="result-label">Watt Dispendio:</span>
+                        <span class="result-value">-</span>
+                    </div>
+                    <div id="percentage-time-rowerg-container" class="result-container">
+                        <span class="result-label">Tempo Equivalente (2k):</span>
+                        <span class="result-value">-</span>
+                    </div>
+                    <div id="percentage-media-rowerg-container" class="result-container">
+                         <span class="result-label">Media /500m Dispendio:</span>
+                         <span class="result-value">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Calcolatore Dispendi BikeErg -->
+            <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6">
+                <h2 class="text-2xl font-bold text-white mb-6">🚴‍♂️ Calcolo Dispendi BikeErg</h2>
+                <div id="bikeerg-record-summary" class="mb-6 space-y-2 hidden">
+                    <div id="record-time-bikeerg-container" class="result-container">
+                        <span class="result-label">Record BikeErg (4k):</span>
+                        <span class="result-value">-</span>
+                    </div>
+                     <div id="record-media-bikeerg-container" class="result-container">
+                        <span class="result-label">Media /1000m:</span>
+                        <span class="result-value">-</span>
+                    </div>
+                    <div id="record-watt-bikeerg-container" class="result-container">
+                         <span class="result-label">Watt Record:</span>
+                         <span class="result-value">-</span>
+                    </div>
+                </div>
+                 <p id="record-bikeerg-missing-message" class="text-center text-yellow-400 bg-yellow-900/30 p-4 rounded-lg mb-6 hidden">
+                    Record BikeErg mancante nel profilo atleta. Impossibile calcolare.
+                </p>
+                <div class="input-group">
+                    <label for="percentageSelectBikeerg">Seleziona una percentuale:</label>
+                    <select id="percentageSelectBikeerg" class="w-full" onchange="calculatePercentageBikeerg()" disabled>
+                         <option value="">Seleziona...</option>
+                         <!-- Opzioni Percentuali -->
+                         <script>
+                            percentages.forEach(p => document.write(`<option value="${p}">${p}%</option>`));
+                        </script>
+                    </select>
+                </div>
+                <div id="percentage-bikeerg-results" class="space-y-2 hidden">
+                    <div id="percentage-watt-bikeerg-container" class="result-container">
+                        <span class="result-label">Watt Dispendio:</span>
+                        <span class="result-value">-</span>
+                    </div>
+                    <div id="percentage-time-bikeerg-container" class="result-container">
+                        <span class="result-label">Tempo Equivalente (4k):</span>
+                        <span class="result-value">-</span>
+                    </div>
+                    <div id="percentage-media-bikeerg-container" class="result-container">
+                         <span class="result-label">Media /1000m Dispendio:</span>
+                         <span class="result-value">-</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+         <p id="error-loading" class="text-center text-red-400 bg-red-900/30 p-4 rounded-lg hidden">
+            Errore nel caricamento dei dati dell'atleta. Riprova o contatta l'assistenza.
+        </p>
+    </div>
+
+    <!-- Modals -->
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
+        <p id="messageText" class="mb-6 text-lg"></p>
+        <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // --- CONFIGURAZIONE FIREBASE ---
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
+            authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
+            projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.appspot.com",
+            messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+
+        // --- ELEMENTI DOM ---
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const mainContent = document.getElementById('main-content');
+        const errorLoadingMessage = document.getElementById('error-loading');
+        const athleteCognomeEl = document.getElementById('athlete-cognome').querySelector('span:last-child');
+        const recordRowergEl = document.getElementById('record-rowerg').querySelector('span:last-child');
+        const recordBikeergEl = document.getElementById('record-bikeerg').querySelector('span:last-child');
+        // RowErg Elements
+        const recordRowergMissingMessage = document.getElementById('record-rowerg-missing-message');
+        const rowergRecordSummary = document.getElementById('rowerg-record-summary');
+        const recordTimeRowergContainer = document.getElementById('record-time-rowerg-container').querySelector('.result-value');
+        const recordMediaRowergContainer = document.getElementById('record-media-rowerg-container').querySelector('.result-value');
+        const recordWattRowergContainer = document.getElementById('record-watt-rowerg-container').querySelector('.result-value');
+        const percentageSelectRowerg = document.getElementById('percentageSelectRowerg');
+        const percentageRowergResultsContainer = document.getElementById('percentage-rowerg-results');
+        const percentageWattRowergContainer = document.getElementById('percentage-watt-rowerg-container').querySelector('.result-value');
+        const percentageTimeRowergContainer = document.getElementById('percentage-time-rowerg-container').querySelector('.result-value');
+        const percentageMediaRowergContainer = document.getElementById('percentage-media-rowerg-container').querySelector('.result-value');
+        // BikeErg Elements
+        const recordBikeergMissingMessage = document.getElementById('record-bikeerg-missing-message');
+        const bikeergRecordSummary = document.getElementById('bikeerg-record-summary');
+        const recordTimeBikeergContainer = document.getElementById('record-time-bikeerg-container').querySelector('.result-value');
+        const recordMediaBikeergContainer = document.getElementById('record-media-bikeerg-container').querySelector('.result-value');
+        const recordWattBikeergContainer = document.getElementById('record-watt-bikeerg-container').querySelector('.result-value');
+        const percentageSelectBikeerg = document.getElementById('percentageSelectBikeerg');
+        const percentageBikeergResultsContainer = document.getElementById('percentage-bikeerg-results');
+        const percentageWattBikeergContainer = document.getElementById('percentage-watt-bikeerg-container').querySelector('.result-value');
+        const percentageTimeBikeergContainer = document.getElementById('percentage-time-bikeerg-container').querySelector('.result-value');
+        const percentageMediaBikeergContainer = document.getElementById('percentage-media-bikeerg-container').querySelector('.result-value');
+
+
+        // --- VARIABILI GLOBALI ---
+        let baseWattsRowerg = 0;
+        let baseWattsBikeerg = 0;
+
+        // --- FUNZIONI DI UTILITÀ ---
+        function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
+        function hideModal(modal) { document.getElementById('modal-backdrop').classList.add('hidden'); modal.classList.add('hidden'); }
+        function showMessageBox(message) {
+            document.getElementById('messageText').textContent = message;
+            showModal(document.getElementById('messageBox'));
+        }
+
+        function convertTimeToSeconds(timeString) {
+            if (!timeString || typeof timeString !== 'string') return 0;
+            timeString = timeString.replace(',', '.');
+            if (!timeString.includes(':')) return 0;
+            const parts = timeString.split(':');
+            if (parts.length !== 2) return 0;
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseFloat(parts[1]);
+            if (isNaN(minutes) || isNaN(seconds) || minutes < 0 || seconds < 0 || seconds >= 60) {
+                console.warn(`Formato tempo non valido: ${timeString}`);
+                return 0;
+            }
+            return (minutes * 60) + seconds;
+        }
+
+        // --- FORMULE ---
+        // Formula Watt (utilizzata per entrambi, cambia solo la distanza)
+        function calculateWatts(totalSeconds, distance) {
+            if (totalSeconds <= 0 || distance <= 0) return 0;
+            // Watt = 2.8 * (Distanza / Tempo)^3
+            return 2.8 * Math.pow(distance / totalSeconds, 3);
+        }
+
+        // Formula Tempo da Watt (utilizzata per entrambi, cambia solo la distanza)
+        function calculateTimeFromWatts(watts, distance) {
+            if (watts <= 0 || distance <= 0) return 0;
+             // Tempo = Distanza / (Watt / 2.8)^(1/3)
+            return distance / Math.pow(watts / 2.8, 1/3);
+        }
+
+        // Calcola media per segmento (assume 4 segmenti)
+        function calculateAverageSegmentTime(totalSeconds) {
+             if (totalSeconds <= 0) return 0;
+             // Divide il tempo totale per 4 per ottenere la media su 1/4 della distanza
+             // (es. 500m per 2000m, 1000m per 4000m)
+             return totalSeconds / 4;
+        }
+
+        function formatSecondsToTime(totalSeconds) {
+            if (totalSeconds <= 0 || !isFinite(totalSeconds)) return "N/D";
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+            const formattedSeconds = seconds.toFixed(1).padStart(4, '0');
+            return `${minutes}:${formattedSeconds}`;
+        }
+
+        // --- LOGICA PRINCIPALE ---
+        onAuthStateChanged(auth, async (user) => {
+            if (user) {
+                try {
+                    const userEmail = user.email.toLowerCase();
+                    const q = query(collection(db, "atleti"), where("email", "==", userEmail));
+                    const querySnapshot = await getDocs(q);
+
+                    if (!querySnapshot.empty) {
+                        const athleteDoc = querySnapshot.docs[0];
+                        const athleteData = athleteDoc.data();
+
+                        // Visualizza dati atleta
+                        athleteCognomeEl.textContent = athleteData.cognome || 'N/D';
+                        recordRowergEl.textContent = athleteData.rowerg || 'N/D';
+                        recordBikeergEl.textContent = athleteData.bikeerg || 'N/D';
+
+                        // Processa Record RowErg (2000m)
+                        const recordRowergSeconds = convertTimeToSeconds(athleteData.rowerg);
+                        if (recordRowergSeconds > 0) {
+                            baseWattsRowerg = calculateWatts(recordRowergSeconds, 2000); // Distanza 2000
+                            const avg500mSeconds = calculateAverageSegmentTime(recordRowergSeconds);
+
+                            recordTimeRowergContainer.textContent = athleteData.rowerg;
+                            recordMediaRowergContainer.textContent = formatSecondsToTime(avg500mSeconds);
+                            recordWattRowergContainer.textContent = baseWattsRowerg.toFixed(2);
+
+                            rowergRecordSummary.classList.remove('hidden');
+                            recordRowergMissingMessage.classList.add('hidden');
+                            percentageSelectRowerg.disabled = false;
+                        } else {
+                            recordRowergMissingMessage.classList.remove('hidden');
+                            rowergRecordSummary.classList.add('hidden');
+                            percentageSelectRowerg.disabled = true;
+                        }
+
+                         // Processa Record BikeErg (4000m)
+                        const recordBikeergSeconds = convertTimeToSeconds(athleteData.bikeerg);
+                        if (recordBikeergSeconds > 0) {
+                            baseWattsBikeerg = calculateWatts(recordBikeergSeconds, 2000); // Distanza 4000
+                            const avg1000mSeconds = calculateAverageSegmentTime(recordBikeergSeconds); // Media su 1000m
+
+                            recordTimeBikeergContainer.textContent = athleteData.bikeerg;
+                            recordMediaBikeergContainer.textContent = formatSecondsToTime(avg1000mSeconds);
+                            recordWattBikeergContainer.textContent = baseWattsBikeerg.toFixed(2);
+
+                            bikeergRecordSummary.classList.remove('hidden');
+                            recordBikeergMissingMessage.classList.add('hidden');
+                            percentageSelectBikeerg.disabled = false;
+                        } else {
+                            recordBikeergMissingMessage.classList.remove('hidden');
+                            bikeergRecordSummary.classList.add('hidden');
+                            percentageSelectBikeerg.disabled = true;
+                        }
+
+
+                        mainContent.classList.remove('hidden');
+                        errorLoadingMessage.classList.add('hidden');
+
+                    } else {
+                        throw new Error("Profilo atleta non trovato.");
+                    }
+                } catch (error) {
+                    console.error("Errore nel caricamento dei dati atleta:", error);
+                    mainContent.classList.add('hidden');
+                    errorLoadingMessage.textContent = `Errore nel caricamento: ${error.message}. Riprova o contatta l'assistenza.`;
+                    errorLoadingMessage.classList.remove('hidden');
+                } finally {
+                    loaderOverlay.classList.add('hidden');
+                }
+            } else {
+                 window.location.href = 'index.html';
+            }
+        });
+
+        // --- FUNZIONI DI CALCOLO PERCENTUALE ---
+        window.calculatePercentageRowerg = function() {
+            const selectedPercentageValue = percentageSelectRowerg.value;
+            if (!selectedPercentageValue || baseWattsRowerg <= 0) {
+                percentageRowergResultsContainer.classList.add('hidden');
+                return;
+            }
+
+            const percentage = parseFloat(selectedPercentageValue) / 100;
+            const finalWatts = baseWattsRowerg * percentage;
+            const finalTimeInSeconds = calculateTimeFromWatts(finalWatts, 2000); // Distanza 2000
+            const finalAvg500mSeconds = calculateAverageSegmentTime(finalTimeInSeconds);
+
+            percentageWattRowergContainer.textContent = finalWatts.toFixed(2);
+            percentageTimeRowergContainer.textContent = formatSecondsToTime(finalTimeInSeconds);
+            percentageMediaRowergContainer.textContent = formatSecondsToTime(finalAvg500mSeconds);
+            percentageRowergResultsContainer.classList.remove('hidden');
+        }
+
+         window.calculatePercentageBikeerg = function() {
+            const selectedPercentageValue = percentageSelectBikeerg.value;
+            if (!selectedPercentageValue || baseWattsBikeerg <= 0) {
+                percentageBikeergResultsContainer.classList.add('hidden');
+                return;
+            }
+
+            const percentage = parseFloat(selectedPercentageValue) / 100;
+            const finalWatts = baseWattsBikeerg * percentage;
+            const finalTimeInSeconds = calculateTimeFromWatts(finalWatts, 2000); // Distanza 4000
+            const finalAvg1000mSeconds = calculateAverageSegmentTime(finalTimeInSeconds); // Media su 1000m
+
+            percentageWattBikeergContainer.textContent = finalWatts.toFixed(2);
+            percentageTimeBikeergContainer.textContent = formatSecondsToTime(finalTimeInSeconds);
+            percentageMediaBikeergContainer.textContent = formatSecondsToTime(finalAvg1000mSeconds);
+            percentageBikeergResultsContainer.classList.remove('hidden');
+        }
+
+        // --- EVENT LISTENER MODALS ---
+        document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
+
+    </script>
+</body>
+</html>
+

@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIC - SQUADRA OLIMPICA</title>
+    <title>FIC</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -72,11 +72,13 @@
 
         <section id="home-page">
             <div class="flex flex-col items-center justify-center min-h-[70vh]">
-                <h1 class="text-3xl md:text-6xl font-black tracking-tight text-slate-100 text-center mb-4">FIC - SQUADRA OLIMPICA</h1>
+                <h1 class="text-3xl md:text-6xl font-black tracking-tight text-slate-100 text-center mb-4">FIC</h1>
                 <p class="text-base md:text-xl text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
                 
+                <!-- Contenitore unico per tutti i pulsanti -->
                 <div class="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto w-full">
                     
+                    <!-- Primi 4 pulsanti (2 colonne su mobile e desktop) -->
                     <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
                         <div class="text-5xl md:text-7xl mb-4">📥</div>
                         <h2 class="text-xl md:text-4xl font-bold text-white">Carica Dati</h2>
@@ -85,24 +87,30 @@
                         <div class="text-5xl md:text-7xl mb-4">📊</div>
                         <h2 class="text-xl md:text-4xl font-bold text-white">Risultati</h2>
                     </a>
-                    
                     <a href="storico_wo.html" id="storico-wo-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
                         <div class="text-5xl md:text-7xl mb-4">📜</div>
                         <h2 class="text-xl md:text-4xl font-bold text-white">Storico WO</h2>
                     </a>
-                    
                     <a href="gym.html" id="gym-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
                         <div class="text-5xl md:text-7xl mb-4">🏋️</div>
                         <h2 class="text-xl md:text-4xl font-bold text-white">Gym</h2>
                     </a>
-                </div>
 
-                <div class="max-w-4xl mx-auto w-full mt-4 md:mt-8">
-                    <a href="CALENDARIO/calendario.html" id="calendario-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
+                    <!-- Calendario (1 colonna su mobile, 2 su desktop) -->
+                    <a href="CALENDARIO/calendario.html" id="calendario-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center md:col-span-2">
                         <div class="text-5xl md:text-7xl mb-4">🗓️</div>
                         <h2 class="text-xl md:text-4xl font-bold text-white">Calendario</h2>
                     </a>
+
+                    <!-- Dispendi (1 colonna su mobile, 2 su desktop) -->
+                    <a href="dispendi.html" id="dispendi-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center md:col-span-2">
+                        <div class="text-5xl md:text-7xl mb-4">🧮</div>
+                        <h2 class="text-xl md:text-4xl font-bold text-white">Dispendi</h2>
+                    </a>
+
                 </div>
+                <!-- FINE contenitore unico -->
+
             </div>
         </section>
         
@@ -200,3 +208,4 @@
     </script>
 </body>
 </html>
+
