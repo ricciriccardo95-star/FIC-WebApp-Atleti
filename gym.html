@@ -50,6 +50,10 @@
         .plan-card[open] summary .icon {
             transform: rotate(90deg);
         }
+        /* Stile per il lightbox dell'immagine */
+        #image-lightbox {
+            transition: opacity 0.3s ease;
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -85,7 +89,14 @@
                 <p class="text-slate-400 mt-2">Non ci sono ancora schede di allenamento disponibili. Contatta il tuo allenatore.</p>
             </div>
         </main>
+    </div>
 
+    <!-- Image Lightbox Modal -->
+    <div id="image-lightbox" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4 opacity-0">
+        <div class="relative max-w-3xl max-h-full">
+            <img id="lightbox-image" src="" alt="Esercizio ingrandito" class="block max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl">
+            <button id="close-lightbox" class="absolute -top-2 -right-2 bg-white text-slate-900 rounded-full h-8 w-8 flex items-center justify-center font-bold text-xl leading-none">&times;</button>
+        </div>
     </div>
 
     <script type="module">
@@ -111,22 +122,20 @@
         const welcomeMessage = document.getElementById('welcome-message');
         const plansContainer = document.getElementById('plans-container');
         const noPlansMessage = document.getElementById('no-plans-message');
+        const imageLightbox = document.getElementById('image-lightbox');
+        const lightboxImage = document.getElementById('lightbox-image');
+        const closeLightboxBtn = document.getElementById('close-lightbox');
 
         onAuthStateChanged(auth, async (user) => {
             if (user) {
-                // Utente autenticato
                 const cognome = sessionStorage.getItem('atletaCognome');
                 if (cognome) {
                     welcomeMessage.textContent = `Benvenuto, ${cognome}`;
                 } else {
-                    // Fallback se il sessionStorage è vuoto
                     welcomeMessage.textContent = 'Benvenuto';
                 }
-                
                 await loadClientData(user);
-                
             } else {
-                // Utente non autenticato, reindirizza al login
                 window.location.href = 'index.html';
             }
         });
@@ -142,7 +151,7 @@
                 }
                 const athleteId = userSnapshot.docs[0].id;
 
-                // 2. Carica i massimali dell'atleta dalla collezione principale
+                // 2. Carica i massimali dell'atleta
                 const massimaliMap = new Map();
                 const massimaliQuery = query(collection(db, 'massimali_atleti'), where('atletaId', '==', athleteId));
                 const massimaliSnapshot = await getDocs(massimaliQuery);
@@ -153,19 +162,26 @@
                     }
                 });
 
-                // 3. Carica tutte le schede di allenamento
+                // 3. Carica la libreria di tutti gli esercizi (per le immagini)
+                const eserciziMap = new Map();
+                const eserciziQuery = query(collection(db, "esercizi_pesistica"));
+                const eserciziSnapshot = await getDocs(eserciziQuery);
+                eserciziSnapshot.forEach(doc => {
+                    eserciziMap.set(doc.id, doc.data());
+                });
+
+                // 4. Carica tutte le schede di allenamento
                 const schedeQuery = query(collection(db, "schede_pesistica"));
                 const schedeSnapshot = await getDocs(schedeQuery);
 
                 if(schedeSnapshot.empty) {
                     noPlansMessage.classList.remove('hidden');
                 } else {
-                    // Ordina le schede per nome
                     const schede = schedeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     schede.sort((a, b) => a.nomeScheda.localeCompare(b.nomeScheda));
                     
                     schede.forEach(scheda => {
-                        const planElement = createPlanElement(scheda, massimaliMap);
+                        const planElement = createPlanElement(scheda, massimaliMap, eserciziMap);
                         plansContainer.appendChild(planElement);
                     });
                 }
@@ -179,7 +195,7 @@
             }
         }
 
-        function createPlanElement(scheda, massimaliMap) {
+        function createPlanElement(scheda, massimaliMap, eserciziMap) {
             const details = document.createElement('details');
             details.className = 'plan-card bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg overflow-hidden';
 
@@ -199,19 +215,23 @@
 
             if (scheda.esercizi && scheda.esercizi.length > 0) {
                 scheda.esercizi.forEach(esercizio => {
+                    const fullEsercizio = eserciziMap.get(esercizio.esercizioId);
+                    const imageUrl = fullEsercizio?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
+                    
                     const massimale = massimaliMap.get(esercizio.esercizioId) || 0;
                     const percentuale = parseFloat(esercizio.percentuale) || 0;
                     const pesoCalcolato = massimale > 0 && percentuale > 0 ? (massimale * percentuale / 100).toFixed(1) : '-';
 
                     exerciseList.innerHTML += `
-                        <div class="flex flex-col sm:flex-row items-start sm:items-center gap-4 p-4 bg-slate-800 rounded-lg">
-                            <div class="flex-grow">
+                        <div class="flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-800 rounded-lg">
+                            <img src="${imageUrl}" alt="${esercizio.nome}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
+                            <div class="flex-grow text-center sm:text-left">
                                 <p class="font-bold text-lg text-slate-100">${esercizio.nome}</p>
                                 <p class="text-slate-400 font-mono text-sm">
                                     ${esercizio.serie || '-'} x ${esercizio.ripetizioni || '-'} @ ${esercizio.percentuale || '-'}%
                                 </p>
                             </div>
-                            <div class="flex items-center gap-3 bg-slate-700 p-3 rounded-lg">
+                            <div class="flex items-center gap-3 bg-slate-700 p-3 rounded-lg sm:ml-auto">
                                  <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
                                 <p class="text-xl font-bold text-white">${pesoCalcolato} kg</p>
                             </div>
@@ -227,6 +247,35 @@
             details.appendChild(content);
             return details;
         }
+
+        // --- GESTIONE LIGHTBOX IMMAGINE ---
+
+        function openImageLightbox(src) {
+            lightboxImage.src = src;
+            imageLightbox.classList.remove('hidden');
+            setTimeout(() => imageLightbox.classList.remove('opacity-0'), 10); // Fade in
+        }
+        
+        function closeImageLightbox() {
+            imageLightbox.classList.add('opacity-0');
+            setTimeout(() => {
+                imageLightbox.classList.add('hidden');
+                lightboxImage.src = ''; // Pulisce l'immagine per evitare flash
+            }, 300);
+        }
+
+        plansContainer.addEventListener('click', (e) => {
+            if (e.target.classList.contains('enlargeable-image')) {
+                openImageLightbox(e.target.src);
+            }
+        });
+
+        closeLightboxBtn.addEventListener('click', closeImageLightbox);
+        imageLightbox.addEventListener('click', (e) => {
+            if (e.target.id === 'image-lightbox') { // Chiude solo se si clicca sullo sfondo
+                closeImageLightbox();
+            }
+        });
 
     </script>
 </body>
