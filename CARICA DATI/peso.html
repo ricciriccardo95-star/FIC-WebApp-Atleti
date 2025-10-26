@@ -46,6 +46,8 @@
             animation: spin 1s linear infinite;
         }
     </style>
+     <!-- Carica l'auth-manager -->
+     <script type="module" src="../auth-manager.js"></script>
 </head>
 <body class="antialiased">
 
@@ -53,7 +55,7 @@
     <div class="background-gradient gradient-2"></div>
 
     <!-- Loader Overlay -->
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50 hidden">
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
@@ -69,7 +71,7 @@
             
             <!-- Questo div mostrerà l'atleta loggato o un messaggio di errore -->
             <div id="athlete-info-container">
-                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg"></p>
+                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente...</p>
             </div>
             
             <div>
@@ -85,7 +87,8 @@
         </div>
 
         <div class="text-center mt-8">
-            <a href="../CARICA DATI/home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
+             <!-- Corretto il link per tornare indietro alla home dei CARICA DATI -->
+            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
                 ← Torna Indietro
             </a>
         </div>
@@ -100,23 +103,13 @@
 
     <!-- Script Firebase (versione aggiornata e modulare) -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        // Importa db da auth-manager
+        import { db } from '../auth-manager.js';
+        // Importa solo le funzioni necessarie da firestore
+        import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
-            authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
-            projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.appspot.com",
-            messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-        
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Rimuovi inizializzazione locale Firebase (app, auth, db, firebaseConfig)
+        // Rimuovi anche le importazioni non più necessarie (initializeApp, getAuth, onAuthStateChanged, getFirestore, collection, query, where, getDocs)
 
         // Elementi DOM
         const weightInput = document.getElementById('weightInput');
@@ -134,41 +127,39 @@
             showModal(document.getElementById('messageBox'));
         }
         
-        // Controlla lo stato dell'autenticazione
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                // L'utente è loggato
-                loaderOverlay.style.display = 'flex';
-                try {
-                    const userEmail = user.email.toLowerCase();
-                    const q = query(collection(db, "atleti"), where("email", "==", userEmail));
-                    const querySnapshot = await getDocs(q);
+        // Rimuovi onAuthStateChanged
+        
+        // Ascolta l'evento 'authStateReady'
+        document.addEventListener('authStateReady', (e) => {
+            const { athlete, error } = e.detail;
 
-                    if (!querySnapshot.empty) {
-                        const athleteDoc = querySnapshot.docs[0];
-                        const athleteData = athleteDoc.data();
-                        currentAthleteId = athleteDoc.id; // Salva l'ID del documento
-                        
-                        athleteInfo.innerHTML = `Stai inserendo il peso per: <strong class="text-sky-400">${athleteData.cognome}</strong>`;
-                        weightInput.disabled = false;
-                        saveWeightBtn.disabled = false;
-                    } else {
-                        athleteInfo.textContent = "Profilo atleta non trovato. Contatta l'amministratore.";
-                    }
-                } catch (error) {
-                    console.error("Errore nel recupero dati atleta:", error);
-                    athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
-                } finally {
-                    loaderOverlay.style.display = 'none';
-                }
+            if (athlete) {
+                // Utente loggato e dati atleta disponibili
+                currentAthleteId = athlete.id; // Salva l'ID del documento
+                
+                athleteInfo.innerHTML = `Stai inserendo il peso per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
+                weightInput.disabled = false;
+                saveWeightBtn.disabled = false;
+            
+            } else if (error) {
+                 // Errore
+                console.error("Errore di autenticazione da auth-manager:", error);
+                athleteInfo.textContent = "Errore nel caricamento dei dati utente.";
+                 weightInput.disabled = true;
+                saveWeightBtn.disabled = true;
 
             } else {
-                // L'utente non è loggato
+                // Utente non loggato (auth-manager dovrebbe aver reindirizzato)
                 athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire il peso.';
                 weightInput.disabled = true;
                 saveWeightBtn.disabled = true;
+                // Considera redirect forzato se necessario: window.location.href = '../index.html';
             }
+            
+            // Nascondi il loader in ogni caso
+            loaderOverlay.style.display = 'none';
         });
+
         
         // Funzione per salvare il peso nello storico
         async function saveWeight() {
@@ -184,8 +175,8 @@
                 return;
             }
             const weight = parseFloat(weightValue);
-            if (isNaN(weight) || weight <= 0) {
-                showMessageBox("Per favore, inserisci un valore di peso valido.");
+            if (isNaN(weight) || weight <= 0 || weight > 200) { // Aggiunto limite superiore
+                showMessageBox("Per favore, inserisci un valore di peso valido (tra 0 e 200 kg).");
                 return;
             }
 
@@ -201,6 +192,7 @@
                 const dateId = `${yyyy}-${mm}-${dd}`;
 
                 // Crea il riferimento al documento del giorno nella sottocollezione "storico_peso"
+                // Usa 'db' importato
                 const dailyWeightRef = doc(db, "atleti", currentAthleteId, "storico_peso", dateId);
 
                 // Usa setDoc per creare o sovrascrivere il dato del giorno
@@ -226,4 +218,3 @@
     </script>
 </body>
 </html>
-

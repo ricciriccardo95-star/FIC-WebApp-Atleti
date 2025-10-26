@@ -22,11 +22,13 @@
         /* Aggiunto per nascondere i campi dinamicamente */
         .dynamic-field { display: none; }
     </style>
+    <!-- Carica l'auth-manager -->
+    <script type="module" src="../auth-manager.js"></script>
 </head>
 <body class="antialiased">
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50 hidden">
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
@@ -105,8 +107,9 @@
             </div>
         </div>
         <div class="text-center mt-8">
-            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
-                ← Torna alla Selezione
+            <!-- Corretto il link -->
+            <a href="../home.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
+                ← Torna alla Home
             </a>
         </div>
     </div>
@@ -118,19 +121,12 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        // Importa db da auth-manager
+        import { db } from '../auth-manager.js';
+        // Importa solo le funzioni necessarie da firestore
+        import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.appspot.com", messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Rimuovi inizializzazione locale Firebase (app, auth, db)
         
         const loaderOverlay = document.getElementById('loader-overlay');
         const athleteInfo = document.getElementById('athlete-info');
@@ -184,6 +180,7 @@
 
         async function fetchAthleteRecord(athleteId) {
             try {
+                // Usa 'db' importato
                 const docRef = doc(db, 'atleti', athleteId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
@@ -196,8 +193,6 @@
         }
 
         function calculateErgoEP(workoutData, athleteData) {
-            // Questa funzione rimane invariata.
-            // Gestirà 'distanza' o 'tempo' in base a workoutData.modalita
             if (!athleteData || !athleteData.rowerg) return null;
             if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) return null;
 
@@ -236,7 +231,6 @@
 
         // --- LOGICA DI SETUP PAGINA ---
         function setupPage() {
-            // Popola dinamicamente il select "Numero di Intervalli"
             const intervalliSelect = document.getElementById('intervalliNumero');
             let intervalliHTML = '';
             for (let i = 1; i <= 20; i++) {
@@ -246,41 +240,28 @@
         }
 
         // --- GESTIONE DINAMICA FORM ---
-
-        /**
-         * Gestisce la visualizzazione dei campi in base alla modalità principale (Distanza/Tempo)
-         */
         function updateFormVisibility() {
             const mode = document.getElementById('workoutMode').value;
             
-            // Nascondi tutti i campi dipendenti
             document.getElementById('tempo-fields').style.display = 'none';
             document.getElementById('tipo-lavoro-fields').style.display = 'none';
             document.getElementById('distanza-fields').style.display = 'none';
             document.getElementById('intervalli-common').style.display = 'none';
-            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona prima il tipo di lavoro --</option>'; // Reset
+            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona prima il tipo di lavoro --</option>'; 
 
             if (mode === 'distanza') {
-                // Se 'Distanza', mostra solo il selettore del TIPO LAVORO
                 document.getElementById('tipo-lavoro-fields').style.display = 'block';
             } else if (mode === 'tempo') {
-                // Se 'Tempo', mostra i campi del TEMPO e degli INTERVALLI
                 document.getElementById('tempo-fields').style.display = 'block';
                 document.getElementById('intervalli-common').style.display = 'block';
             }
-            
-            // Rigenera gli input degli intervalli (necessario se si passa da Distanza a Tempo)
             generateIntervalliInputs();
         }
 
-        /**
-         * Popola il menu delle distanze specifiche in base al tipo di lavoro (Polarizzato/Steady)
-         */
         function updateDistanceOptions() {
             const tipoLavoro = document.getElementById('tipoLavoroSelect').value;
             const distanzaSelect = document.getElementById('distanzaSelect');
             
-            // Svuota le opzioni esistenti
             distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
             
             let optionsArray = [];
@@ -290,23 +271,18 @@
                 optionsArray = distanzeSteadyState;
             }
 
-            // Popola con le nuove opzioni
             optionsArray.forEach(opt => {
                 distanzaSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
             });
 
-            // Mostra i campi per selezionare la distanza e gli intervalli
             document.getElementById('distanza-fields').style.display = 'block';
             document.getElementById('intervalli-common').style.display = 'block';
         }
 
-        /**
-         * Genera i campi di input per i singoli intervalli
-         */
         function generateIntervalliInputs() {
             const container = document.getElementById('intervalli-inputs-container');
             const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
-            const mode = document.getElementById('workoutMode').value; // Legge la modalità principale
+            const mode = document.getElementById('workoutMode').value; 
             container.innerHTML = '';
 
             if (numero > 0 && numero <= 20) {
@@ -329,7 +305,6 @@
             }
         }
         
-        // Funzione helper per formattare l'input del tempo
         window.formatTimeInput = function(event) {
             const input = event.target;
             let value = input.value.replace(/[^\d]/g, ''); 
@@ -370,7 +345,7 @@
                 timestamp: serverTimestamp(),
                 intervalli: [],
                 ep: null,
-                tipoLavoro: null // Nuovo campo
+                tipoLavoro: null 
             };
 
             if (!mode) {
@@ -383,12 +358,11 @@
                 workoutData.distanza = document.getElementById('distanzaSelect').value;
                 if (!workoutData.tipoLavoro) { showMessageBox("Seleziona un tipo di lavoro (Polarizzato o Steady State)."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
                 if (!workoutData.distanza) { showMessageBox("Seleziona una distanza specifica."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-            } else { // mode === 'tempo'
+            } else { 
                 workoutData.tempo = document.getElementById('tempoSelect').value;
                 if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
             }
 
-            // Raccolta intervalli (logica invariata)
             const intervalliInputs = document.querySelectorAll('.intervallo-input');
             let allIntervalsValid = true;
 
@@ -419,7 +393,6 @@
                  btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             
-            // Calcolo EP (logica invariata)
             const athleteData = await fetchAthleteRecord(currentAthleteId);
 
             if (athleteData) {
@@ -437,18 +410,17 @@
                 console.warn(`Record atleta ${currentAthleteId} non trovato. L'EP non può essere calcolato.`);
             }
 
-            // Salvataggio
             try {
+                // Usa 'db' importato
                 await addDoc(collection(db, 'allenamenti'), workoutData);
                 showMessageBox("Allenamento salvato con successo!");
                 
-                // Reset form
                 document.getElementById('workoutMode').value = "";
                 document.getElementById('tipoLavoroSelect').value = "";
                 document.getElementById('distanzaSelect').value = "";
                 document.getElementById('tempoSelect').value = "";
                 document.getElementById('intervalliNumero').value = "";
-                updateFormVisibility(); // Nasconde tutti i campi dinamici
+                updateFormVisibility(); 
 
             } catch (error) {
                 console.error("Errore salvataggio: ", error);
@@ -459,50 +431,40 @@
             }
         }
 
-        // --- GESTIONE AUTENTICAZIONE E AVVIO (INVARIATO) ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                loaderOverlay.style.display = 'flex';
-                try {
-                    const userEmail = user.email.toLowerCase();
-                    const q = query(collection(db, "atleti"), where("email", "==", userEmail));
-                    const querySnapshot = await getDocs(q);
+        // --- GESTIONE AUTENTICAZIONE E AVVIO (SOSTITUITO) ---
+        // Rimuovi onAuthStateChanged
+        
+        // Ascolta l'evento 'authStateReady'
+        document.addEventListener('authStateReady', (e) => {
+            const { athlete, error } = e.detail;
 
-                    if (!querySnapshot.empty) {
-                        const athleteDoc = querySnapshot.docs[0];
-                        const athleteData = athleteDoc.data();
-                        currentAthleteId = athleteDoc.id;
-                        currentAthleteCognome = athleteData.cognome;
-                        
-                        athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athleteData.cognome}</strong>`;
-                        formContent.classList.remove('hidden');
-                    } else {
-                        athleteInfo.textContent = "Profilo atleta non trovato. Contatta l'amministratore.";
-                        formContent.classList.add('hidden');
-                    }
-                } catch (error) {
-                    console.error("Errore nel recupero dati atleta:", error);
-                    athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
-                    formContent.classList.add('hidden');
-                } finally {
-                    loaderOverlay.style.display = 'none';
-                }
+            if (athlete) {
+                currentAthleteId = athlete.id;
+                currentAthleteCognome = athlete.cognome;
+                
+                athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
+                formContent.classList.remove('hidden');
+            
+            } else if (error) {
+                console.error("Errore di autenticazione da auth-manager:", error);
+                athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
+                formContent.classList.add('hidden');
+
             } else {
+                // Utente non loggato
                 athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire i dati.';
                 formContent.classList.add('hidden');
             }
+            
+            loaderOverlay.style.display = 'none';
         });
         
         // --- EVENT LISTENERS ---
         document.addEventListener('DOMContentLoaded', () => {
             setupPage();
-            // Listener per la modalità principale (Distanza/Tempo)
             document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
-            // NUOVO Listener per il tipo di lavoro (Polarizzato/Steady)
             document.getElementById('tipoLavoroSelect').addEventListener('change', updateDistanceOptions);
-            // Listener per il numero di intervalli
             document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
-            // Listener per il salvataggio
             document.getElementById('saveWorkoutBtn').addEventListener('click', saveWorkout);
             document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
         });

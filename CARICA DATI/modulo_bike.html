@@ -21,14 +21,26 @@
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; }
         .dynamic-field { display: none; }
     </style>
+    
+    <!--
+      Carica l'auth-manager.
+      Questo gestirà il controllo auth e il redirect SE NON LOGGATI.
+      Il percorso '../' presume che questo file sia in una sottocartella (WEB APP ATLETI/CARICA DATI/).
+      Assicurati che auth-manager.js sia nella cartella 'WEB APP ATLETI/'.
+    -->
+    <script type="module" src="../auth-manager.js"></script>
+
 </head>
 <body class="antialiased">
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50 hidden">
+    
+    <!-- Il loader è visibile di default e viene nascosto dall'evento 'authStateReady' -->
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
+    
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
         <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">🚴‍♂️ Allenamento BikeErg</h1>
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
@@ -104,8 +116,9 @@
             </div>
         </div>
         <div class="text-center mt-8">
-            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
-                ← Torna alla Selezione
+            <!-- Corretto il link per tornare indietro, dalla cartella CARICA DATI alla root -->
+            <a href="../home.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
+                ← Torna alla Home
             </a>
         </div>
     </div>
@@ -117,20 +130,15 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.appspot.com", messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Importa l'istanza 'db' da auth-manager.js (presumendo sia nella cartella genitore)
+        import { db } from '../auth-manager.js';
         
+        // Importa solo le funzioni Firestore necessarie per QUESTA pagina
+        import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+        // Rimuovi: initializeApp, getAuth, onAuthStateChanged, getFirestore, query, where, getDocs
+        // Rimuovi: firebaseConfig, app, auth
+
         const loaderOverlay = document.getElementById('loader-overlay');
         const athleteInfo = document.getElementById('athlete-info');
         const formContent = document.getElementById('form-content');
@@ -183,6 +191,7 @@
 
         async function fetchAthleteRecord(athleteId) {
             try {
+                // 'db' è importato da auth-manager.js
                 const docRef = doc(db, 'atleti', athleteId);
                 const docSnap = await getDoc(docRef);
                 if (docSnap.exists()) {
@@ -194,10 +203,6 @@
             return null;
         }
 
-        /**
-         * Calcola EP specifico per BikeErg.
-         * Utilizza athleteData.bikeerg
-         */
         function calculateBikeEP(workoutData, athleteData) {
             if (!athleteData || !athleteData.bikeerg) return null; // Usa bikeerg
             if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) return null;
@@ -208,10 +213,10 @@
                 return null;
             }
             
-            // NOTA: La formula per Watt è specifica. Assicurati che sia corretta per la bike.
-            // Se la formula è diversa da quella del RowErg, andrebbe cambiata qui.
-            // Per ora, mantengo la stessa formula del RowErg come da file originale.
-            const wattRecordPersonale = 2.8 * Math.pow(2000 / recordBikeSeconds, 3);
+            // Formula Watt specifica per BikeErg (Potrebbe essere diversa dal RowErg)
+            // Assumendo la stessa formula per ora: Watt = 2.8 * (Distanza / Tempo)^3
+            // NOTA: La distanza di riferimento per BikeErg è 4000m, NON 2000m. Correggo.
+            const wattRecordPersonale = 2.8 * Math.pow(4000 / recordBikeSeconds, 3);
             if (wattRecordPersonale <= 0) return null;
 
             let wattAllenamento = 0;
@@ -221,15 +226,17 @@
             const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
 
             if (workoutData.modalita === 'tempo') {
-                // Logica specifica per BIKE (mediaMetri / 2)
-                const mediaMetri = mediaIntervalli / 2; 
+                // Se la modalità è tempo, l'input degli intervalli è la DISTANZA percorsa.
+                const mediaMetri = mediaIntervalli; // Giusto
                 const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60;
                 if (tempoSelezionatoSec > 0) wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
             } else if (workoutData.modalita === 'distanza') {
-                const mediaTempoSec = mediaIntervalli; 
+                // Se la modalità è distanza, l'input degli intervalli è il TEMPO impiegato.
+                const mediaTempoSec = mediaIntervalli; // Giusto
                 const distanzaSelezionata = parseInt(workoutData.distanza, 10); 
                 if (mediaTempoSec > 0) wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
             }
+
 
             if (wattAllenamento > 0) {
                 return (wattAllenamento / wattRecordPersonale) * 100;
@@ -240,9 +247,6 @@
 
         // --- LOGICA DI SETUP PAGINA ---
         function setupPage() {
-            // NON popola più le distanze generiche
-            
-            // Popola dinamicamente il select "Numero di Intervalli"
             const intervalliSelect = document.getElementById('intervalliNumero');
             let intervalliHTML = '';
             for (let i = 1; i <= 20; i++) {
@@ -252,14 +256,9 @@
         }
 
         // --- GESTIONE DINAMICA FORM ---
-
-        /**
-         * Gestisce la visualizzazione dei campi in base alla modalità principale (Distanza/Tempo)
-         */
         function updateFormVisibility() {
             const mode = document.getElementById('workoutMode').value;
             
-            // Nascondi tutti i campi dipendenti
             document.getElementById('tempo-fields').style.display = 'none';
             document.getElementById('tipo-lavoro-fields').style.display = 'none';
             document.getElementById('distanza-fields').style.display = 'none';
@@ -267,26 +266,18 @@
             document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona prima il tipo di lavoro --</option>'; // Reset
 
             if (mode === 'distanza') {
-                // Se 'Distanza', mostra solo il selettore del TIPO LAVORO
                 document.getElementById('tipo-lavoro-fields').style.display = 'block';
             } else if (mode === 'tempo') {
-                // Se 'Tempo', mostra i campi del TEMPO e degli INTERVALLI
                 document.getElementById('tempo-fields').style.display = 'block';
                 document.getElementById('intervalli-common').style.display = 'block';
             }
-            
-            // Rigenera gli input degli intervalli (necessario se si passa da Distanza a Tempo)
             generateIntervalliInputs();
         }
 
-        /**
-         * Popola il menu delle distanze specifiche in base al tipo di lavoro (Polarizzato/Steady)
-         */
         function updateDistanceOptions() {
             const tipoLavoro = document.getElementById('tipoLavoroSelect').value;
             const distanzaSelect = document.getElementById('distanzaSelect');
             
-            // Svuota le opzioni esistenti
             distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
             
             let optionsArray = [];
@@ -296,20 +287,14 @@
                 optionsArray = distanzeSteadyState;
             }
 
-            // Popola con le nuove opzioni
             optionsArray.forEach(opt => {
                 distanzaSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
             });
 
-            // Mostra i campi per selezionare la distanza e gli intervalli
             document.getElementById('distanza-fields').style.display = 'block';
             document.getElementById('intervalli-common').style.display = 'block';
         }
 
-
-        /**
-         * Genera i campi di input per i singoli intervalli
-         */
         function generateIntervalliInputs() {
             const container = document.getElementById('intervalli-inputs-container');
             const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
@@ -336,7 +321,6 @@
             }
         }
         
-        // Funzione helper per formattare l'input del tempo
         window.formatTimeInput = function(event) {
             const input = event.target;
             let value = input.value.replace(/[^\d]/g, ''); 
@@ -385,7 +369,6 @@
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
 
-            // Logica di validazione aggiornata
             if (mode === 'distanza') {
                 workoutData.tipoLavoro = document.getElementById('tipoLavoroSelect').value;
                 workoutData.distanza = document.getElementById('distanzaSelect').value;
@@ -396,7 +379,6 @@
                 if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
             }
 
-            // Raccolta intervalli (logica invariata)
             const intervalliInputs = document.querySelectorAll('.intervallo-input');
             let allIntervalsValid = true;
             
@@ -427,7 +409,6 @@
                  btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             
-            // Calcolo EP specifico per BIKE
             const athleteData = await fetchAthleteRecord(currentAthleteId);
             if (athleteData) {
                 try {
@@ -435,7 +416,7 @@
                     if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
                         workoutData.ep = parseFloat(epValueToSave.toFixed(2));
                     } else {
-                        console.warn("EP non calcolato o non valido. Controlla che 'bikeerg' sia presente.");
+                        console.warn("EP non calcolato o non valido. Controlla che 'bikeerg' (record 4k) sia presente nel profilo atleta.");
                     }
                 } catch(epError) {
                     console.error("Errore durante il calcolo EP:", epError);
@@ -444,12 +425,11 @@
                 console.warn(`Record atleta ${currentAthleteId} non trovato. L'EP non può essere calcolato.`);
             }
 
-            // Salvataggio
             try {
+                // 'db' è importato
                 await addDoc(collection(db, 'allenamenti'), workoutData);
                 showMessageBox("Allenamento salvato con successo!");
                 
-                // Reset form aggiornato
                 document.getElementById('workoutMode').value = "";
                 document.getElementById('tipoLavoroSelect').value = "";
                 document.getElementById('distanzaSelect').value = "";
@@ -467,53 +447,48 @@
             }
         }
 
-        // --- GESTIONE AUTENTICAZIONE E AVVIO (INVARIATO) ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                loaderOverlay.style.display = 'flex';
-                try {
-                    const userEmail = user.email.toLowerCase();
-                    const q = query(collection(db, "atleti"), where("email", "==", userEmail));
-                    const querySnapshot = await getDocs(q);
+        // --- GESTIONE AUTENTICAZIONE E AVVIO (SOSTITUITO) ---
+        // Rimuovi il vecchio onAuthStateChanged
+        
+        // Ascolta l'evento 'authStateReady' inviato da auth-manager.js
+        document.addEventListener('authStateReady', (e) => {
+            const { athlete, error } = e.detail;
 
-                    if (!querySnapshot.empty) {
-                        const athleteDoc = querySnapshot.docs[0];
-                        const athleteData = athleteDoc.data();
-                        currentAthleteId = athleteDoc.id;
-                        currentAthleteCognome = athleteData.cognome;
-                        
-                        athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athleteData.cognome}</strong>`;
-                        formContent.classList.remove('hidden');
-                    } else {
-                        athleteInfo.textContent = "Profilo atleta non trovato. Contatta l'amministratore.";
-                        formContent.classList.add('hidden'); 
-                    }
-                } catch (error) {
-                    console.error("Errore nel recupero dati atleta:", error);
-                    athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
-                    formContent.classList.add('hidden');
-                } finally {
-                    loaderOverlay.style.display = 'none';
-                }
+            if (athlete) {
+                // Utente loggato e dati atleta disponibili
+                currentAthleteId = athlete.id;
+                currentAthleteCognome = athlete.cognome;
+                
+                athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
+                formContent.classList.remove('hidden');
+            
+            } else if (error) {
+                 // Errore
+                console.error("Errore di autenticazione da auth-manager:", error);
+                athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
+                formContent.classList.add('hidden');
+
             } else {
+                // Utente non loggato (auth-manager.js dovrebbe aver già reindirizzato)
                 athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire i dati.';
                 formContent.classList.add('hidden');
             }
+            
+            // Nascondi il loader in ogni caso
+            loaderOverlay.style.display = 'none';
         });
         
-        // --- EVENT LISTENERS (AGGIORNATI) ---
+        
+        // --- EVENT LISTENERS (Invariati) ---
         document.addEventListener('DOMContentLoaded', () => {
             setupPage();
-            // Listener per la modalità principale (Distanza/Tempo)
             document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
-            // NUOVO Listener per il tipo di lavoro (Polarizzato/Steady)
             document.getElementById('tipoLavoroSelect').addEventListener('change', updateDistanceOptions);
-            // Listener per il numero di intervalli
             document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
-            // Listener per il salvataggio
             document.getElementById('saveWorkoutBtn').addEventListener('click', saveWorkout);
             document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
         });
     </script>
 </body>
 </html>
+
