@@ -48,6 +48,8 @@
     <meta name="apple-mobile-web-app-title" content="FIC Canottaggio">
     <link rel="apple-touch-icon" href="logo-fic (1) copia.png">
     <link rel="manifest" href="manifest.json">
+    <!-- Carica l'auth-manager -->
+    <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased">
 
@@ -55,13 +57,20 @@
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
+     <!-- Loader Overlay -->
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+        <div class="h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600 border-t-sky-500"></div>
+        <p class="mt-4 text-slate-300">Caricamento...</p>
+    </div>
+
+
     <!-- Vista Principale App (visibile solo se loggati) -->
     <div id="app-view" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
         
         <!-- HEADER con Benvenuto e Logout -->
         <div class="flex justify-between items-start mb-10">
             <div>
-                <p id="welcome-message" class="text-xl md:text-2xl font-semibold text-sky-400"></p>
+                <p id="welcome-message" class="text-xl md:text-2xl font-semibold text-sky-400">Caricamento...</p>
                 <div id="group-banner-container" class="mt-2"></div>
             </div>
             <button id="logout-btn" class="inline-flex items-center px-4 py-2 bg-red-600 hover:bg-red-700 text-white font-semibold rounded-lg shadow transition-colors flex-shrink-0">
@@ -117,30 +126,23 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
-            authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
-            projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.appspot.com",
-            messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Rimuovi tutte le importazioni e inizializzazioni Firebase locali
+        // import { initializeApp } from "...";
+        // import { getAuth, onAuthStateChanged, signOut } from "...";
+        // import { getFirestore, collection, query, where, getDocs } from "...";
+        // const firebaseConfig = {...};
+        // const app = initializeApp(firebaseConfig);
+        // const auth = getAuth(app);
+        // const db = getFirestore(app);
 
         const appView = document.getElementById('app-view');
         const logoutBtn = document.getElementById('logout-btn');
         const welcomeMessage = document.getElementById('welcome-message');
         const groupBannerContainer = document.getElementById('group-banner-container');
+        const loaderOverlay = document.getElementById('loader-overlay'); // Aggiunto riferimento al loader
 
-        // Controlla lo stato di autenticazione. Se l'utente non è loggato, lo reindirizza al login.
+        // Rimuovi il vecchio onAuthStateChanged
+        /*
         onAuthStateChanged(auth, (user) => {
             if (user) {
                 appView.classList.remove('hidden');
@@ -149,6 +151,32 @@
                 window.location.href = 'index.html';
             }
         });
+        */
+
+        // Ascolta l'evento 'authStateReady' inviato da auth-manager.js
+        document.addEventListener('authStateReady', (e) => {
+            const { athlete, error } = e.detail;
+
+            if (athlete) {
+                // Utente loggato e dati atleta disponibili
+                appView.classList.remove('hidden');
+                displayAthleteInfo(athlete); // Usa i dati ricevuti
+            } else if (error) {
+                // Errore durante l'autenticazione/recupero dati
+                console.error("Errore di autenticazione da auth-manager:", error);
+                welcomeMessage.textContent = "Errore nel caricamento dei dati utente.";
+                appView.classList.remove('hidden'); // Mostra la vista app ma con messaggio di errore
+            } else {
+                // Utente non loggato (auth-manager.js dovrebbe aver già reindirizzato)
+                // Se siamo ancora qui, forziamo il redirect per sicurezza
+                console.log("Utente non loggato rilevato in home.html, reindirizzamento...");
+                window.location.href = 'index.html';
+            }
+            
+            // Nascondi il loader in ogni caso una volta gestito lo stato
+            loaderOverlay.style.display = 'none';
+        });
+
 
         function getGroupBadgeHTML(gruppo) {
             if (!gruppo) return '';
@@ -167,45 +195,41 @@
             return `<span class="inline-block px-3 py-1 rounded-full font-semibold text-sm ${bgColor} ${textColor}">${gruppo}</span>`;
         }
 
-        async function checkAthleteStatus(email) {
-            const userEmail = email.toLowerCase();
-            try {
-                const q = query(collection(db, "atleti"), where("email", "==", userEmail));
-                const querySnapshot = await getDocs(q);
-                
-                if (!querySnapshot.empty) {
-                    const atletaData = querySnapshot.docs[0].data();
-                    const cognome = atletaData.cognome; 
-                    const gruppo = atletaData.gruppo;
+        // Funzione per visualizzare le info atleta ricevute dall'evento
+        function displayAthleteInfo(athlete) {
+            if (athlete && athlete.cognome) {
+                welcomeMessage.textContent = `Benvenuto ${athlete.cognome}!`;
+                // NOTA: Non serve più sessionStorage qui, auth-manager gestisce la cache in localStorage
+                // sessionStorage.setItem('atletaCognome', athlete.cognome);
 
-                    sessionStorage.setItem('atletaCognome', cognome);
-                    welcomeMessage.textContent = `Benvenuto ${cognome}!`;
-
-                    if (gruppo) {
-                        groupBannerContainer.innerHTML = getGroupBadgeHTML(gruppo);
-                    } else {
-                        groupBannerContainer.innerHTML = '';
-                    }
-
+                if (athlete.gruppo) {
+                    groupBannerContainer.innerHTML = getGroupBadgeHTML(athlete.gruppo);
                 } else {
-                    welcomeMessage.textContent = 'Benvenuto!';
                     groupBannerContainer.innerHTML = '';
-                    sessionStorage.removeItem('atletaCognome');
                 }
-            } catch (error) {
-                console.error("Errore durante la verifica dello stato di atleta in Firestore:", error);
+            } else {
+                // Caso in cui l'utente è loggato ma i dati non sono stati recuperati correttamente
                 welcomeMessage.textContent = 'Benvenuto!';
                 groupBannerContainer.innerHTML = '';
-                sessionStorage.removeItem('atletaCognome');
+                // sessionStorage.removeItem('atletaCognome');
+                 console.warn("Dati atleta (cognome/gruppo) non disponibili dall'evento authStateReady.");
             }
         }
 
+        // Rimuovi la funzione checkAthleteStatus - ora gestita da displayAthleteInfo
+        /*
+        async function checkAthleteStatus(email) { ... }
+        */
+
+        // Aggiorna il listener del logout per usare la funzione globale
         logoutBtn.addEventListener('click', () => {
-            signOut(auth).catch((error) => {
-                console.error('Logout Error', error);
-            });
+             // Chiama la funzione di logout globale definita in auth-manager.js
+            if (window.appLogout) {
+                window.appLogout();
+            } else {
+                console.error("Funzione appLogout() non trovata. Assicurati che auth-manager.js sia caricato.");
+            }
         });
     </script>
 </body>
 </html>
-
