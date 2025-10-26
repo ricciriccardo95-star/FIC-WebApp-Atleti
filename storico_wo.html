@@ -69,8 +69,15 @@
             /* Per select: Rimuove l'aspetto di default e lo gestisce Tailwind (non necessario qui, ma utile) */
         }
     </style>
+     <!-- Carica l'auth-manager -->
+     <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased p-4 md:p-8">
+     <!-- Loader Overlay -->
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+        <div class="h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600 border-t-sky-500"></div>
+        <p class="mt-4 text-slate-300">Caricamento...</p>
+    </div>
 
     <div class="max-w-4xl mx-auto">
         <header class="mb-8 flex justify-between items-center border-b border-slate-700 pb-4">
@@ -113,35 +120,23 @@
         </div>
 
         <div id="workout-list" class="space-y-6">
-            <p id="loading-message" class="text-slate-400 text-center">Caricamento storico allenamenti...</p>
+            <p id="loading-message" class="text-slate-400 text-center hidden">Caricamento storico allenamenti...</p>
             <p id="error-message" class="text-red-400 text-center hidden">Si è verificato un errore nel caricamento dei dati.</p>
         </div>
 
-        <p id="no-data-message" class="text-slate-400 text-center hidden">Nessun allenamento trovato nell'ultima settimana.</p>
+        <p id="no-data-message" class="text-slate-400 text-center hidden">Nessun allenamento trovato per i filtri selezionati.</p>
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        // Importa db da auth-manager
+        import { db } from './auth-manager.js';
+        // Importa solo le funzioni necessarie da firestore
+        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Configurazione Firebase (la stessa usata in index.html)
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
-            authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
-            projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.appspot.com",
-            messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-
-        // Inizializzazione Firebase
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Rimuovi inizializzazione locale Firebase (app, auth, db)
 
         // Riferimenti al DOM
+        const loaderOverlay = document.getElementById('loader-overlay');
         const infoAtleta = document.getElementById('info-atleta');
         const workoutList = document.getElementById('workout-list');
         const loadingMessage = document.getElementById('loading-message');
@@ -153,18 +148,15 @@
         const tipoFilterSelect = document.getElementById('tipoFilter');
         const applyFiltersBtn = document.getElementById('applyFiltersBtn');
 
+        let currentAthlete = null; // Salva i dati dell'atleta loggato
 
         // --- Funzioni di Utility ---
         
-        /**
-         * Imposta i valori di default per i selettori di data (ultimi 7 giorni)
-         */
         function setDefaultDates() {
             const today = new Date();
             const sevenDaysAgo = new Date();
             sevenDaysAgo.setDate(today.getDate() - 7);
             
-            // Formatta YYYY-MM-DD
             const formatDate = (date) => {
                 const y = date.getFullYear();
                 const m = String(date.getMonth() + 1).padStart(2, '0');
@@ -176,16 +168,6 @@
             endDateInput.value = formatDate(today);
         }
 
-        /**
-         * Calcola la data di 7 giorni fa (in formato timestamp per confronto locale).
-         * Utilizzato solo all'inizio se i campi data non sono usati.
-         */
-        function getSevenDaysAgoTimestamp() {
-            const sevenDaysAgo = new Date();
-            sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-            return sevenDaysAgo.getTime(); 
-        }
-
         function getCardColorClass(tipo) {
             switch (tipo ? tipo.toUpperCase() : '') {
                 case 'ERGO': return 'ergo-border';
@@ -195,45 +177,51 @@
             }
         }
         
-        // --- FUNZIONE CORRETTA ---
         function formatWorkoutData(data) {
-            // Aggiungo 'ep' e 'tempo' ai valori di default
-            const defaultValues = { tipo: 'N/A', modalita: 'N/A', distanza: null, tempo: null, ep: null, data: 'N/A', timestamp: null, intervalli: [] };
-            const { tipo, modalita, distanza, tempo, ep, data: formattedDateString, timestamp, intervalli } = { ...defaultValues, ...data };
+            const defaultValues = { tipo: 'N/A', modalita: 'N/A', distanza: null, tempo: null, ep: null, data: 'N/A', timestamp: null, intervalli: [], imbarcazione: null, equipaggio: [] };
+            const { tipo, modalita, distanza, tempo, ep, data: formattedDateString, timestamp, intervalli, imbarcazione, equipaggio } = { ...defaultValues, ...data };
 
             let intervalsHtml = '';
             if (intervalli && intervalli.length > 0) {
-                // Miglioramento della formattazione degli intervalli per mobile
                 intervalsHtml = `<div class="mt-3 pt-3 border-t border-slate-700/50">
-                                    <p class="font-medium text-slate-300 mb-1">Intervalli:</p>
-                                    <ul class="grid grid-cols-2 gap-x-4 text-sm text-slate-400">`;
+                                    <p class="font-medium text-slate-300 mb-1">Intervalli (${intervalli.length}):</p>
+                                    <ul class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-x-4 text-sm text-slate-400">`; // Grid per intervalli
                 intervalli.forEach((interval, index) => {
-                    intervalsHtml += `<li><span class="font-mono text-white">${index + 1}:</span> ${interval}</li>`;
+                    intervalsHtml += `<li class="truncate"><span class="font-mono text-white">${index + 1}:</span> ${interval}</li>`; // truncate per spazi stretti
                 });
                 intervalsHtml += `</ul></div>`;
             }
 
-            const borderClass = getCardColorClass(tipo);
-            
-            // Logica per visualizzare EP (Efficienza Personale)
-            let epHtml = '';
-            if (ep !== null && ep !== undefined) {
-                let epValue = String(ep);
-                
-                // Se è un numero, lo formatto con 2 decimali
-                if (!isNaN(parseFloat(ep))) {
-                    epValue = parseFloat(ep).toFixed(2);
-                }
-                
-                epHtml = `
-                    <div class="flex justify-between text-slate-300">
-                        <p>Efficienza (Ep):</p>
-                        <span class="font-semibold text-white">${epValue}</span>
+            // Aggiungi info Barca se presente
+            let boatInfoHtml = '';
+            if (tipo && tipo.toUpperCase() === 'BOAT' && imbarcazione) {
+                 const crewNames = (equipaggio || [])
+                    .map(m => m.cognomeAtleta || 'N/D')
+                    .join(' / ');
+                boatInfoHtml = `
+                    <div class="flex justify-between text-slate-300 mt-1">
+                        <p>Barca:</p>
+                        <span class="font-semibold text-white">${imbarcazione} (${crewNames})</span>
                     </div>
                 `;
             }
 
-            // --- LOGICA CORRETTA PER DISTANZA/TEMPO ---
+            const borderClass = getCardColorClass(tipo);
+            
+            let epHtml = '';
+            if (ep !== null && ep !== undefined) {
+                let epValue = String(ep);
+                if (!isNaN(parseFloat(ep))) {
+                    epValue = parseFloat(ep).toFixed(2);
+                }
+                epHtml = `
+                    <div class="flex justify-between text-slate-300">
+                        <p>Efficienza (Ep):</p>
+                        <span class="font-semibold text-white">${epValue}%</span> 
+                    </div>
+                `;
+            }
+
             let mainMetricHtml = '';
             if (modalita === 'distanza' && distanza) {
                 mainMetricHtml = `
@@ -248,7 +236,6 @@
                         <span class="font-semibold text-white">${tempo} min</span>
                     </div>`;
             }
-            // --- FINE LOGICA CORRETTA ---
             
             return `
                 <div class="wo-card ${borderClass} bg-slate-800 p-5 rounded-xl shadow-xl">
@@ -256,14 +243,13 @@
                         <span class="font-extrabold text-xl text-white mb-1 sm:mb-0">${tipo} (${modalita})</span>
                         <span class="text-sm text-slate-400 font-medium">${formattedDateString}</span>
                     </div>
+                    ${boatInfoHtml} 
                     ${mainMetricHtml}
                     ${epHtml}
                     ${intervalsHtml}
                 </div>
             `;
         }
-        // --- FINE FUNZIONE CORRETTA ---
-
 
         // --- Funzione Principale di Caricamento ---
         
@@ -274,44 +260,33 @@
             workoutList.innerHTML = ''; 
 
             if (!cognomeAtleta) {
-                errorMessage.textContent = "Cognome dell'atleta non trovato. Riprova l'accesso.";
+                errorMessage.textContent = "Cognome dell'atleta non disponibile.";
                 errorMessage.classList.remove('hidden');
                 loadingMessage.classList.add('hidden');
                 return;
             }
 
-            // Imposta i limiti temporali per il filtro JS (inclusivo)
             const startTime = startFilterDate ? new Date(startFilterDate).getTime() : 0;
-            // La data di fine deve includere l'intero giorno, quindi aggiungiamo un giorno intero (86400000 ms)
             const endTime = endFilterDate ? new Date(endFilterDate).getTime() + 86400000 : Infinity; 
             
             try {
-                // PRIMO PASSAGGIO: Recupera tutti gli allenamenti dell'atleta (solo filtro per cognome)
+                // Usa 'db' importato
                 const q = query(
                     collection(db, "allenamenti"),
-                    where("cognomeAtleta", "==", cognomeAtleta)
+                    where("cognomeAtleta", "==", cognomeAtleta.toUpperCase()) // Assicurati che il cognome sia maiuscolo
                 );
                 
                 const querySnapshot = await getDocs(q);
-                
                 let filteredWorkouts = [];
 
                 if (!querySnapshot.empty) {
                     querySnapshot.forEach((doc) => {
                         const data = doc.data();
                         
-                        // SECONDO PASSAGGIO: Filtra i risultati localmente in JavaScript
-                        
-                        // 1. Filtro Temporale (data DB deve essere YYYY-MM-DD)
                         const workoutDate = new Date(data.data); 
                         const workoutTime = workoutDate.getTime();
-
                         const isWithinDateRange = !isNaN(workoutTime) && workoutTime >= startTime && workoutTime < endTime;
-                        
-                        // 2. Filtro per Tipo (più robusto)
-                        const isCorrectType = tipoFilter === 'TUTTI' || 
-                            (data.tipo && data.tipo.toUpperCase() === tipoFilter.toUpperCase()) ||
-                            (data.modalita && data.modalita.toUpperCase() === tipoFilter.toUpperCase()); // Controllo anche la modalita, se necessario
+                        const isCorrectType = tipoFilter === 'TUTTI' || (data.tipo && data.tipo.toUpperCase() === tipoFilter.toUpperCase());
                         
                         if (isWithinDateRange && isCorrectType) {
                             filteredWorkouts.push(data);
@@ -323,10 +298,7 @@
                     noDataMessage.classList.remove('hidden');
                 } else {
                     let resultsHtml = '';
-                    
-                    // Ordina i workout dal più recente al più vecchio
                     filteredWorkouts.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-
                     filteredWorkouts.forEach((data) => {
                         resultsHtml += formatWorkoutData(data);
                     });
@@ -345,48 +317,56 @@
         // --- Gestione Stato Autenticazione e Inizializzazione ---
         
         applyFiltersBtn.addEventListener('click', () => {
-            const cognome = sessionStorage.getItem('atletaCognome');
-            if (cognome) {
-                // Esegue il fetch ogni volta che si clicca "Applica Filtri"
+            if (currentAthlete && currentAthlete.cognome) {
                 fetchWorkouts(
-                    cognome.toUpperCase(),
+                    currentAthlete.cognome, // Usa il cognome dai dati dell'atleta
                     startDateInput.value,
                     endDateInput.value,
                     tipoFilterSelect.value
                 );
+            } else {
+                 // Mostra messaggio se i dati atleta non sono ancora pronti
+                 errorMessage.textContent = "Dati atleta non ancora caricati. Attendi o ricarica la pagina.";
+                 errorMessage.classList.remove('hidden');
             }
         });
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                const cognome = sessionStorage.getItem('atletaCognome');
-                
-                if (cognome) {
-                    // Imposta le date di default all'avvio
-                    setDefaultDates();
-                    
-                    infoAtleta.textContent = `Storico Workout per ${cognome}`;
-                    
-                    // Imposta sempre il valore di default del filtro su 'TUTTI'
-                    tipoFilterSelect.value = 'TUTTI'; 
-                    
-                    // Carica i dati con i filtri di default (ultima settimana e TUTTI i tipi)
-                    fetchWorkouts(
-                        cognome.toUpperCase(),
-                        startDateInput.value,
-                        endDateInput.value,
-                        tipoFilterSelect.value 
-                    );
-                } else {
-                    infoAtleta.textContent = "Informazioni atleta mancanti. Reindirizzamento alla pagina di login...";
-                    setTimeout(() => {
-                         window.location.href = './index.html'; 
-                    }, 1500);
-                    loadingMessage.classList.add('hidden');
-                }
-            } else {
-                window.location.href = './index.html'; 
-            }
+        // Ascolta l'evento 'authStateReady'
+        document.addEventListener('authStateReady', (e) => {
+             const { athlete, error } = e.detail;
+             loaderOverlay.style.display = 'none'; // Nascondi loader subito
+
+             if (athlete) {
+                 currentAthlete = athlete; // Salva i dati dell'atleta
+                 infoAtleta.textContent = `Storico Workout per ${athlete.cognome}`;
+                 setDefaultDates();
+                 tipoFilterSelect.value = 'TUTTI'; 
+                 // Carica i dati iniziali
+                 fetchWorkouts(
+                     athlete.cognome,
+                     startDateInput.value,
+                     endDateInput.value,
+                     tipoFilterSelect.value 
+                 );
+             } else if (error) {
+                 console.error("Errore di autenticazione da auth-manager:", error);
+                 infoAtleta.textContent = "Errore nel caricamento dei dati utente.";
+                 errorMessage.textContent = "Impossibile verificare l'utente. Riprova il login.";
+                 errorMessage.classList.remove('hidden');
+                 // Disabilita filtri se c'è errore
+                 startDateInput.disabled = true;
+                 endDateInput.disabled = true;
+                 tipoFilterSelect.disabled = true;
+                 applyFiltersBtn.disabled = true;
+             } else {
+                  // Utente non loggato, auth-manager dovrebbe aver già reindirizzato
+                 infoAtleta.textContent = "Effettua il login per vedere lo storico.";
+                  // Disabilita filtri
+                 startDateInput.disabled = true;
+                 endDateInput.disabled = true;
+                 tipoFilterSelect.disabled = true;
+                 applyFiltersBtn.disabled = true;
+             }
         });
 
     </script>

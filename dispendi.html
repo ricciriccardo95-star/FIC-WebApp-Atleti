@@ -100,6 +100,8 @@
             animation: spin 1s linear infinite;
         }
     </style>
+     <!-- Carica l'auth-manager -->
+     <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased">
 
@@ -239,24 +241,12 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        // Importa db da auth-manager
+        import { db } from './auth-manager.js';
+        // Importa solo le funzioni necessarie da firestore
+        import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // --- CONFIGURAZIONE FIREBASE ---
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
-            authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com",
-            projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.appspot.com",
-            messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Rimuovi inizializzazione locale Firebase (app, auth, db)
 
         // --- ELEMENTI DOM ---
         const loaderOverlay = document.getElementById('loader-overlay');
@@ -317,25 +307,18 @@
         }
 
         // --- FORMULE ---
-        // Formula Watt (utilizzata per entrambi, cambia solo la distanza)
         function calculateWatts(totalSeconds, distance) {
             if (totalSeconds <= 0 || distance <= 0) return 0;
-            // Watt = 2.8 * (Distanza / Tempo)^3
             return 2.8 * Math.pow(distance / totalSeconds, 3);
         }
 
-        // Formula Tempo da Watt (utilizzata per entrambi, cambia solo la distanza)
         function calculateTimeFromWatts(watts, distance) {
             if (watts <= 0 || distance <= 0) return 0;
-             // Tempo = Distanza / (Watt / 2.8)^(1/3)
             return distance / Math.pow(watts / 2.8, 1/3);
         }
 
-        // Calcola media per segmento (assume 4 segmenti)
         function calculateAverageSegmentTime(totalSeconds) {
              if (totalSeconds <= 0) return 0;
-             // Divide il tempo totale per 4 per ottenere la media su 1/4 della distanza
-             // (es. 500m per 2000m, 1000m per 4000m)
              return totalSeconds / 4;
         }
 
@@ -347,80 +330,105 @@
             return `${minutes}:${formattedSeconds}`;
         }
 
-        // --- LOGICA PRINCIPALE ---
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                try {
-                    const userEmail = user.email.toLowerCase();
-                    const q = query(collection(db, "atleti"), where("email", "==", userEmail));
-                    const querySnapshot = await getDocs(q);
+        // --- FUNZIONE PER CARICARE I DATI DELL'ATLETA ---
+        async function loadAthleteData(athleteId, athleteEmail) {
+            try {
+                // Usa 'db' importato
+                const docRef = doc(db, "atleti", athleteId);
+                const docSnap = await getDoc(docRef);
 
-                    if (!querySnapshot.empty) {
-                        const athleteDoc = querySnapshot.docs[0];
-                        const athleteData = athleteDoc.data();
+                if (docSnap.exists()) {
+                    const athleteData = docSnap.data();
 
-                        // Visualizza dati atleta
-                        athleteCognomeEl.textContent = athleteData.cognome || 'N/D';
-                        recordRowergEl.textContent = athleteData.rowerg || 'N/D';
-                        recordBikeergEl.textContent = athleteData.bikeerg || 'N/D';
+                    // Visualizza dati atleta
+                    athleteCognomeEl.textContent = athleteData.cognome || 'N/D';
+                    recordRowergEl.textContent = athleteData.rowerg || 'N/D';
+                    recordBikeergEl.textContent = athleteData.bikeerg || 'N/D';
 
-                        // Processa Record RowErg (2000m)
-                        const recordRowergSeconds = convertTimeToSeconds(athleteData.rowerg);
-                        if (recordRowergSeconds > 0) {
-                            baseWattsRowerg = calculateWatts(recordRowergSeconds, 2000); // Distanza 2000
-                            const avg500mSeconds = calculateAverageSegmentTime(recordRowergSeconds);
+                    // Processa Record RowErg (2000m)
+                    const recordRowergSeconds = convertTimeToSeconds(athleteData.rowerg);
+                    if (recordRowergSeconds > 0) {
+                        baseWattsRowerg = calculateWatts(recordRowergSeconds, 2000); // Distanza 2000
+                        const avg500mSeconds = calculateAverageSegmentTime(recordRowergSeconds);
 
-                            recordTimeRowergContainer.textContent = athleteData.rowerg;
-                            recordMediaRowergContainer.textContent = formatSecondsToTime(avg500mSeconds);
-                            recordWattRowergContainer.textContent = baseWattsRowerg.toFixed(2);
+                        recordTimeRowergContainer.textContent = athleteData.rowerg;
+                        recordMediaRowergContainer.textContent = formatSecondsToTime(avg500mSeconds);
+                        recordWattRowergContainer.textContent = baseWattsRowerg.toFixed(2);
 
-                            rowergRecordSummary.classList.remove('hidden');
-                            recordRowergMissingMessage.classList.add('hidden');
-                            percentageSelectRowerg.disabled = false;
-                        } else {
-                            recordRowergMissingMessage.classList.remove('hidden');
-                            rowergRecordSummary.classList.add('hidden');
-                            percentageSelectRowerg.disabled = true;
-                        }
-
-                         // Processa Record BikeErg (4000m)
-                        const recordBikeergSeconds = convertTimeToSeconds(athleteData.bikeerg);
-                        if (recordBikeergSeconds > 0) {
-                            baseWattsBikeerg = calculateWatts(recordBikeergSeconds, 2000); // Distanza 4000
-                            const avg1000mSeconds = calculateAverageSegmentTime(recordBikeergSeconds); // Media su 1000m
-
-                            recordTimeBikeergContainer.textContent = athleteData.bikeerg;
-                            recordMediaBikeergContainer.textContent = formatSecondsToTime(avg1000mSeconds);
-                            recordWattBikeergContainer.textContent = baseWattsBikeerg.toFixed(2);
-
-                            bikeergRecordSummary.classList.remove('hidden');
-                            recordBikeergMissingMessage.classList.add('hidden');
-                            percentageSelectBikeerg.disabled = false;
-                        } else {
-                            recordBikeergMissingMessage.classList.remove('hidden');
-                            bikeergRecordSummary.classList.add('hidden');
-                            percentageSelectBikeerg.disabled = true;
-                        }
-
-
-                        mainContent.classList.remove('hidden');
-                        errorLoadingMessage.classList.add('hidden');
-
+                        rowergRecordSummary.classList.remove('hidden');
+                        recordRowergMissingMessage.classList.add('hidden');
+                        percentageSelectRowerg.disabled = false;
                     } else {
-                        throw new Error("Profilo atleta non trovato.");
+                        recordRowergMissingMessage.classList.remove('hidden');
+                        rowergRecordSummary.classList.add('hidden');
+                        percentageSelectRowerg.disabled = true;
                     }
-                } catch (error) {
-                    console.error("Errore nel caricamento dei dati atleta:", error);
-                    mainContent.classList.add('hidden');
-                    errorLoadingMessage.textContent = `Errore nel caricamento: ${error.message}. Riprova o contatta l'assistenza.`;
-                    errorLoadingMessage.classList.remove('hidden');
-                } finally {
-                    loaderOverlay.classList.add('hidden');
+
+                    // Processa Record BikeErg (4000m)
+                    const recordBikeergSeconds = convertTimeToSeconds(athleteData.bikeerg);
+                    if (recordBikeergSeconds > 0) {
+                        // CORREZIONE: Usa 4000m per calcolare i Watt di riferimento della BikeErg
+                        baseWattsBikeerg = calculateWatts(recordBikeergSeconds, 4000);
+                        const avg1000mSeconds = calculateAverageSegmentTime(recordBikeergSeconds); // Media su 1000m
+
+                        recordTimeBikeergContainer.textContent = athleteData.bikeerg;
+                        recordMediaBikeergContainer.textContent = formatSecondsToTime(avg1000mSeconds);
+                        recordWattBikeergContainer.textContent = baseWattsBikeerg.toFixed(2);
+
+                        bikeergRecordSummary.classList.remove('hidden');
+                        recordBikeergMissingMessage.classList.add('hidden');
+                        percentageSelectBikeerg.disabled = false;
+                    } else {
+                        recordBikeergMissingMessage.classList.remove('hidden');
+                        bikeergRecordSummary.classList.add('hidden');
+                        percentageSelectBikeerg.disabled = true;
+                    }
+
+                    mainContent.classList.remove('hidden');
+                    errorLoadingMessage.classList.add('hidden');
+
+                } else {
+                    throw new Error("Profilo atleta non trovato nel database.");
                 }
-            } else {
-                 window.location.href = 'index.html';
+            } catch (error) {
+                console.error("Errore nel caricamento dei dati atleta:", error);
+                mainContent.classList.add('hidden');
+                errorLoadingMessage.textContent = `Errore nel caricamento: ${error.message}. Riprova o contatta l'assistenza.`;
+                errorLoadingMessage.classList.remove('hidden');
+            } finally {
+                loaderOverlay.classList.add('hidden');
             }
+        }
+
+        // --- GESTIONE AUTH STATE ---
+        // Rimuovi onAuthStateChanged
+        
+        // Ascolta l'evento 'authStateReady'
+        document.addEventListener('authStateReady', (e) => {
+             const { athlete, error } = e.detail;
+
+             if (athlete) {
+                 // Utente loggato e dati disponibili
+                 loadAthleteData(athlete.id, athlete.email);
+             } else if (error) {
+                 // Errore durante l'autenticazione
+                 console.error("Errore di autenticazione da auth-manager:", error);
+                 mainContent.classList.add('hidden');
+                 errorLoadingMessage.textContent = "Impossibile verificare l'utente. Riprova il login.";
+                 errorLoadingMessage.classList.remove('hidden');
+                 loaderOverlay.classList.add('hidden');
+             } else {
+                 // Utente non loggato, auth-manager dovrebbe aver reindirizzato
+                 // Mostriamo comunque un messaggio nel caso non lo faccia
+                 mainContent.classList.add('hidden');
+                 errorLoadingMessage.textContent = "Devi effettuare il login per accedere a questa pagina.";
+                 errorLoadingMessage.classList.remove('hidden');
+                 loaderOverlay.classList.add('hidden');
+                 // Potrebbe essere utile forzare il redirect qui se auth-manager fallisce
+                 // window.location.href = 'index.html';
+             }
         });
+
 
         // --- FUNZIONI DI CALCOLO PERCENTUALE ---
         window.calculatePercentageRowerg = function() {
@@ -450,7 +458,8 @@
 
             const percentage = parseFloat(selectedPercentageValue) / 100;
             const finalWatts = baseWattsBikeerg * percentage;
-            const finalTimeInSeconds = calculateTimeFromWatts(finalWatts, 2000); // Distanza 4000
+            // CORREZIONE: Usa 4000m per calcolare il tempo equivalente della BikeErg
+            const finalTimeInSeconds = calculateTimeFromWatts(finalWatts, 4000);
             const finalAvg1000mSeconds = calculateAverageSegmentTime(finalTimeInSeconds); // Media su 1000m
 
             percentageWattBikeergContainer.textContent = finalWatts.toFixed(2);
@@ -465,4 +474,3 @@
     </script>
 </body>
 </html>
-

@@ -55,6 +55,8 @@
             transition: opacity 0.3s ease;
         }
     </style>
+     <!-- Carica l'auth-manager -->
+     <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased">
 
@@ -100,22 +102,12 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        import { getFirestore, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        // Importa db da auth-manager
+        import { db } from './auth-manager.js';
+        // Importa solo le funzioni necessarie da firestore
+        import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
-            authDomain: "database-atleti-fic.firebaseapp.com",
-            projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.firebasestorage.app",
-            messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        const db = getFirestore(app);
+        // Rimuovi inizializzazione locale Firebase (app, auth, db, firebaseConfig)
         
         const loader = document.getElementById('loader-overlay');
         const mainContent = document.getElementById('main-content');
@@ -126,32 +118,44 @@
         const lightboxImage = document.getElementById('lightbox-image');
         const closeLightboxBtn = document.getElementById('close-lightbox');
 
-        onAuthStateChanged(auth, async (user) => {
-            if (user) {
-                const cognome = sessionStorage.getItem('atletaCognome');
-                if (cognome) {
-                    welcomeMessage.textContent = `Benvenuto, ${cognome}`;
+        // Rimuovi onAuthStateChanged
+        
+        // Ascolta l'evento 'authStateReady'
+        document.addEventListener('authStateReady', async (e) => {
+            const { athlete, error } = e.detail;
+
+            if (athlete) {
+                // Utente loggato e dati atleta disponibili
+                if (athlete.cognome) {
+                    welcomeMessage.textContent = `Benvenuto, ${athlete.cognome}`;
+                    // Salva il cognome in sessionStorage se necessario altrove
+                    sessionStorage.setItem('atletaCognome', athlete.cognome);
                 } else {
                     welcomeMessage.textContent = 'Benvenuto';
+                    sessionStorage.removeItem('atletaCognome'); // Rimuovi se non presente
                 }
-                await loadClientData(user);
+                await loadClientData(athlete); // Passa l'oggetto athlete
+            } else if (error) {
+                 // Errore
+                console.error("Errore di autenticazione da auth-manager:", error);
+                welcomeMessage.textContent = "Errore";
+                plansContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile verificare l'utente. Riprova il login.</p>`;
+                loader.classList.add('hidden');
+                mainContent.classList.remove('hidden'); // Mostra il messaggio di errore
             } else {
+                // Utente non loggato (auth-manager dovrebbe aver reindirizzato)
                 window.location.href = 'index.html';
             }
         });
 
-        async function loadClientData(user) {
-            try {
-                // 1. Trova l'ID dell'atleta loggato
-                const q = query(collection(db, "atleti"), where("email", "==", user.email));
-                const userSnapshot = await getDocs(q);
-                
-                if (userSnapshot.empty) {
-                    throw new Error("Profilo atleta non trovato.");
-                }
-                const athleteId = userSnapshot.docs[0].id;
 
-                // 2. Carica i massimali dell'atleta
+        // Modifica loadClientData per accettare l'oggetto athlete
+        async function loadClientData(athlete) {
+            try {
+                // 1. Usa l'ID dell'atleta direttamente dall'oggetto athlete
+                const athleteId = athlete.id;
+
+                // 2. Carica i massimali dell'atleta (usa 'db' importato)
                 const massimaliMap = new Map();
                 const massimaliQuery = query(collection(db, 'massimali_atleti'), where('atletaId', '==', athleteId));
                 const massimaliSnapshot = await getDocs(massimaliQuery);
@@ -162,7 +166,7 @@
                     }
                 });
 
-                // 3. Carica la libreria di tutti gli esercizi (per le immagini)
+                // 3. Carica la libreria di tutti gli esercizi (usa 'db' importato)
                 const eserciziMap = new Map();
                 const eserciziQuery = query(collection(db, "esercizi_pesistica"));
                 const eserciziSnapshot = await getDocs(eserciziQuery);
@@ -170,13 +174,14 @@
                     eserciziMap.set(doc.id, doc.data());
                 });
 
-                // 4. Carica tutte le schede di allenamento
+                // 4. Carica tutte le schede di allenamento (usa 'db' importato)
                 const schedeQuery = query(collection(db, "schede_pesistica"));
                 const schedeSnapshot = await getDocs(schedeQuery);
 
                 if(schedeSnapshot.empty) {
                     noPlansMessage.classList.remove('hidden');
                 } else {
+                    plansContainer.innerHTML = ''; // Pulisce prima di aggiungere nuove schede
                     const schede = schedeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     schede.sort((a, b) => a.nomeScheda.localeCompare(b.nomeScheda));
                     
@@ -184,11 +189,13 @@
                         const planElement = createPlanElement(scheda, massimaliMap, eserciziMap);
                         plansContainer.appendChild(planElement);
                     });
+                    noPlansMessage.classList.add('hidden'); // Nasconde il messaggio se ci sono schede
                 }
 
             } catch (error) {
                 console.error("Errore nel caricamento dei dati: ", error);
                 plansContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
+                noPlansMessage.classList.add('hidden'); // Nasconde msg "nessuna scheda" se c'è errore
             } finally {
                 loader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
@@ -215,18 +222,28 @@
 
             if (scheda.esercizi && scheda.esercizi.length > 0) {
                 scheda.esercizi.forEach(esercizio => {
+                    // Controllo di base per assicurarsi che esercizio.esercizioId esista
+                    if (!esercizio.esercizioId) {
+                        console.warn("Esercizio senza ID trovato nella scheda:", scheda.nomeScheda, esercizio);
+                        return; // Salta questo esercizio
+                    }
+
                     const fullEsercizio = eserciziMap.get(esercizio.esercizioId);
                     const imageUrl = fullEsercizio?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
                     
                     const massimale = massimaliMap.get(esercizio.esercizioId) || 0;
                     const percentuale = parseFloat(esercizio.percentuale) || 0;
+                    // Calcola peso solo se massimale e percentuale sono validi
                     const pesoCalcolato = massimale > 0 && percentuale > 0 ? (massimale * percentuale / 100).toFixed(1) : '-';
+                    // Fallback per nome esercizio
+                    const nomeEsercizio = esercizio.nome || fullEsercizio?.nome || 'Esercizio Sconosciuto';
+
 
                     exerciseList.innerHTML += `
                         <div class="flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-800 rounded-lg">
-                            <img src="${imageUrl}" alt="${esercizio.nome}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
+                            <img src="${imageUrl}" alt="${nomeEsercizio}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
                             <div class="flex-grow text-center sm:text-left">
-                                <p class="font-bold text-lg text-slate-100">${esercizio.nome}</p>
+                                <p class="font-bold text-lg text-slate-100">${nomeEsercizio}</p>
                                 <p class="text-slate-400 font-mono text-sm">
                                     ${esercizio.serie || '-'} x ${esercizio.ripetizioni || '-'} @ ${esercizio.percentuale || '-'}%
                                 </p>
@@ -264,7 +281,8 @@
             }, 300);
         }
 
-        plansContainer.addEventListener('click', (e) => {
+        // Usa event delegation sul container principale
+        mainContent.addEventListener('click', (e) => {
             if (e.target.classList.contains('enlargeable-image')) {
                 openImageLightbox(e.target.src);
             }
@@ -272,7 +290,8 @@
 
         closeLightboxBtn.addEventListener('click', closeImageLightbox);
         imageLightbox.addEventListener('click', (e) => {
-            if (e.target.id === 'image-lightbox') { // Chiude solo se si clicca sullo sfondo
+            // Chiude solo se si clicca sullo sfondo e non sull'immagine o sul bottone
+            if (e.target === imageLightbox) { 
                 closeImageLightbox();
             }
         });
@@ -280,4 +299,3 @@
     </script>
 </body>
 </html>
-
