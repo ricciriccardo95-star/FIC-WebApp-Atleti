@@ -88,10 +88,19 @@
         </div>
     </div>
 
-    <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword, onAuthStateChanged, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+    <!-- SCRIPT CENTRALIZZATO: gestisce il reindirizzamento SE GIA' LOGGATO -->
+    <!-- Questo script DEVE essere caricato prima di quello inline per ridurre la race condition -->
+    <script type="module" src="auth-manager.js"></script>
 
+    <!-- SCRIPT SPECIFICO DELLA PAGINA: gestisce solo il SUBMIT DEL FORM -->
+    <script type="module">
+        // Importa solo ciò che serve per il login
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+
+        // NOTA: la configurazione è già in auth-manager.js,
+        // ma per le importazioni modulari di Firebase, è più sicuro reinizializzare qui
+        // per ottenere l'istanza 'auth' locale per signIn.
         const firebaseConfig = {
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
             authDomain: "database-atleti-fic.firebaseapp.com",
@@ -99,7 +108,7 @@
             projectId: "database-atleti-fic",
             storageBucket: "database-atleti-fic.appspot.com",
             messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
+            appId: "1:860422140545:web:cd14c047f2650681380"
         };
 
         const app = initializeApp(firebaseConfig);
@@ -107,29 +116,10 @@
 
         const loginForm = document.getElementById('login-form');
         const errorMessage = document.getElementById('error-message');
-
-        // Funzione asincrona per gestire l'autenticazione
-        async function handleAuth() {
-            try {
-                // **LA MODIFICA CHIAVE È QUI**
-                // Impostiamo esplicitamente la persistenza prima di controllare lo stato
-                await setPersistence(auth, browserLocalPersistence);
-
-                onAuthStateChanged(auth, (user) => {
-                    if (user) {
-                        window.location.href = 'home.html';
-                    } else {
-                        startLoginAnimation();
-                    }
-                });
-
-            } catch (error) {
-                console.error("Errore nell'impostare la persistenza:", error);
-                errorMessage.textContent = "Errore di configurazione dell'app. Contatta il supporto.";
-                errorMessage.classList.remove('hidden');
-            }
-        }
         
+        // Tutta la logica 'handleAuth' e 'onAuthStateChanged' è stata rimossa
+        // e ora vive in 'auth-manager.js'.
+
         function startLoginAnimation() {
             const logoContainer = document.getElementById('logo-container');
             const appTitle = document.getElementById('app-title');
@@ -143,6 +133,14 @@
             }, 500);
         }
 
+        // --- CORREZIONE ---
+        // Avviamo l'animazione direttamente.
+        // Se l'utente è loggato, 'auth-manager.js' (caricato sopra)
+        // lo reindirizzerà a 'home.html' prima che questa animazione
+        // diventi rilevante, risolvendo l'errore.
+        startLoginAnimation();
+
+
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = loginForm.email.value;
@@ -150,15 +148,18 @@
             errorMessage.classList.add('hidden');
 
             signInWithEmailAndPassword(auth, email, password)
+                .then((userCredential) => {
+                    // Successo!
+                    // Non serve fare nulla. 'auth-manager.js' rileverà il cambio
+                    // di stato, recupererà i dati e reindirizzerà a home.html.
+                })
                 .catch((error) => {
                     console.error("Login Error:", error.code, error.message);
                     errorMessage.textContent = "Credenziali non valide. Riprova.";
                     errorMessage.classList.remove('hidden');
                 });
         });
-
-        // Avvia la gestione dell'autenticazione
-        handleAuth();
     </script>
 </body>
 </html>
+
