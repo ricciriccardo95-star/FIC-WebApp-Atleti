@@ -56,7 +56,8 @@ window.appLogout = () => {
 const isLoginPage = () => {
     // Check if the path ends with /index.html or is exactly /
     const path = window.location.pathname;
-    return path.endsWith('/index.html') || path === '/' || path.endsWith('/');
+    // Considera anche la root del sito (es. "http://tuosito.com/")
+    return path.endsWith('/index.html') || path.endsWith('/');
 };
 
 
@@ -70,16 +71,18 @@ const authStateManager = async () => {
 
         onAuthStateChanged(auth, async (user) => {
             let athlete = null;
-            let error = null; // Aggiunto per tracciare errori
+            let error = null;
 
-            if (user) {
-                // --- UTENTE LOGGATO ---
+            // --- CORREZIONE 1: Controlla se l'utente esiste E HA UN'EMAIL ---
+            // Questo esclude gli utenti anonimi, che causano il crash
+            if (user && user.email) {
+                // --- UTENTE CON EMAIL LOGGATO ---
                 athlete = window.getCurrentAthlete(); // Prova a leggere dalla cache
 
-                // Se l'utente è loggato ma i suoi dati non sono in cache o non corrispondono
                 if (!athlete || athlete.email !== user.email) {
                     console.log("Dati atleta non in cache o email non corrispondente. Recupero da Firestore...");
                     try {
+                        // Questa riga ora è sicura
                         const q = query(collection(db, "atleti"), where("email", "==", user.email.toLowerCase()));
                         const querySnapshot = await getDocs(q);
 
@@ -95,17 +98,16 @@ const authStateManager = async () => {
                             localStorage.setItem(CACHE_KEY, JSON.stringify(athlete));
                             console.log("Dati atleta recuperati e salvati in cache:", athlete);
                         } else {
-                            error = new Error("Utente autenticato ma non trovato nel database 'atleti'.");
-                            console.error(error.message);
-                            localStorage.removeItem(CACHE_KEY); // Pulisce cache in caso di errore
+                            console.error("Utente autenticato ma non trovato nel database 'atleti'. Eseguo logout.");
                             await window.appLogout(); // Esegui il logout forzato
                             return; // Esce dalla funzione onAuthStateChanged
                         }
                     } catch (dbError) {
-                        console.error("Errore durante il recupero dati da Firestore:", dbError);
+                        console.error("Errore durante il recupero dati da Firestore (forse rete assente):", dbError);
                         localStorage.removeItem(CACHE_KEY);
-                        athlete = null;
-                        error = dbError; // Salva l'errore del database
+                        // Esegui logout se il database fallisce (errore intermittente)
+                        await window.appLogout();
+                        return;
                     }
                 }
 
@@ -116,29 +118,27 @@ const authStateManager = async () => {
                     return; // Esce per evitare l'invio dell'evento sulla pagina di login
                 }
                 
-                // --- FIX: INVIA L'EVENTO QUI (per utente loggato su pagina interna) ---
-                console.log('Dispatching authStateReady (LOGGED IN). Athlete:', athlete, 'Error:', error);
+                // --- CORREZIONE 2: Invia l'evento QUI (risolve il loop) ---
+                console.log('Dispatching authStateReady (LOGGED IN). Athlete:', athlete);
                 document.dispatchEvent(new CustomEvent('authStateReady', {
                     detail: {
                         athlete: athlete,
-                        error: error
+                        error: null // Nessun errore
                     }
                 }));
 
             } else {
-                // --- UTENTE NON LOGGATO ---
+                // --- UTENTE NON LOGGATO O ANONIMO ---
                 localStorage.removeItem(CACHE_KEY); // Pulisci la cache
 
-                // Reindirizzamento
+                // Reindirizzamento se non siamo già su index.html
                 if (!isLoginPage()) {
-                    // Redirect relative to the current location if not on login page
-                    // Assumes index.html is in the same directory or root
                     window.location.href = 'index.html';
-                    return; // Esce per evitare l'invio dell'evento se stiamo reindirizzando
+                    return;
                 }
-
-                // --- FIX: INVIA L'EVENTO QUI (per utente non loggato su pagina di login) ---
-                console.log('Dispatching authStateReady (LOGGED OUT).');
+                
+                // --- CORREZIONE 2: Invia l'evento QUI (risolve il loop) ---
+                console.log('Dispatching authStateReady (LOGGED OUT / ANONYMOUS).');
                 document.dispatchEvent(new CustomEvent('authStateReady', {
                     detail: {
                         athlete: null,
@@ -146,9 +146,6 @@ const authStateManager = async () => {
                     }
                 }));
             }
-
-            // --- FIX: Rimosso l'invio dell'evento da qui ---
-            // (Era qui che causava il bug)
         });
 
     } catch (error) {
