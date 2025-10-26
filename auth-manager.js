@@ -18,10 +18,10 @@ const firebaseConfig = {
     appId: "1:860422140545:web:cd14c047f2650681380"
 };
 
-// Inizializza Firebase
-const app = initializeApp(firebaseConfig);
-const auth = getAuth(app);
-const db = getFirestore(app);
+// Inizializza Firebase ED ESPORTA le istanze per l'uso in altri moduli
+export const app = initializeApp(firebaseConfig);
+export const auth = getAuth(app);
+export const db = getFirestore(app); // <<< FIX: Added export
 
 const CACHE_KEY = 'currentAthlete';
 
@@ -55,8 +55,9 @@ window.appLogout = () => {
  * Funzione helper per determinare se ci si trova su una pagina di login.
  */
 const isLoginPage = () => {
-    const loginPages = ['/index.html', '/']; // Aggiungi '/' se index.html è la pagina principale
-    return loginPages.some(page => window.location.pathname.endsWith(page));
+    // Check if the path ends with /index.html or is exactly /
+    const path = window.location.pathname;
+    return path.endsWith('/index.html') || path === '/' || path.endsWith('/');
 };
 
 
@@ -110,6 +111,7 @@ const authStateManager = async () => {
 
                 // Reindirizzamento DOPO aver gestito i dati
                 if (isLoginPage()) {
+                    // Redirect relative to the current location if login page detected
                     window.location.href = 'home.html';
                     return; // Esce per evitare l'invio dell'evento sulla pagina di login
                 }
@@ -120,6 +122,8 @@ const authStateManager = async () => {
 
                 // Reindirizzamento
                 if (!isLoginPage()) {
+                    // Redirect relative to the current location if not on login page
+                    // Assumes index.html is in the same directory or root
                     window.location.href = 'index.html';
                     return; // Esce per evitare l'invio dell'evento se stiamo reindirizzando
                 }
@@ -146,4 +150,3 @@ const authStateManager = async () => {
 
 // Avvia il gestore di autenticazione
 authStateManager();
-
