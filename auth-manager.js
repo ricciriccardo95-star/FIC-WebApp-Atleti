@@ -1,4 +1,3 @@
-
 // File: auth-manager.js
 // Questo file gestirà tutta la logica di autenticazione e la cache dei dati utente.
 
@@ -21,7 +20,7 @@ const firebaseConfig = {
 // Inizializza Firebase ED ESPORTA le istanze per l'uso in altri moduli
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
-export const db = getFirestore(app); // <<< FIX: Added export
+export const db = getFirestore(app);
 
 const CACHE_KEY = 'currentAthlete';
 
@@ -70,7 +69,8 @@ const authStateManager = async () => {
         await setPersistence(auth, browserLocalPersistence);
 
         onAuthStateChanged(auth, async (user) => {
-            let athlete = null; // Inizializza athlete a null qui
+            let athlete = null;
+            let error = null; // Aggiunto per tracciare errori
 
             if (user) {
                 // --- UTENTE LOGGATO ---
@@ -95,7 +95,8 @@ const authStateManager = async () => {
                             localStorage.setItem(CACHE_KEY, JSON.stringify(athlete));
                             console.log("Dati atleta recuperati e salvati in cache:", athlete);
                         } else {
-                            console.error("Utente autenticato ma non trovato nel database 'atleti'. Eseguo logout.");
+                            error = new Error("Utente autenticato ma non trovato nel database 'atleti'.");
+                            console.error(error.message);
                             localStorage.removeItem(CACHE_KEY); // Pulisce cache in caso di errore
                             await window.appLogout(); // Esegui il logout forzato
                             return; // Esce dalla funzione onAuthStateChanged
@@ -103,9 +104,8 @@ const authStateManager = async () => {
                     } catch (dbError) {
                         console.error("Errore durante il recupero dati da Firestore:", dbError);
                         localStorage.removeItem(CACHE_KEY);
-                        // Non fare logout automatico per errore DB, potrebbe essere temporaneo
-                        // Ma segnala che l'atleta non è stato caricato
                         athlete = null;
+                        error = dbError; // Salva l'errore del database
                     }
                 }
 
@@ -115,6 +115,15 @@ const authStateManager = async () => {
                     window.location.href = 'home.html';
                     return; // Esce per evitare l'invio dell'evento sulla pagina di login
                 }
+                
+                // --- FIX: INVIA L'EVENTO QUI (per utente loggato su pagina interna) ---
+                console.log('Dispatching authStateReady (LOGGED IN). Athlete:', athlete, 'Error:', error);
+                document.dispatchEvent(new CustomEvent('authStateReady', {
+                    detail: {
+                        athlete: athlete,
+                        error: error
+                    }
+                }));
 
             } else {
                 // --- UTENTE NON LOGGATO ---
@@ -127,18 +136,19 @@ const authStateManager = async () => {
                     window.location.href = 'index.html';
                     return; // Esce per evitare l'invio dell'evento se stiamo reindirizzando
                 }
+
+                // --- FIX: INVIA L'EVENTO QUI (per utente non loggato su pagina di login) ---
+                console.log('Dispatching authStateReady (LOGGED OUT).');
+                document.dispatchEvent(new CustomEvent('authStateReady', {
+                    detail: {
+                        athlete: null,
+                        error: null
+                    }
+                }));
             }
 
-            // --- NUOVO: Invia l'evento personalizzato ---
-            // Invia l'evento DOPO che l'utente è stato gestito (loggato o meno)
-            // e dopo eventuali reindirizzamenti.
-            console.log('Dispatching authStateReady event. Athlete:', athlete);
-            document.dispatchEvent(new CustomEvent('authStateReady', {
-                detail: {
-                    // Passa l'atleta (o null se non loggato/errore)
-                    athlete: athlete
-                }
-            }));
+            // --- FIX: Rimosso l'invio dell'evento da qui ---
+            // (Era qui che causava il bug)
         });
 
     } catch (error) {
