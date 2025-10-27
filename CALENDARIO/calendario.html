@@ -18,6 +18,9 @@
         body.theme-olimpica { background-color: #0F172A; } /* Slate 900 */
         body.theme-u23 { background-color: #0d1c1a; } /* Dark Teal */
         body.theme-u19 { background-color: #1c150d; } /* Dark Orange */
+        /* *** NUOVO: Stili tema per Para e Beach *** */
+        body.theme-para-rowing { background-color: #1a1129; } /* Dark Purple */
+        body.theme-beach-sprint { background-color: #2a210f; } /* Dark Yellow/Sand */
 
         .calendar-grid {
             display: grid;
@@ -78,6 +81,18 @@
             color: #0F172A;
             box-shadow: 0 0 15px rgba(251, 146, 60, 0.4);
         }
+         /* *** NUOVO: Stili pulsanti attivi per Para e Beach *** */
+        .calendar-btn.active-para-rowing {
+            background-color: #a855f7; /* purple-500 */
+            color: #0F172A;
+            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+        }
+        .calendar-btn.active-beach-sprint {
+            background-color: #eab308; /* yellow-600 */
+            color: #0F172A;
+            box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+        }
+
         .intensity-bar {
             position: absolute;
             top: 28px; /* Adjusted for smaller mobile layout */
@@ -116,10 +131,13 @@
         </div>
         <h1 class="text-2xl sm:text-4xl font-black text-center text-slate-100 mb-4 tracking-tight">CALENDARIO ALLENAMENTI</h1>
 
+        <!-- *** MODIFICA: Aggiunti i pulsanti Para-Rowing e Beach Sprint *** -->
         <div id="calendar-selector" class="flex justify-center flex-wrap gap-2 mb-6">
             <button data-collection="calendario_olimpica" data-theme="theme-olimpica" data-active-class="active-olimpica" class="calendar-btn active-olimpica text-xs sm:text-base">SQUADRA OLIMPICA</button>
             <button data-collection="calendario_u23" data-theme="theme-u23" data-active-class="active-u23" class="calendar-btn text-xs sm:text-base">UNDER 23</button>
             <button data-collection="calendario_u19" data-theme="theme-u19" data-active-class="active-u19" class="calendar-btn text-xs sm:text-base">UNDER 19</button>
+            <button data-collection="calendario_para_rowing" data-theme="theme-para-rowing" data-active-class="active-para-rowing" class="calendar-btn text-xs sm:text-base">PARA-ROWING</button>
+            <button data-collection="calendario_beach_sprint" data-theme="theme-beach-sprint" data-active-class="active-beach-sprint" class="calendar-btn text-xs sm:text-base">BEACH SPRINT</button>
         </div>
         
         <div id="calendar-container" class="transition-opacity duration-300 ease-in-out">
@@ -168,9 +186,10 @@
             appId: "1:576407223567:web:73eaa8e12aae9e4926927a"
         };
 
-        const app = initializeApp(firebaseConfig);
+        const calendarAppName = "AppCalendario";
+        const app = initializeApp(firebaseConfig, calendarAppName);
         const db = getFirestore(app);
-
+        
         // --- DOM Elements ---
         const pageBody = document.body;
         const calendarContainer = document.getElementById('calendar-container');
@@ -421,8 +440,9 @@
 
             pageBody.className = `min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 antialiased ${newTheme}`;
 
+            // *** MODIFICA: Rimuovi tutte le classi attive, incluse le nuove ***
             document.querySelectorAll('#calendar-selector .calendar-btn').forEach(btn => {
-                btn.classList.remove('active-olimpica', 'active-u23', 'active-u19');
+                btn.classList.remove('active-olimpica', 'active-u23', 'active-u19', 'active-para-rowing', 'active-beach-sprint');
             });
             buttonElement.classList.add(newActiveClass);
 
