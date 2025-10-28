@@ -307,16 +307,50 @@
         }
 
         // --- FORMULE ---
-        function calculateWatts(totalSeconds, distance) {
+        // Formula standard Concept2 per i Watt (RowErg)
+        function calculateWattsRowerg(totalSeconds, distance) {
             if (totalSeconds <= 0 || distance <= 0) return 0;
+            // W = 2.8 * (dist / t)^3
             return 2.8 * Math.pow(distance / totalSeconds, 3);
         }
 
-        function calculateTimeFromWatts(watts, distance) {
+        // Formula Concept2 per i Watt (BikeErg)
+        // Basata sullo screenshot del C2 Pace Calculator:
+        // I Watt sono calcolati dalla media /1000m (t_1000),
+        // ma usa la stessa formula del RowErg (che usa la media /500m).
+        // W_bike(t_1000) = W_row(t_500) dove t_1000 = t_500.
+        // W = 2.8 * (500 / t_1000)^3
+        function calculateWattsBikeerg(totalSeconds, distance) {
+            if (totalSeconds <= 0 || distance <= 0) return 0;
+            // La distanza (es. 4000) viene divisa in 4 segmenti (da 1000m)
+            const numSegments = 4; // Assumiamo 4 segmenti (es. 4000m / 1000m)
+            const t_1000 = totalSeconds / numSegments;
+            if (t_1000 <= 0) return 0;
+            // Calcola i watt usando la media /1000m come se fosse una media /500m
+            return 2.8 * Math.pow(500 / t_1000, 3);
+        }
+
+        // Formula inversa: calcola il tempo dai Watt (RowErg)
+        function calculateTimeFromWattsRowerg(watts, distance) {
             if (watts <= 0 || distance <= 0) return 0;
+            // t = dist / (W / 2.8)^(1/3)
             return distance / Math.pow(watts / 2.8, 1/3);
         }
 
+        // Formula inversa: calcola il tempo dai Watt (BikeErg)
+        function calculateTimeFromWattsBikeerg(watts, distance) {
+            if (watts <= 0 || distance <= 0) return 0; 
+            // W = 2.8 * (500 / t_1000)^3
+            // (W / 2.8)^(1/3) = 500 / t_1000
+            // t_1000 = 500 / (W / 2.8)^(1/3)
+            const t_1000 = 500 / Math.pow(watts / 2.8, 1/3);
+            // totalSeconds = t_1000 * 4 (per 4000m)
+            const numSegments = 4; // Assumiamo 4 segmenti (es. 4000m / 1000m)
+            return t_1000 * numSegments;
+        }
+
+
+        // Calcola la media su 1/4 della distanza (500m per 2k, 1000m per 4k)
         function calculateAverageSegmentTime(totalSeconds) {
              if (totalSeconds <= 0) return 0;
              return totalSeconds / 4;
@@ -326,7 +360,8 @@
             if (totalSeconds <= 0 || !isFinite(totalSeconds)) return "N/D";
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
-            const formattedSeconds = seconds.toFixed(1).padStart(4, '0');
+            // Formatta i secondi a una cifra decimale, es: "05.3"
+            const formattedSeconds = seconds.toFixed(1).padStart(4, '0'); 
             return `${minutes}:${formattedSeconds}`;
         }
 
@@ -348,8 +383,10 @@
                     // Processa Record RowErg (2000m)
                     const recordRowergSeconds = convertTimeToSeconds(athleteData.rowerg);
                     if (recordRowergSeconds > 0) {
-                        baseWattsRowerg = calculateWatts(recordRowergSeconds, 2000); // Distanza 2000
-                        const avg500mSeconds = calculateAverageSegmentTime(recordRowergSeconds);
+                        // Calcola Watt di base su 2000m
+                        baseWattsRowerg = calculateWattsRowerg(recordRowergSeconds, 2000); 
+                        // Calcola media su 500m (2000 / 4)
+                        const avg500mSeconds = calculateAverageSegmentTime(recordRowergSeconds); 
 
                         recordTimeRowergContainer.textContent = athleteData.rowerg;
                         recordMediaRowergContainer.textContent = formatSecondsToTime(avg500mSeconds);
@@ -367,9 +404,10 @@
                     // Processa Record BikeErg (4000m)
                     const recordBikeergSeconds = convertTimeToSeconds(athleteData.bikeerg);
                     if (recordBikeergSeconds > 0) {
-                        // CORREZIONE: Usa 4000m per calcolare i Watt di riferimento della BikeErg
-                        baseWattsBikeerg = calculateWatts(recordBikeergSeconds, 4000);
-                        const avg1000mSeconds = calculateAverageSegmentTime(recordBikeergSeconds); // Media su 1000m
+                        // Calcola Watt di base su 4000m
+                        baseWattsBikeerg = calculateWattsBikeerg(recordBikeergSeconds, 4000);
+                        // Calcola media su 1000m (4000 / 4)
+                        const avg1000mSeconds = calculateAverageSegmentTime(recordBikeergSeconds); 
 
                         recordTimeBikeergContainer.textContent = athleteData.bikeerg;
                         recordMediaBikeergContainer.textContent = formatSecondsToTime(avg1000mSeconds);
@@ -393,6 +431,7 @@
             } catch (error) {
                 console.error("Errore nel caricamento dei dati atleta:", error);
                 mainContent.classList.add('hidden');
+NORMALIZED_HEIGHT: 0.28
                 errorLoadingMessage.textContent = `Errore nel caricamento: ${error.message}. Riprova o contatta l'assistenza.`;
                 errorLoadingMessage.classList.remove('hidden');
             } finally {
@@ -440,7 +479,7 @@
 
             const percentage = parseFloat(selectedPercentageValue) / 100;
             const finalWatts = baseWattsRowerg * percentage;
-            const finalTimeInSeconds = calculateTimeFromWatts(finalWatts, 2000); // Distanza 2000
+            const finalTimeInSeconds = calculateTimeFromWattsRowerg(finalWatts, 2000); // Distanza 2000
             const finalAvg500mSeconds = calculateAverageSegmentTime(finalTimeInSeconds);
 
             percentageWattRowergContainer.textContent = finalWatts.toFixed(2);
@@ -451,16 +490,22 @@
 
          window.calculatePercentageBikeerg = function() {
             const selectedPercentageValue = percentageSelectBikeerg.value;
-            if (!selectedPercentageValue || baseWattsBikeerg <= 0) {
+            // L'utente vuole che i watt di base siano gli stessi
+            // Quindi usiamo baseWattsRowerg se disponibile, altrimenti baseWattsBikeerg
+            const baseWattsToUse = baseWattsRowerg > 0 ? baseWattsRowerg : baseWattsBikeerg;
+
+            if (!selectedPercentageValue || baseWattsToUse <= 0) {
                 percentageBikeergResultsContainer.classList.add('hidden');
                 return;
             }
 
             const percentage = parseFloat(selectedPercentageValue) / 100;
-            const finalWatts = baseWattsBikeerg * percentage;
-            // CORREZIONE: Usa 4000m per calcolare il tempo equivalente della BikeErg
-            const finalTimeInSeconds = calculateTimeFromWatts(finalWatts, 4000);
-            const finalAvg1000mSeconds = calculateAverageSegmentTime(finalTimeInSeconds); // Media su 1000m
+            const finalWatts = baseWattsToUse * percentage; // Usa i watt di base (preferibilmente RowErg)
+            
+            // Usa 4000m per calcolare il tempo equivalente della BikeErg
+            const finalTimeInSeconds = calculateTimeFromWattsBikeerg(finalWatts, 4000);
+            // Calcola media su 1000m
+            const finalAvg1000mSeconds = calculateAverageSegmentTime(finalTimeInSeconds); 
 
             percentageWattBikeergContainer.textContent = finalWatts.toFixed(2);
             percentageTimeBikeergContainer.textContent = formatSecondsToTime(finalTimeInSeconds);
@@ -474,3 +519,4 @@
     </script>
 </body>
 </html>
+
