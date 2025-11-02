@@ -7,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display.swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -121,37 +121,72 @@
 
         <section id="home-page">
             <div class="flex flex-col items-center justify-center min-h-[70vh]">
-                <!-- MODIFICA: Aumentata dimensione testo (text-5xl md:text-8xl) -->
-                <h1 class="text-5xl md:text-8xl font-black tracking-tight text-slate-100 text-center mb-4">FIC</h1>
-                <p class="text-base md:text-xl text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
+                <!-- MODIFICA: Ridotta dimensione testo (text-5xl md:text-7xl) -->
+                <h1 class="text-5xl md:text-7xl font-black tracking-tight text-slate-100 text-center mb-4">FIC</h1>
+                <!-- MODIFICA: Ridotta dimensione testo (text-base md:text-lg) -->
+                <p class="text-base md:text-lg text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
                 
-                <!-- Contenitore unico per tutti i pulsanti --><div class="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto w-full">
+                <!-- Contenitore unico per tutti i pulsanti -->
+                <!-- MODIFICA: gap-4 md:gap-8 -->
+                <div class="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto w-full">
                     
-                    <!-- Primi 4 pulsanti (2 colonne su mobile e desktop) --><a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">📥</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Carica Dati</h2>
+                    <!-- Primi 4 pulsanti (2 colonne su mobile e desktop) -->
+                    <!-- MODIFICA: p-4 lg:p-8, h-16 lg:h-20, w-12 h-12 lg:w-16 lg:h-16, text-2xl lg:text-3xl -->
+                    <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Carica Dati</h2>
                     </a>
-                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">📊</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Risultati</h2>
+                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Risultati</h2>
                     </a>
-                    <a href="storico_wo.html" id="storico-wo-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">📜</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Storico WO</h2>
+                    <a href="storico_wo.html" id="storico-wo-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Storico WO</h2>
                     </a>
-                    <a href="gym.html" id="gym-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center">
-                        <div class="text-5xl md:text-7xl mb-4">🏋️</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Gym</h2>
+                    <a href="gym.html" id="gym-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="M18 22 12 16"/><path d="m6 8 6-6"/><path d="m2 6 6 6"/><path d="m16 6 6 6"/><path d="m22 18-6-6"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Gym</h2>
                     </a>
 
-                    <!-- Calendario (1 colonna su mobile, 2 su desktop) --><a href="CALENDARIO/calendario.html" id="calendario-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center md:col-span-2">
-                        <div class="text-5xl md:text-7xl mb-4">🗓️</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Calendario</h2>
+                    <!-- Calendario (col-span-2 su mobile, md:col-span-2) -->
+                    <!-- MODIFICA: Aggiunto col-span-2 per mobile, p-4 lg:p-8, h-16 lg:h-20, w-12 h-12 lg:w-16 lg:h-16, text-2xl lg:text-3xl -->
+                    <!-- MODIFICA: Rimosso col-span-2 per layout a scacchiera -->
+                    <a href="CALENDARIO/calendario.html" id="calendario-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Calendario</h2>
                     </a>
 
-                    <!-- Dispendi (1 colonna su mobile, 2 su desktop) --><a href="dispendi.html" id="dispendi-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-6 md:p-12 text-center md:col-span-2">
-                        <div class="text-5xl md:text-7xl mb-4">🧮</div>
-                        <h2 class="text-xl md:text-4xl font-bold text-white">Dispendi</h2>
+                    <!-- Dispendi (col-span-2 su mobile, md:col-span-2) -->
+                    <!-- MODIFICA: Aggiunto col-span-2 per mobile, p-4 lg:p-8, h-16 lg:h-20, w-12 h-12 lg:w-16 lg:h-16, text-2xl lg:text-3xl -->
+                    <!-- MODIFICA: Rimosso col-span-2 per layout a scacchiera -->
+                    <a href="dispendi.html" id="dispendi-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <rect x="4" y="2" width="16" height="20" rx="2"/><line x1="8" x2="16" y1="6" y2="6"/><line x1="12" x2="12" y1="10" y2="18"/><line x1="8" x2="16" y1="14" y2="14"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Dispendi</h2>
                     </a>
 
                 </div>
@@ -254,4 +289,5 @@
     </script>
 </body>
 </html>
+
 
