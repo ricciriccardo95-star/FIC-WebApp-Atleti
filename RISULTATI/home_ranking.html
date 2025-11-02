@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Ranking Totale Allenamenti - FIC Canottaggio</title>
+    <title>Ranking Allenamenti - FIC Canottaggio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <!-- Icone Heroicons per la freccia --><script src="https://unpkg.com/heroicons"></script>
+    <script src="https://unpkg.com/heroicons"></script>
     <style>
         /* Stili di base */
         body { 
@@ -52,8 +52,9 @@
             border-top-color: #3B82F6;
             animation: spin 1s linear infinite; 
         }
-        /* Stili per input data */
-        .date-input { 
+        
+        /* Stili per input e select */
+        .date-input, .filter-select { 
             background-color: #1E293B; 
             border: 1px solid #334155; 
             border-radius: 0.5rem; 
@@ -61,219 +62,71 @@
             color: #E2E8F0; 
             transition: border-color 0.3s, box-shadow 0.3s;
         }
-        .date-input:focus {
+        .date-input { width: 180px; }
+        .filter-select { 
+            width: 100%;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394A3B8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25em;
+            padding-right: 2.5rem; /* Spazio per la freccia */
+        }
+        
+        .date-input:focus, .filter-select:focus {
             border-color: #3B82F6;
             outline: none;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
         }
-        input[type="date"]::-webkit-calendar-picker-indicator {
+        input[type="date"]::-webkit-calendar-picker-indicator,
+        input[type="month"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
             cursor: pointer;
         }
         
-        /* Stili per la tabella */
-        table {
-            border-collapse: collapse;
-        }
-        th, td {
-            padding: 0.75rem 0.6rem;
-            text-align: left;
-        }
-        th {
-            background-color: #334155; /* slate-700 */
-            font-weight: 700;
-            color: #d1d5db; /* gray-300 */
-            text-transform: uppercase;
-            font-size: 0.75rem;
-            letter-spacing: 0.05em;
-        }
-        tr:nth-child(even) {
-            background-color: #1e293b; /* slate-800 */
-        }
-         tr:nth-child(odd) {
-            background-color: #162031; /* Un po' più scuro di slate-800 */
-        }
-        tr:hover {
-            background-color: #374764;
-        }
-        td {
-            border-bottom: 1px solid #334155; /* slate-700 */
-            white-space: nowrap;
-        }
-        
-        /* Stili per le medaglie */
-        .rank-1 { color: #facc15; /* amber-400 */ font-weight: 900; }
-        .rank-2 { color: #d1d5db; /* gray-300 */ font-weight: 900; }
-        .rank-3 { color: #cd7f32; /* Bronzo */ font-weight: 900; }
-        
-        /* Classe per i valori EP e VOL */
-        .ep-value {
-            font-size: 0.8rem;
-            font-weight: 700;
-            color: #fbbf24; /* amber-400 */
-        }
-        .vol-value {
-             font-size: 0.8rem;
-            font-weight: 700;
-            color: #22c55e; /* emerald-500 */
-        }
-        .ep-col-min {
-            min-width: 70px;
-        }
+        /* Stili tabella */
+        table { border-collapse: collapse; }
+        th, td { padding: 0.75rem 0.6rem; text-align: left; }
+        th { background-color: #334155; font-weight: 700; color: #d1d5db; text-transform: uppercase; font-size: 0.75rem; letter-spacing: 0.05em; }
+        tr:nth-child(even) { background-color: #1e293b; }
+        tr:nth-child(odd) { background-color: #162031; }
+        tr:hover { background-color: #374764; }
+        td { border-bottom: 1px solid #334155; white-space: nowrap; }
+        .rank-1 { color: #facc15; font-weight: 900; }
+        .rank-2 { color: #d1d5db; font-weight: 900; }
+        .rank-3 { color: #cd7f32; font-weight: 900; }
+        .ep-value { font-size: 0.8rem; font-weight: 700; color: #fbbf24; }
+        .vol-value { font-size: 0.8rem; font-weight: 700; color: #22c55e; }
+        .ep-col-min { min-width: 70px; }
+        .badge { display: inline-block; padding: 0.25rem 0.75rem; border-radius: 9999px; font-weight: 600; font-size: 0.75rem; line-height: 1.2; text-align: center; white-space: nowrap; vertical-align: baseline; }
 
-        /* --- STILI PER BADGE --- */
-        .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px; /* rounded-full */
-            font-weight: 600;
-            font-size: 0.75rem; /* text-xs */
-            line-height: 1.2;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: baseline;
-        }
-
-        /* --- STILI PER TABELLA RESPONSIVE (MODIFICATI) --- */
+        /* Stili responsive */
         @media screen and (max-width: 768px) {
-            table { 
-                width: 100%; 
-                border-collapse: separate; 
-                border-spacing: 0 0.75rem; 
-            }
+            table { width: 100%; border-collapse: separate; border-spacing: 0 0.75rem; }
             table thead { display: none; } 
             table tbody { display: block; width: 100%; }
-
-            table tr {
-                display: block; 
-                border-radius: 0.75rem; 
-                background-color: #1e293b; 
-                border: 1px solid #334155; 
-                padding: 0; 
-                width: 100%;
-                overflow: hidden; 
-            }
-            table tr:nth-child(even), table tr:nth-child(odd) {
-                 background-color: #1e293b; 
-            }
-            table tr:hover {
-                background-color: #2b3b57; 
-            }
-
-            .mobile-row-summary {
-                /* MODIFICA: Layout "Blocco Unico Verticale" (Idea 3) */
-                display: flex;
-                align-items: center;
-                justify-content: space-between; /* Spinge freccia a destra */
-                padding: 0.75rem 1rem;
-                cursor: pointer;
-                text-align: left;
-                width: 100%;
-                margin: 0 auto;
-                gap: 0.5rem; 
-                border-radius: 0.75rem;
-            }
-
-            /* --- STILI PER IDEA 3 --- */
-            /* Rimosse tutte le vecchie classi .mobile-col.* */
-
-            .mobile-main-info {
-                display: flex;
-                flex-direction: column;
-                flex-grow: 1; /* Prende lo spazio disponibile */
-                min-width: 0; /* Per troncamento corretto */
-            }
-
-            .mobile-row-line1 {
-                display: flex;
-                align-items: baseline; /* Allinea base di Pos, Nome, Badge */
-                gap: 0.5rem;
-                width: 100%;
-            }
-
-            .mobile-rank-number {
-                font-size: 1.25rem; 
-                font-weight: 700;
-                flex-shrink: 0; /* Non stringere il numero */
-            }
-
-            .mobile-athlete-name {
-                font-size: 1.1rem; 
-                font-weight: 700;
-                white-space: nowrap;
-                overflow: hidden;
-                text-overflow: ellipsis;
-                flex-grow: 1; /* Prende spazio e tronca */
-            }
-
-            .mobile-group-badge .badge {
-                font-size: 0.65rem; 
-                padding: 0.1rem 0.4rem; 
-                flex-shrink: 0;
-            }
-            
-            .mobile-row-line2 {
-                display: flex;
-                flex-direction: column;
-                align-items: flex-start; /* Allinea punteggio a sinistra */
-                margin-top: 0.25rem;
-            }
-            
-            .mobile-score-label {
-                font-size: 0.65rem; 
-                font-weight: 500;
-                color: #94A3B8; 
-                text-transform: uppercase;
-                margin-bottom: -4px;
-            }
-
-            .mobile-score-value {
-                font-size: 1.5rem; /* Punteggio bello grande */
-                font-weight: 900;
-                background-clip: text;
-                -webkit-background-clip: text;
-                color: transparent;
-                background-image: linear-gradient(to right, #60A5FA, #7DD3FC);
-            }
-            /* --- FINE STILI IDEA 3 --- */
-
-
-            .mobile-arrow-icon {
-                display: flex;
-                align-items: center;
-                justify-content: flex-end; /* Allineato a destra */
-                transition: transform 0.2s ease-in-out;
-                flex-shrink: 0; /* Non stringere la freccia */
-            }
-            
-            /* Dettagli espandibili */
-            .mobile-details {
-                display: none; 
-                padding: 0.5rem 1rem 1rem 1rem;
-                background-color: #0f172a; 
-                border-top: 1px solid #334155; 
-            }
-            .mobile-details.active {
-                display: block;
-            }
-            .mobile-details-item {
-                display: flex;
-                justify-content: space-between;
-                align-items: center;
-                padding: 0.25rem 0;
-                font-size: 0.9em;
-                color: #cbd5e1; 
-            }
-            .mobile-details-item span:first-child {
-                font-weight: 600;
-                color: #94A3B8; 
-            }
+            table tr { display: block; border-radius: 0.75rem; background-color: #1e293b; border: 1px solid #334155; padding: 0; width: 100%; overflow: hidden; }
+            table tr:nth-child(even), table tr:nth-child(odd) { background-color: #1e293b; }
+            table tr:hover { background-color: #2b3b57; }
+            .mobile-row-summary { display: flex; align-items: center; justify-content: space-between; padding: 0.75rem 1rem; cursor: pointer; text-align: left; width: 100%; margin: 0 auto; gap: 0.5rem; border-radius: 0.75rem; }
+            .mobile-main-info { display: flex; flex-direction: column; flex-grow: 1; min-width: 0; }
+            .mobile-row-line1 { display: flex; align-items: baseline; gap: 0.5rem; width: 100%; }
+            .mobile-rank-number { font-size: 1.25rem; font-weight: 700; flex-shrink: 0; }
+            .mobile-athlete-name { font-size: 1.1rem; font-weight: 700; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex-grow: 1; }
+            .mobile-group-badge .badge { font-size: 0.65rem; padding: 0.1rem 0.4rem; flex-shrink: 0; }
+            .mobile-row-line2 { display: flex; flex-direction: column; align-items: flex-start; margin-top: 0.25rem; }
+            .mobile-score-label { font-size: 0.65rem; font-weight: 500; color: #94A3B8; text-transform: uppercase; margin-bottom: -4px; }
+            .mobile-score-value { font-size: 1.5rem; font-weight: 900; background-clip: text; -webkit-background-clip: text; color: transparent; background-image: linear-gradient(to right, #60A5FA, #7DD3FC); }
+            .mobile-arrow-icon { display: flex; align-items: center; justify-content: flex-end; transition: transform 0.2s ease-in-out; flex-shrink: 0; }
+            .mobile-details { display: none; padding: 0.5rem 1rem 1rem 1rem; background-color: #0f172a; border-top: 1px solid #334155; }
+            .mobile-details.active { display: block; }
+            .mobile-details-item { display: flex; justify-content: space-between; align-items: center; padding: 0.25rem 0; font-size: 0.9em; color: #cbd5e1; }
+            .mobile-details-item span:first-child { font-weight: 600; color: #94A3B8; }
             .mobile-details-item .ep-value,
-            .mobile-details-item .vol-value {
-                font-size: 0.9em; 
-            }
+            .mobile-details-item .vol-value { font-size: 0.9em; }
         }
-        /* Rotazione per l'icona della freccia */
         .rotate-180 { transform: rotate(180deg); }
     </style>
 </head>
@@ -287,31 +140,74 @@
     </div>
 
     <div id="app-view" class="pt-4 pb-4 md:p-10 max-w-screen-2xl mx-auto relative z-10 hidden">
+        
+        <!-- Tasto Home (STILE AGGIORNATO) -->
+        <a href="../home.html" class="absolute top-4 left-4 md:top-6 md:left-6 inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg shadow transition-colors text-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M12 19l-7-7 7-7"/><path d="M19 12H5"/></svg>
+            Home
+        </a>
+
         <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-300 text-center mb-6 pt-4">
-            🏆 Ranking Totale Allenamenti
+            Ranking
         </h1>
         
-        <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-2xl p-6 mb-12 flex flex-wrap justify-center items-center gap-6 mx-4 md:mx-0">
-            <a href="../home.html" class="bg-slate-600 hover:bg-slate-500 active:bg-slate-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-slate-500/50">
-                <span class="mr-1">←</span> Torna alla selezione
-            </a>
-            <div class="flex items-center gap-3">
-                <label for="startDate" class="text-slate-300 font-semibold">Dal:</label>
-                <input type="date" id="startDate" class="date-input w-40">
+        <!-- === SELETTORI DATA/MESE === -->
+        <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-2xl p-6 mb-8 flex flex-col md:flex-row justify-center items-center gap-8 mx-4 md:mx-0">
+            
+            <!-- Zona GIORNO -->
+            <div class="text-center">
+                <label for="dailyDateInput" class="text-slate-300 font-semibold mb-2 block">Ranking Giornaliero</label>
+                <div class="flex gap-3">
+                    <input type="date" id="dailyDateInput" class="date-input">
+                    <button id="loadDailyBtn" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/50">
+                        Carica
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">
+                    (i) Mostra la classifica di un giorno specifico (agg. ogni ora)
+                </p>
             </div>
-            <div class="flex items-center gap-3">
-                <label for="endDate" class="text-slate-300 font-semibold">Al:</label>
-                <input type="date" id="endDate" class="date-input w-40">
+            
+            <!-- Zona MESE -->
+            <div class="text-center">
+                <label for="monthlyMonthInput" class="text-slate-300 font-semibold mb-2 block">Ranking Mensile</label>
+                <div class="flex gap-3">
+                    <input type="month" id="monthlyMonthInput" class="date-input">
+                    <button id="loadMonthlyBtn" class="bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-teal-500/50">
+                        Carica
+                    </button>
+                </div>
+                <p class="text-xs text-slate-400 mt-2">
+                    (i) Mostra il riepilogo completo di un mese (agg. alle 02:00)
+                </p>
             </div>
-            <button id="filterBtn" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/50">
-                Filtra <span class="ml-1">→</span>
-            </button>
         </div>
+        <!-- === FINE SELETTORI === -->
 
-        <div id="info-box" class="text-center text-slate-400 mb-8 font-medium hidden">
-            <span id="info-message"></span>
-            <span id="reads-count" class="text-sky-300 text-xl font-extrabold tracking-wider">0</span>
+        <!-- === NUOVI FILTRI === -->
+        <div id="filter-controls" class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-xl p-4 mb-8 flex flex-col md:flex-row justify-center items-center gap-4 mx-4 md:mx-0 hidden">
+            <div class_="w-full md:w-1/3">
+                <label for="filterGenere" class="text-slate-400 font-semibold mb-1 block text-sm">Filtra per Genere</label>
+                <select id="filterGenere" class="filter-select">
+                    <option value="">Tutti i Generi</option>
+                    <option value="M">Maschile</option>
+                    <option value="F">Femminile</option>
+                </select>
+            </div>
+            <div class="w-full md:w-1/3">
+                <label for="filterGruppo" class="text-slate-400 font-semibold mb-1 block text-sm">Filtra per Gruppo</label>
+                <select id="filterGruppo" class="filter-select">
+                    <option value="">Tutti i Gruppi</option>
+                    <option value="Squadra olimpica">Squadra olimpica</option>
+                    <option value="Under 23">Under 23</option>
+                    <option value="Under 19">Under 19</option>
+                    <option value="ParaRowing">ParaRowing</option>
+                    <option value="Beach sprint">Beach sprint</option>
+                </select>
+            </div>
         </div>
+        <!-- === FINE NUOVI FILTRI === -->
+
 
         <div id="results-container" class="mx-4 md:mx-0">
             <!-- La tabella verrà inserita qui --></div>
@@ -322,6 +218,7 @@
 
     <script>
         const firebaseConfig = {
+            // TUA CONFIGURAZIONE FIREBASE
             apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
             databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
             storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
@@ -334,13 +231,19 @@
         const loaderOverlay = document.getElementById('loader-overlay');
         const loaderText = document.getElementById('loader-text');
         const resultsContainer = document.getElementById('results-container');
-        const infoBox = document.getElementById('info-box');
-        const infoMessage = document.getElementById('info-message');
-        const readsCountSpan = document.getElementById('reads-count');
-        const startDateInput = document.getElementById('startDate');
-        const endDateInput = document.getElementById('endDate');
-        const filterBtn = document.getElementById('filterBtn');
+        const dailyDateInput = document.getElementById('dailyDateInput');
+        const loadDailyBtn = document.getElementById('loadDailyBtn');
+        const monthlyMonthInput = document.getElementById('monthlyMonthInput');
+        const loadMonthlyBtn = document.getElementById('loadMonthlyBtn');
         const appView = document.getElementById('app-view');
+        
+        // NUOVI Riferimenti Filtri
+        const filterControls = document.getElementById('filter-controls');
+        const filterGenere = document.getElementById('filterGenere');
+        const filterGruppo = document.getElementById('filterGruppo');
+
+        // Variabile globale per memorizzare i dati scaricati
+        let allAthletesData = [];
 
         // --- FUNZIONI HELPER ---
         function getTodayDateString() {
@@ -350,266 +253,140 @@
             const day = String(now.getDate()).padStart(2, '0');
             return `${year}-${month}-${day}`;
         }
-        
-        function getFirstDayOfMonthString() {
+
+        function getCurrentMonthString() {
             const now = new Date();
             const year = now.getFullYear();
             const month = String(now.getMonth() + 1).padStart(2, '0');
-            return `${year}-${month}-01`;
+            return `${year}-${month}`;
         }
-
-        function timeToSeconds(timeStr) {
-            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
-            const parts = timeStr.split(':');
-            const minutes = parseInt(parts[0], 10);
-            const seconds = parseFloat(parts[1].replace(',', '.'));
-            if (isNaN(minutes) || isNaN(seconds)) return 0;
-            return (minutes * 60) + seconds;
-        }
-
-        // --- FUNZIONE PER I BADGE (MODIFICATA CON ABBREVIAZIONI) ---
+        
+        // --- FUNZIONE PER I BADGE (GRUPPO) ---
         function getGruppoBadge(value) {
             if (!value) return '<span class="badge bg-slate-600 text-slate-200" title="Non Definito">N/D</span>';
-            
-            let bgColor = 'bg-slate-600';
-            let textColor = 'text-slate-200';
-            let abbrev = 'N/D';
-
+            let bgColor = 'bg-slate-600', textColor = 'text-slate-200', abbrev = 'N/D';
             switch (value) {
-                case 'Squadra olimpica': 
-                    bgColor = 'bg-sky-500'; 
-                    textColor = 'text-white'; 
-                    abbrev = 'GO'; // Gruppo Olimpico
-                    break;
-                case 'Under 23': 
-                    bgColor = 'bg-teal-500'; 
-                    textColor = 'text-white'; 
-                    abbrev = 'U23'; 
-                    break;
-                case 'Under 19': 
-                    bgColor = 'bg-orange-500'; 
-                    textColor = 'text-white'; 
-                    abbrev = 'U19'; 
-                    break;
-                case 'ParaRowing': 
-                    bgColor = 'bg-purple-500'; 
-                    textColor = 'text-white'; 
-                    abbrev = 'PR'; 
-                    break;
-                case 'Beach sprint': 
-                    bgColor = 'bg-amber-500'; 
-                    textColor = 'text-white'; 
-                    abbrev = 'BS'; 
-                    break;
+                case 'Squadra olimpica': bgColor = 'bg-sky-500'; textColor = 'text-white'; abbrev = 'GO'; break;
+                case 'Under 23': bgColor = 'bg-teal-500'; textColor = 'text-white'; abbrev = 'U23'; break;
+                case 'Under 19': bgColor = 'bg-orange-500'; textColor = 'text-white'; abbrev = 'U19'; break;
+                case 'ParaRowing': bgColor = 'bg-purple-500'; textColor = 'text-white'; abbrev = 'PR'; break;
+                case 'Beach sprint': bgColor = 'bg-amber-500'; textColor = 'text-white'; abbrev = 'BS'; break;
             }
-            // Aggiungo 'value' come 'title' per vedere il nome completo in hover
             return `<span class="badge ${bgColor} ${textColor}" title="${value}">${abbrev}</span>`;
         }
 
-
-        // --- FUNZIONE (ECONOMICA) ---
-        async function loadPrecomputedRanking() {
-            loaderText.textContent = 'Caricamento ranking pre-calcolato...';
+        // --- FUNZIONE BADGE (GENERE) ---
+        function getGenereBadge(value) {
+            if (!value) return '<span class="badge bg-slate-600 text-slate-200" title="Non Definito">N/D</span>';
+            let bgColor = 'bg-slate-600', textColor = 'text-slate-200', text = value;
             
-            try {
-                const docRef = firestore.doc('riepiloghi/rankingTotale');
-                const doc = await docRef.get();
+            if (value === 'M') { bgColor = 'bg-blue-500'; textColor = 'text-white'; } 
+            else if (value === 'F') { bgColor = 'bg-pink-500'; textColor = 'text-white'; }
+            
+            return `<span class="badge ${bgColor} ${textColor}" title="${value}">${text}</span>`;
+        }
 
-                if (doc.exists) {
-                    const data = doc.data();
-                    const rankedAthletes = data.ranking; 
-                    
-                    renderRanking(rankedAthletes);
-                    
-                    infoMessage.textContent = 'Ranking di oggi (pre-calcolato). Letture: ';
-                    readsCountSpan.textContent = '1';
-                    
-                    if (data.timestamp) {
-                        const date = data.timestamp.toDate();
-                        infoMessage.textContent = `Ranking del ${date.toLocaleDateString('it-IT')} ore ${date.toLocaleTimeString('it-IT')}. Letture: `;
-                    }
-                    infoBox.classList.remove('hidden');
+        // --- NUOVA FUNZIONE PER FILTRARE E RENDERIZZARE ---
+        function applyFiltersAndRender() {
+            const selectedGenere = filterGenere.value;
+            const selectedGruppo = filterGruppo.value;
 
-                } else {
-                    resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Documento ranking non ancora disponibile. Riprova tra poco.</p>`;
-                }
-            } catch (error) {
-                console.error("Errore nel caricamento del ranking pre-calcolato: ", error);
-                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: Impossibile caricare il ranking pre-calcolato.</p>`;
-            } finally {
-                loaderOverlay.style.display = 'none';
+            // Filtra i dati
+            let filteredAthletes = allAthletesData;
+
+            if (selectedGenere) {
+                filteredAthletes = filteredAthletes.filter(athlete => athlete.genere === selectedGenere);
             }
+
+            if (selectedGruppo) {
+                filteredAthletes = filteredAthletes.filter(athlete => athlete.gruppo === selectedGruppo);
+            }
+
+            // Chiama la funzione di render con i dati filtrati
+            renderRanking(filteredAthletes);
         }
 
 
-        // --- FUNZIONE (COSTOSA) ---
-        async function loadAndProcessRankings() {
-            loaderText.textContent = 'Aggregazione dati in corso...';
+        // --- FUNZIONE (ECONOMICA 1) - Carica Dati GIORNALIERI ---
+        async function loadDailyData() {
+            loaderText.textContent = 'Caricamento ranking giornaliero...';
             loaderOverlay.style.display = 'flex';
-            infoBox.classList.add('hidden');
             resultsContainer.innerHTML = '';
-            let totalReads = 0;
-
-            const startDate = startDateInput.value;
-            const endDate = endDateInput.value;
-
-            if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
-                resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Seleziona un intervallo di date valido.</p>`;
+            filterControls.classList.add('hidden'); // Nasconde i filtri
+            allAthletesData = []; // Resetta i dati
+            
+            const dateId = dailyDateInput.value;
+            if (!dateId) {
+                resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Seleziona una data valida.</p>`;
                 loaderOverlay.style.display = 'none';
                 return;
             }
 
-            const tempAthleteGroupCache = new Map();
             try {
-                const athletesSnapshot = await firestore.collection('atleti').get();
-                athletesSnapshot.docs.forEach(doc => {
-                    tempAthleteGroupCache.set(doc.id, doc.data().gruppo || null);
-                });
-                totalReads += athletesSnapshot.docs.length;
-            } catch (e) {
-                console.error("Errore caricamento gruppi per filtro", e);
-            }
+                const docRef = firestore.doc(`riepiloghiGiornalieri/${dateId}`);
+                const doc = await docRef.get(); // <-- 1 LETTURA
 
-            const athletesData = new Map();
-
-            try {
-                const workoutTypes = ['BIKE', 'BOAT', 'ERGO'];
-                const promises = workoutTypes.map(type => 
-                    firestore.collection('allenamenti')
-                        .where('tipo', '==', type)
-                        .where('data', '>=', startDate)
-                        .where('data', '<=', endDate)
-                        .get()
-                );
-
-                const snapshots = await Promise.all(promises);
-                
-                snapshots.forEach((snapshot, index) => {
-                    const type = workoutTypes[index].toLowerCase(); 
-                    totalReads += snapshot.docs.length > 0 ? snapshot.docs.length : 1;
-
-                    snapshot.docs.forEach(doc => {
-                        const workout = doc.data();
-                        
-                        let workoutMeters = 0;
-                        let workoutMinutes = 0;
-                        let workoutEp = (typeof workout.ep === 'number' && workout.ep > 0) ? workout.ep : 0;
-                        
-                        if (!Array.isArray(workout.intervalli) || workout.intervalli.length === 0) {
-                            return; 
-                        }
-                        
-                        const numberOfIntervals = workout.intervalli.length;
-                        
-                        if (workout.modalita === 'tempo') {
-                            const intervalsData = workout.intervalli.map(i => parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n));
-                            if(intervalsData.length > 0) {
-                                workoutMeters = intervalsData.reduce((a, b) => a + b, 0);
-                            }
-                            const durationMinutes = parseInt(workout.tempo, 10);
-                            if (!isNaN(durationMinutes)) {
-                                workoutMinutes = durationMinutes * numberOfIntervals;
-                            }
-                        } else if (workout.modalita === 'distanza') {
-                            const intervalsData = workout.intervalli.map(i => {
-                                const val = (typeof i === 'object' && i !== null && i['0']) ? i['0'] : i;
-                                return timeToSeconds(val);
-                            });
-                             if(intervalsData.length > 0) {
-                                const totalSeconds = intervalsData.reduce((a, b) => a + b, 0);
-                                workoutMinutes = totalSeconds / 60;
-                            }
-                            const distanceMeters = parseInt(workout.distanza, 10);
-                            if (!isNaN(distanceMeters)) {
-                                workoutMeters = distanceMeters * numberOfIntervals;
-                            }
-                        }
-
-                        const athletesInWorkout = [];
-                        if (type === 'boat' && workout.equipaggio) {
-                             workout.equipaggio.forEach(member => {
-                                if (member.atletaId && member.cognomeAtleta) {
-                                    athletesInWorkout.push({id: member.atletaId, name: member.cognomeAtleta});
-                                }
-                            });
-                        } else if (workout.atletaId && workout.cognomeAtleta) {
-                             athletesInWorkout.push({id: workout.atletaId, name: workout.cognomeAtleta});
-                        }
-
-                        athletesInWorkout.forEach(athlete => {
-                            if (!athletesData.has(athlete.id)) {
-                                athletesData.set(athlete.id, {
-                                    id: athlete.id, 
-                                    name: athlete.name,
-                                    bike: { meters: 0, minutes: 0, epSum: 0, count: 0 },
-                                    boat: { meters: 0, minutes: 0, epSum: 0, count: 0 },
-                                    ergo: { meters: 0, minutes: 0, epSum: 0, count: 0 },
-                                });
-                            }
-                            const currentData = athletesData.get(athlete.id);
-                            
-                            currentData[type].meters += workoutMeters;
-                            currentData[type].minutes += workoutMinutes;
-                            
-                            if (workoutEp > 0) {
-                                currentData[type].epSum += workoutEp;
-                                currentData[type].count += 1;
-                            }
-                        });
-                    });
-                });
-
-                const rankedAthletes = Array.from(athletesData.values()).map(data => {
-                    const totalMeters = data.bike.meters + data.boat.meters + data.ergo.meters;
-                    const totalMinutes = data.bike.minutes + data.boat.minutes + data.ergo.minutes;
-                    
-                    const avgBikeEp = data.bike.count > 0 ? data.bike.epSum / data.bike.count : 0;
-                    const avgBoatEp = data.boat.count > 0 ? data.boat.epSum / data.boat.count : 0;
-                    const avgErgoEp = data.ergo.count > 0 ? data.ergo.epSum / data.ergo.count : 0;
-
-                    const volBarca = avgBoatEp;
-                    const volErgo = avgErgoEp * 0.75;
-                    const volBike = avgBikeEp * 0.50;
-                    
-                    const score = volBarca + volErgo + volBike;
-                    
-                    const gruppo = tempAthleteGroupCache.get(data.id) || 'N/D';
-
-                    return {
-                        ...data, 
-                        gruppo: gruppo,
-                        totalMeters,
-                        totalMinutes,
-                        score,
-                        avgBikeEp,
-                        avgBoatEp,
-                        avgErgoEp,
-                        volBarca,
-                        volErgo,
-                        volBike,
-                    };
-                });
-                
-                rankedAthletes.sort((a, b) => b.score - a.score);
-
-                renderRanking(rankedAthletes);
-                
-                infoMessage.textContent = 'Letture totali generate da questo filtro: ';
-                readsCountSpan.textContent = totalReads.toLocaleString('it-IT');
-                infoBox.classList.remove('hidden');
-
+                if (doc.exists) {
+                    const data = doc.data();
+                    allAthletesData = data.ranking || []; // Salva i dati nella variabile globale
+                    applyFiltersAndRender(); // Filtra e renderizza
+                    filterControls.classList.remove('hidden'); // Mostra i filtri
+                } else {
+                    resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Documento ranking per ${dateId} non ancora disponibile.<br/></p>`;
+                }
             } catch (error) {
-                console.error("Errore nel caricamento dei dati: ", error);
-                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: INDICE MANCANTE. La query richiede l'indice composto: <code>allenamenti</code> > <code>tipo</code> (Asc), <code>data</code> (Asc). Crealo sulla console Firebase.</p>`;
+                console.error("Errore nel caricamento del ranking giornaliero: ", error);
+                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: Impossibile caricare il ranking.</p>`;
+            } finally {
+                loaderOverlay.style.display = 'none';
+            }
+        }
+        
+        // --- FUNZIONE (ECONOMICA 2) - Carica Dati MENSILI ---
+        async function loadMonthlyData() {
+            loaderText.textContent = 'Caricamento ranking del mese...';
+            loaderOverlay.style.display = 'flex';
+            resultsContainer.innerHTML = '';
+            filterControls.classList.add('hidden'); // Nasconde i filtri
+            allAthletesData = []; // Resetta i dati
+
+            const monthId = monthlyMonthInput.value;
+            if (!monthId) {
+                resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Seleziona un mese valido.</p>`;
+                loaderOverlay.style.display = 'none';
+                return;
+            }
+            
+            try {
+                const docRef = firestore.doc(`riepiloghiMensili/${monthId}`);
+                const doc = await docRef.get(); // <-- 1 LETTURA
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    allAthletesData = data.ranking || []; // Salva i dati nella variabile globale
+                    applyFiltersAndRender(); // Filtra e renderizza
+                    filterControls.classList.remove('hidden'); // Mostra i filtri
+                } else {
+                    resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Riepilogo mensile per ${monthId} non ancora disponibile.<br/>(Viene generato ogni notte alle 02:00)</p>`;
+                }
+            } catch (error) {
+                console.error("Errore nel caricamento del ranking mensile: ", error);
+                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: Impossibile caricare il ranking mensile.</p>`;
             } finally {
                 loaderOverlay.style.display = 'none';
             }
         }
 
-        // --- FUNZIONE DI RENDER (MODIFICATA) ---
+
+        // --- FUNZIONE DI RENDER (MODIFICATA per RANKING RELATIVO) ---
         function renderRanking(rankedAthletes) {
-            if (rankedAthletes.length === 0) {
-                resultsContainer.innerHTML = `<p class="text-center text-slate-400 p-8 text-xl">Nessun dato trovato.</p>`;
+            if (!rankedAthletes || rankedAthletes.length === 0) {
+                // Modifica messaggio se i dati master ci sono ma i filtri non danno risultati
+                if (allAthletesData.length > 0) {
+                    resultsContainer.innerHTML = `<p class="text-center text-slate-400 p-8 text-xl">Nessun atleta trovato con i filtri selezionati.</p>`;
+                } else {
+                    resultsContainer.innerHTML = `<p class="text-center text-slate-400 p-8 text-xl">Nessun dato trovato.</p>`;
+                }
                 return;
             }
 
@@ -621,6 +398,7 @@
                         <th scope="col" class="w-16 text-center">#</th>
                         <th scope="col">Atleta</th>
                         <th scope="col">Gruppo</th>
+                        <th scope="col">Genere</th> 
                         
                         <th scope="col" class="text-right">Barca (Metri)</th>
                         <th scope="col" class="text-right ep-col-min">EP Barca</th>
@@ -638,55 +416,64 @@
                 </thead>
                 <tbody class="block md:table-row-group">
                     ${rankedAthletes.map((athlete, index) => {
-                        let rankClass = '';
-                        if (index === 0) rankClass = 'rank-1';
-                        if (index === 1) rankClass = 'rank-2';
-                        if (index === 2) rankClass = 'rank-3';
-
-                        const format = (num) => num.toLocaleString('it-IT', { maximumFractionDigits: 0 });
-                        const formatScore = (num) => num.toLocaleString('it-IT', { maximumFractionDigits: 2 });
-                        const formatEp = (num) => num > 0 ? `${num.toFixed(2)}%` : '-';
+                        // MODIFICA: 'index' ora si basa sulla lista filtrata.
+                        // Usiamo 'index + 1' per il ranking relativo.
                         
-                        // Funzione badge ora usa abbreviazioni
+                        // Troviamo il ranking relativo
+                        const relativeRank = index + 1;
+                        
+                        let rankClass = '';
+                        if (index === 0) rankClass = 'rank-1'; // Basato su index
+                        if (index === 1) rankClass = 'rank-2'; // Basato su index
+                        if (index === 2) rankClass = 'rank-3'; // Basato su index
+
+                        const boatMeters = (athlete.boat && athlete.boat.meters) ? athlete.boat.meters : 0;
+                        const boatEp = (athlete.avgBoatEp) ? athlete.avgBoatEp : 0;
+                        const ergoMeters = (athlete.ergo && athlete.ergo.meters) ? athlete.ergo.meters : 0;
+                        const ergoEp = (athlete.avgErgoEp) ? athlete.avgErgoEp : 0;
+                        const bikeMeters = (athlete.bike && athlete.bike.meters) ? athlete.bike.meters : 0;
+                        const bikeEp = (athlete.avgBikeEp) ? athlete.avgBikeEp : 0;
+
+                        const format = (num) => (num || 0).toLocaleString('it-IT', { maximumFractionDigits: 0 });
+                        const formatScore = (num) => (num || 0).toLocaleString('it-IT', { maximumFractionDigits: 2 });
+                        const formatEp = (num) => (num && num > 0) ? `${num.toFixed(2)}%` : '-';
+                        
                         const gruppoBadge = getGruppoBadge(athlete.gruppo);
+                        const genereBadge = getGenereBadge(athlete.genere);
 
                         return `
                         <tr id="athlete-row-${athlete.id || index}" class="block md:table-row">
-                            <!-- DESKTOP VIEW --><td data-label="#" class="hidden md:table-cell text-center font-bold text-xl rank-cell ${rankClass}">${index + 1}</td>
-                            <td data-label="Atleta" class="hidden md:table-cell font-bold text-lg athlete-cell">
-                                ${athlete.name}
-                            </td>
+                            <!-- DESKTOP VIEW -->
+                            <td data-label="#" class="hidden md:table-cell text-center font-bold text-xl rank-cell ${rankClass}">${relativeRank}</td>
+                            <td data-label="Atleta" class="hidden md:table-cell font-bold text-lg athlete-cell">${athlete.name}</td>
                             <td data-label="Gruppo" class="hidden md:table-cell">${gruppoBadge}</td>
-                            <td data-label="Barca (Metri)" class="hidden md:table-cell text-right text-emerald-300">${format(athlete.boat.meters)}</td>
-                            <td data-label="EP Barca" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(athlete.avgBoatEp)}</td>
-                            <td data-label="Ergo (Metri)" class="hidden md:table-cell text-right text-sky-300">${format(athlete.ergo.meters)}</td>
-                            <td data-label="EP Ergo" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(athlete.avgErgoEp)}</td>
-                            <td data-label="Bike (Metri)" class="hidden md:table-cell text-right text-purple-300">${format(athlete.bike.meters)}</td>
-                            <td data-label="EP Bike" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(athlete.avgBikeEp)}</td>
+                            <td data-label="Genere" class="hidden md:table-cell">${genereBadge}</td>
+                            <td data-label="Barca (Metri)" class="hidden md:table-cell text-right text-emerald-300">${format(boatMeters)}</td>
+                            <td data-label="EP Barca" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(boatEp)}</td>
+                            <td data-label="Ergo (Metri)" class="hidden md:table-cell text-right text-sky-300">${format(ergoMeters)}</td>
+                            <td data-label="EP Ergo" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(ergoEp)}</td>
+                            <td data-label="Bike (Metri)" class="hidden md:table-cell text-right text-purple-300">${format(bikeMeters)}</td>
+                            <td data-label="EP Bike" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(bikeEp)}</td>
                             <td data-label="Vol Barca" class="hidden md:table-cell text-right ep-col-min vol-value">${formatScore(athlete.volBarca)}%</td>
                             <td data-label="Vol Ergo" class="hidden md:table-cell text-right ep-col-min vol-value">${formatScore(athlete.volErgo)}%</td>
                             <td data-label="Vol Bike" class="hidden md:table-cell text-right ep-col-min vol-value">${formatScore(athlete.volBike)}%</td>
                             <td data-label="Punteggio Tot." class="hidden md:table-cell text-right font-extrabold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-300">${formatScore(athlete.score)}</td>
 
-                            <!-- MOBILE VIEW (MODIFICATA) --><td colspan="13" class="md:hidden p-0 border-b-0">
+                            <!-- MOBILE VIEW -->
+                            <td colspan="14" class="md:hidden p-0 border-b-0"> <!-- Colspan incrementato a 14 -->
                                 <div class="mobile-row-summary" data-athlete-id="${athlete.id || index}">
-                                    
-                                    <!-- Blocco Unico Verticale -->
                                     <div class="mobile-main-info">
-                                        <!-- Riga 1: Pos, Atleta, Gruppo -->
                                         <div class="mobile-row-line1">
-                                            <span class="mobile-rank-number ${rankClass}">${index + 1}.</span>
+                                            <span class="mobile-rank-number ${rankClass}">${relativeRank}.</span>
                                             <span class="mobile-athlete-name">${athlete.name}</span>
                                             <span class="mobile-group-badge">${gruppoBadge}</span>
+                                            <span class="mobile-group-badge">${genereBadge}</span>
                                         </div>
-                                        <!-- Riga 2: Punteggio -->
                                         <div class="mobile-row-line2">
                                             <span class="mobile-score-label">Punteggio</span>
                                             <span class="mobile-score-value">${formatScore(athlete.score)}</span>
                                         </div>
                                     </div>
-
-                                    <!-- Colonna Freccia -->
                                     <div class="mobile-arrow-icon">
                                         <svg class="h-6 w-6 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
@@ -695,15 +482,15 @@
                                 </div>
                                 
                                 <div class="mobile-details" id="details-${athlete.id || index}">
-                                    <div class="mobile-details-item"><span>Barca (Metri)</span> <span class="text-emerald-300">${format(athlete.boat.meters)}</span></div>
-                                    <div class="mobile-details-item"><span>EP Barca</span> <span class="ep-value">${formatEp(athlete.avgBoatEp)}</span></div>
-                                    <div class="mobile-details-item"><span>Ergo (Metri)</span> <span class="text-sky-300">${format(athlete.ergo.meters)}</span></div>
-                                    <div class="mobile-details-item"><span>EP Ergo</span> <span class="ep-value">${formatEp(athlete.avgErgoEp)}</span></div>
-                                    <div class="mobile-details-item"><span>Bike (Metri)</span> <span class="text-purple-300">${format(athlete.bike.meters)}</span></div>
-                                    <div class="mobile-details-item"><span>EP Bike</span> <span class="ep-value">${formatEp(athlete.avgBikeEp)}</span></div>
+                                    <div class="mobile-details-item"><span>Genere</span> <span>${genereBadge}</span></div>
+                                    <div class="mobile-details-item"><span>Barca (Metri)</span> <span class="text-emerald-300">${format(boatMeters)}</span></div>
+                                    <div class="mobile-details-item"><span>EP Barca</span> <span class="ep-value">${formatEp(boatEp)}</span></div>
+                                    <div class="mobile-details-item"><span>Ergo (Metri)</span> <span class="text-sky-300">${format(ergoMeters)}</span></div>
+                                    <div class="mobile-details-item"><span>EP Ergo</span> <span class="ep-value">${formatEp(ergoEp)}</span></div>
+                                    <div class="mobile-details-item"><span>Bike (Metri)</span> <span class="text-purple-300">${format(bikeMeters)}</span></div>
+                                    <div class="mobile-details-item"><span>EP Bike</span> <span class="ep-value">${formatEp(bikeEp)}</span></div>
                                     <div class="mobile-details-item"><span>Vol Barca</span> <span class="vol-value">${formatScore(athlete.volBarca)}%</span></div>
                                     <div class="mobile-details-item"><span>Vol Ergo</span> <span class="vol-value">${formatScore(athlete.volErgo)}%</span></div>
-                                    <!-- CORREZIONE BUG: Corretto 'div classExample-Bug' in 'div class' -->
                                     <div class="mobile-details-item"><span>Vol Bike</span> <span class="vol-value">${formatScore(athlete.volBike)}%</span></div>
                                 </div>
                             </td>
@@ -730,19 +517,27 @@
             });
         }
 
+        // --- GESTIONE AVVIO PAGINA ---
         document.addEventListener('DOMContentLoaded', async () => { 
-            loaderText.textContent = 'Caricamento dati...';
-            
+            loaderText.textContent = 'Caricamento...';
             appView.classList.remove('hidden');
-            
+
+            // Imposta i valori predefiniti
             const today = getTodayDateString();
-            const firstDayOfMonth = getFirstDayOfMonthString();
-            startDateInput.value = firstDayOfMonth;
-            endDateInput.value = today;
+            const currentMonth = getCurrentMonthString();
+            dailyDateInput.value = today;
+            monthlyMonthInput.value = currentMonth;
             
-            filterBtn.addEventListener('click', loadAndProcessRankings);
+            // Collega i bottoni alle rispettIVE funzioni
+            loadDailyBtn.addEventListener('click', loadDailyData);
+            loadMonthlyBtn.addEventListener('click', loadMonthlyData);
             
-            await loadPrecomputedRanking(); 
+            // NUOVI LISTENER PER I FILTRI
+            filterGenere.addEventListener('change', applyFiltersAndRender);
+            filterGruppo.addEventListener('change', applyFiltersAndRender);
+
+            // Carica automaticamente il ranking MENSILE corrente all'avvio
+            await loadMonthlyData(); 
         });
     </script>
 </body>
