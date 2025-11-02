@@ -1,4 +1,4 @@
-const CACHE_NAME = 'fic-pwa-cache-v1.26';
+const CACHE_NAME = 'fic-pwa-cache-v1.27';
 
 // Lista dei file fondamentali dell'applicazione da mettere in cache.
 // Aggiungi qui tutte le pagine e le risorse principali della tua PWA.
