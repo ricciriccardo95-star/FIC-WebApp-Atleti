@@ -3,81 +3,748 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIC - Visualizza Ranking</title>
+    <title>Ranking Totale Allenamenti - FIC Canottaggio</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <!-- Icone Heroicons per la freccia --><script src="https://unpkg.com/heroicons"></script>
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0F172A;
-            color: #E2E8F0;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+        /* Stili di base */
+        body { 
+            font-family: 'Inter', sans-serif; 
+            background-color: #020617;
+            color: #E2E8F0; 
+            -webkit-font-smoothing: antialiased; 
+            -moz-osx-font-smoothing: grayscale; 
         }
-        .background-gradient {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            filter: blur(100px); z-index: -1;
+        .background-gradient { 
+            position: fixed; 
+            top: 50%; 
+            left: 50%; 
+            transform: translate(-50%, -50%); 
+            filter: blur(150px);
+            opacity: 0.4;
+            z-index: -1; 
         }
-        .gradient-1 {
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%);
-            animation: pulse 10s infinite alternate;
+        .gradient-1 { 
+            width: 600px; 
+            height: 600px; 
+            background: radial-gradient(circle, rgba(37, 99, 235, 0.4), transparent 70%);
+            animation: pulse 10s infinite alternate; 
         }
-        .gradient-2 {
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
-            animation: pulse 12s infinite alternate-reverse;
+        .gradient-2 { 
+            width: 500px; 
+            height: 500px; 
+            background: radial-gradient(circle, rgba(168, 85, 247, 0.3), transparent 70%);
+            animation: pulse 12s infinite alternate-reverse; 
+            top: 60%;
+            left: 40%;
         }
-        @keyframes pulse {
-            0% { transform: scale(0.9) rotate(0deg); }
-            100% { transform: scale(1.2) rotate(20deg); }
+        @keyframes pulse { 
+            0% { transform: translate(-50%, -50%) scale(0.9) rotate(0deg); } 
+            100% { transform: translate(-50%, -50%) scale(1.1) rotate(5deg); } 
         }
-        .nav-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        @keyframes spin { 
+            to { transform: rotate(360deg); } 
         }
-        .nav-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        .loader { 
+            border-top-color: #3B82F6;
+            animation: spin 1s linear infinite; 
         }
+        /* Stili per input data */
+        .date-input { 
+            background-color: #1E293B; 
+            border: 1px solid #334155; 
+            border-radius: 0.5rem; 
+            padding: 0.5rem 1rem; 
+            color: #E2E8F0; 
+            transition: border-color 0.3s, box-shadow 0.3s;
+        }
+        .date-input:focus {
+            border-color: #3B82F6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
+        }
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        
+        /* Stili per la tabella */
+        table {
+            border-collapse: collapse;
+        }
+        th, td {
+            padding: 0.75rem 0.6rem;
+            text-align: left;
+        }
+        th {
+            background-color: #334155; /* slate-700 */
+            font-weight: 700;
+            color: #d1d5db; /* gray-300 */
+            text-transform: uppercase;
+            font-size: 0.75rem;
+            letter-spacing: 0.05em;
+        }
+        tr:nth-child(even) {
+            background-color: #1e293b; /* slate-800 */
+        }
+         tr:nth-child(odd) {
+            background-color: #162031; /* Un po' più scuro di slate-800 */
+        }
+        tr:hover {
+            background-color: #374764;
+        }
+        td {
+            border-bottom: 1px solid #334155; /* slate-700 */
+            white-space: nowrap;
+        }
+        
+        /* Stili per le medaglie */
+        .rank-1 { color: #facc15; /* amber-400 */ font-weight: 900; }
+        .rank-2 { color: #d1d5db; /* gray-300 */ font-weight: 900; }
+        .rank-3 { color: #cd7f32; /* Bronzo */ font-weight: 900; }
+        
+        /* Classe per i valori EP e VOL */
+        .ep-value {
+            font-size: 0.8rem;
+            font-weight: 700;
+            color: #fbbf24; /* amber-400 */
+        }
+        .vol-value {
+             font-size: 0.8rem;
+            font-weight: 700;
+            color: #22c55e; /* emerald-500 */
+        }
+        .ep-col-min {
+            min-width: 70px;
+        }
+
+        /* --- STILI PER BADGE --- */
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px; /* rounded-full */
+            font-weight: 600;
+            font-size: 0.75rem; /* text-xs */
+            line-height: 1.2;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+        }
+
+        /* --- STILI PER TABELLA RESPONSIVE (MODIFICATI) --- */
+        @media screen and (max-width: 768px) {
+            table { 
+                width: 100%; 
+                border-collapse: separate; 
+                border-spacing: 0 0.75rem; 
+            }
+            table thead { display: none; } 
+            table tbody { display: block; width: 100%; }
+
+            table tr {
+                display: block; 
+                border-radius: 0.75rem; 
+                background-color: #1e293b; 
+                border: 1px solid #334155; 
+                padding: 0; 
+                width: 100%;
+                overflow: hidden; 
+            }
+            table tr:nth-child(even), table tr:nth-child(odd) {
+                 background-color: #1e293b; 
+            }
+            table tr:hover {
+                background-color: #2b3b57; 
+            }
+
+            .mobile-row-summary {
+                /* MODIFICA: Layout "Blocco Unico Verticale" (Idea 3) */
+                display: flex;
+                align-items: center;
+                justify-content: space-between; /* Spinge freccia a destra */
+                padding: 0.75rem 1rem;
+                cursor: pointer;
+                text-align: left;
+                width: 100%;
+                margin: 0 auto;
+                gap: 0.5rem; 
+                border-radius: 0.75rem;
+            }
+
+            /* --- STILI PER IDEA 3 --- */
+            /* Rimosse tutte le vecchie classi .mobile-col.* */
+
+            .mobile-main-info {
+                display: flex;
+                flex-direction: column;
+                flex-grow: 1; /* Prende lo spazio disponibile */
+                min-width: 0; /* Per troncamento corretto */
+            }
+
+            .mobile-row-line1 {
+                display: flex;
+                align-items: baseline; /* Allinea base di Pos, Nome, Badge */
+                gap: 0.5rem;
+                width: 100%;
+            }
+
+            .mobile-rank-number {
+                font-size: 1.25rem; 
+                font-weight: 700;
+                flex-shrink: 0; /* Non stringere il numero */
+            }
+
+            .mobile-athlete-name {
+                font-size: 1.1rem; 
+                font-weight: 700;
+                white-space: nowrap;
+                overflow: hidden;
+                text-overflow: ellipsis;
+                flex-grow: 1; /* Prende spazio e tronca */
+            }
+
+            .mobile-group-badge .badge {
+                font-size: 0.65rem; 
+                padding: 0.1rem 0.4rem; 
+                flex-shrink: 0;
+            }
+            
+            .mobile-row-line2 {
+                display: flex;
+                flex-direction: column;
+                align-items: flex-start; /* Allinea punteggio a sinistra */
+                margin-top: 0.25rem;
+            }
+            
+            .mobile-score-label {
+                font-size: 0.65rem; 
+                font-weight: 500;
+                color: #94A3B8; 
+                text-transform: uppercase;
+                margin-bottom: -4px;
+            }
+
+            .mobile-score-value {
+                font-size: 1.5rem; /* Punteggio bello grande */
+                font-weight: 900;
+                background-clip: text;
+                -webkit-background-clip: text;
+                color: transparent;
+                background-image: linear-gradient(to right, #60A5FA, #7DD3FC);
+            }
+            /* --- FINE STILI IDEA 3 --- */
+
+
+            .mobile-arrow-icon {
+                display: flex;
+                align-items: center;
+                justify-content: flex-end; /* Allineato a destra */
+                transition: transform 0.2s ease-in-out;
+                flex-shrink: 0; /* Non stringere la freccia */
+            }
+            
+            /* Dettagli espandibili */
+            .mobile-details {
+                display: none; 
+                padding: 0.5rem 1rem 1rem 1rem;
+                background-color: #0f172a; 
+                border-top: 1px solid #334155; 
+            }
+            .mobile-details.active {
+                display: block;
+            }
+            .mobile-details-item {
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+                padding: 0.25rem 0;
+                font-size: 0.9em;
+                color: #cbd5e1; 
+            }
+            .mobile-details-item span:first-child {
+                font-weight: 600;
+                color: #94A3B8; 
+            }
+            .mobile-details-item .ep-value,
+            .mobile-details-item .vol-value {
+                font-size: 0.9em; 
+            }
+        }
+        /* Rotazione per l'icona della freccia */
+        .rotate-180 { transform: rotate(180deg); }
     </style>
 </head>
 <body class="antialiased">
-
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
-    <div class="p-4 md:p-8 max-w-7xl mx-auto">
-        <div class="mb-8">
-            <a href="../home.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-                Torna alla Home
-            </a>
-        </div>
-        <section id="ranking-page">
-            <div class="flex flex-col items-center justify-center">
-                <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Visualizza Ranking</h1>
-                <!-- Modificata la griglia per centrare 3 elementi -->
-                <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8 w-full max-w-5xl">
-                    <a href="ranking_boat.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
-                        <div class="text-6xl mb-4">🚤</div> <h3 class="text-2xl font-bold text-white">Ranking Barca</h3>
-                        <p class="text-slate-400 mt-2">Classifiche degli allenamenti in barca.</p>
-                    </a>
-                    <a href="ranking_ergo.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
-                        <div class="text-6xl mb-4">🚣‍♂️</div> <h3 class="text-2xl font-bold text-white">Ranking RowErg</h3>
-                        <p class="text-slate-400 mt-2">Classifiche al remoergometro.</p>
-                    </a>
-                    <a href="ranking_bike.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-8 text-center">
-                        <div class="text-6xl mb-4">🚴‍♂️</div> <h3 class="text-2xl font-bold text-white">Ranking BikeErg</h3>
-                        <p class="text-slate-400 mt-2">Classifiche sulla bike.</p>
-                    </a>
-                    <!-- Blocco Ranking Generale rimosso -->
-                </div>
-            </div>
-        </section>
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-950/90 flex flex-col justify-center items-center z-50 transition-opacity duration-500">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p id="loader-text" class="mt-4 text-slate-300 font-medium">Caricamento dati...</p>
     </div>
 
+    <div id="app-view" class="pt-4 pb-4 md:p-10 max-w-screen-2xl mx-auto relative z-10 hidden">
+        <h1 class="text-4xl md:text-6xl font-extrabold tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-300 text-center mb-6 pt-4">
+            🏆 Ranking Totale Allenamenti
+        </h1>
+        
+        <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-2xl p-6 mb-12 flex flex-wrap justify-center items-center gap-6 mx-4 md:mx-0">
+            <a href="../home.html" class="bg-slate-600 hover:bg-slate-500 active:bg-slate-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-slate-500/50">
+                <span class="mr-1">←</span> Torna alla selezione
+            </a>
+            <div class="flex items-center gap-3">
+                <label for="startDate" class="text-slate-300 font-semibold">Dal:</label>
+                <input type="date" id="startDate" class="date-input w-40">
+            </div>
+            <div class="flex items-center gap-3">
+                <label for="endDate" class="text-slate-300 font-semibold">Al:</label>
+                <input type="date" id="endDate" class="date-input w-40">
+            </div>
+            <button id="filterBtn" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/50">
+                Filtra <span class="ml-1">→</span>
+            </button>
+        </div>
+
+        <div id="info-box" class="text-center text-slate-400 mb-8 font-medium hidden">
+            <span id="info-message"></span>
+            <span id="reads-count" class="text-sky-300 text-xl font-extrabold tracking-wider">0</span>
+        </div>
+
+        <div id="results-container" class="mx-4 md:mx-0">
+            <!-- La tabella verrà inserita qui --></div>
+    </div>
+
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <script>
+        const firebaseConfig = {
+            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ", authDomain: "database-atleti-fic.firebaseapp.com",
+            databaseURL: "https://database-atleti-fic-default-rtdb.firebaseio.com", projectId: "database-atleti-fic",
+            storageBucket: "database-atleti-fic.firebasestorage.app", messagingSenderId: "860422140545",
+            appId: "1:860422140545:web:cd14c042a47f2650681380"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const firestore = firebase.firestore();
+
+        // Riferimenti DOM
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const loaderText = document.getElementById('loader-text');
+        const resultsContainer = document.getElementById('results-container');
+        const infoBox = document.getElementById('info-box');
+        const infoMessage = document.getElementById('info-message');
+        const readsCountSpan = document.getElementById('reads-count');
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const filterBtn = document.getElementById('filterBtn');
+        const appView = document.getElementById('app-view');
+
+        // --- FUNZIONI HELPER ---
+        function getTodayDateString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            return `${year}-${month}-${day}`;
+        }
+        
+        function getFirstDayOfMonthString() {
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            return `${year}-${month}-01`;
+        }
+
+        function timeToSeconds(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+            const parts = timeStr.split(':');
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseFloat(parts[1].replace(',', '.'));
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+
+        // --- FUNZIONE PER I BADGE (MODIFICATA CON ABBREVIAZIONI) ---
+        function getGruppoBadge(value) {
+            if (!value) return '<span class="badge bg-slate-600 text-slate-200" title="Non Definito">N/D</span>';
+            
+            let bgColor = 'bg-slate-600';
+            let textColor = 'text-slate-200';
+            let abbrev = 'N/D';
+
+            switch (value) {
+                case 'Squadra olimpica': 
+                    bgColor = 'bg-sky-500'; 
+                    textColor = 'text-white'; 
+                    abbrev = 'GO'; // Gruppo Olimpico
+                    break;
+                case 'Under 23': 
+                    bgColor = 'bg-teal-500'; 
+                    textColor = 'text-white'; 
+                    abbrev = 'U23'; 
+                    break;
+                case 'Under 19': 
+                    bgColor = 'bg-orange-500'; 
+                    textColor = 'text-white'; 
+                    abbrev = 'U19'; 
+                    break;
+                case 'ParaRowing': 
+                    bgColor = 'bg-purple-500'; 
+                    textColor = 'text-white'; 
+                    abbrev = 'PR'; 
+                    break;
+                case 'Beach sprint': 
+                    bgColor = 'bg-amber-500'; 
+                    textColor = 'text-white'; 
+                    abbrev = 'BS'; 
+                    break;
+            }
+            // Aggiungo 'value' come 'title' per vedere il nome completo in hover
+            return `<span class="badge ${bgColor} ${textColor}" title="${value}">${abbrev}</span>`;
+        }
+
+
+        // --- FUNZIONE (ECONOMICA) ---
+        async function loadPrecomputedRanking() {
+            loaderText.textContent = 'Caricamento ranking pre-calcolato...';
+            
+            try {
+                const docRef = firestore.doc('riepiloghi/rankingTotale');
+                const doc = await docRef.get();
+
+                if (doc.exists) {
+                    const data = doc.data();
+                    const rankedAthletes = data.ranking; 
+                    
+                    renderRanking(rankedAthletes);
+                    
+                    infoMessage.textContent = 'Ranking di oggi (pre-calcolato). Letture: ';
+                    readsCountSpan.textContent = '1';
+                    
+                    if (data.timestamp) {
+                        const date = data.timestamp.toDate();
+                        infoMessage.textContent = `Ranking del ${date.toLocaleDateString('it-IT')} ore ${date.toLocaleTimeString('it-IT')}. Letture: `;
+                    }
+                    infoBox.classList.remove('hidden');
+
+                } else {
+                    resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Documento ranking non ancora disponibile. Riprova tra poco.</p>`;
+                }
+            } catch (error) {
+                console.error("Errore nel caricamento del ranking pre-calcolato: ", error);
+                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: Impossibile caricare il ranking pre-calcolato.</p>`;
+            } finally {
+                loaderOverlay.style.display = 'none';
+            }
+        }
+
+
+        // --- FUNZIONE (COSTOSA) ---
+        async function loadAndProcessRankings() {
+            loaderText.textContent = 'Aggregazione dati in corso...';
+            loaderOverlay.style.display = 'flex';
+            infoBox.classList.add('hidden');
+            resultsContainer.innerHTML = '';
+            let totalReads = 0;
+
+            const startDate = startDateInput.value;
+            const endDate = endDateInput.value;
+
+            if (!startDate || !endDate || new Date(startDate) > new Date(endDate)) {
+                resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Seleziona un intervallo di date valido.</p>`;
+                loaderOverlay.style.display = 'none';
+                return;
+            }
+
+            const tempAthleteGroupCache = new Map();
+            try {
+                const athletesSnapshot = await firestore.collection('atleti').get();
+                athletesSnapshot.docs.forEach(doc => {
+                    tempAthleteGroupCache.set(doc.id, doc.data().gruppo || null);
+                });
+                totalReads += athletesSnapshot.docs.length;
+            } catch (e) {
+                console.error("Errore caricamento gruppi per filtro", e);
+            }
+
+            const athletesData = new Map();
+
+            try {
+                const workoutTypes = ['BIKE', 'BOAT', 'ERGO'];
+                const promises = workoutTypes.map(type => 
+                    firestore.collection('allenamenti')
+                        .where('tipo', '==', type)
+                        .where('data', '>=', startDate)
+                        .where('data', '<=', endDate)
+                        .get()
+                );
+
+                const snapshots = await Promise.all(promises);
+                
+                snapshots.forEach((snapshot, index) => {
+                    const type = workoutTypes[index].toLowerCase(); 
+                    totalReads += snapshot.docs.length > 0 ? snapshot.docs.length : 1;
+
+                    snapshot.docs.forEach(doc => {
+                        const workout = doc.data();
+                        
+                        let workoutMeters = 0;
+                        let workoutMinutes = 0;
+                        let workoutEp = (typeof workout.ep === 'number' && workout.ep > 0) ? workout.ep : 0;
+                        
+                        if (!Array.isArray(workout.intervalli) || workout.intervalli.length === 0) {
+                            return; 
+                        }
+                        
+                        const numberOfIntervals = workout.intervalli.length;
+                        
+                        if (workout.modalita === 'tempo') {
+                            const intervalsData = workout.intervalli.map(i => parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n));
+                            if(intervalsData.length > 0) {
+                                workoutMeters = intervalsData.reduce((a, b) => a + b, 0);
+                            }
+                            const durationMinutes = parseInt(workout.tempo, 10);
+                            if (!isNaN(durationMinutes)) {
+                                workoutMinutes = durationMinutes * numberOfIntervals;
+                            }
+                        } else if (workout.modalita === 'distanza') {
+                            const intervalsData = workout.intervalli.map(i => {
+                                const val = (typeof i === 'object' && i !== null && i['0']) ? i['0'] : i;
+                                return timeToSeconds(val);
+                            });
+                             if(intervalsData.length > 0) {
+                                const totalSeconds = intervalsData.reduce((a, b) => a + b, 0);
+                                workoutMinutes = totalSeconds / 60;
+                            }
+                            const distanceMeters = parseInt(workout.distanza, 10);
+                            if (!isNaN(distanceMeters)) {
+                                workoutMeters = distanceMeters * numberOfIntervals;
+                            }
+                        }
+
+                        const athletesInWorkout = [];
+                        if (type === 'boat' && workout.equipaggio) {
+                             workout.equipaggio.forEach(member => {
+                                if (member.atletaId && member.cognomeAtleta) {
+                                    athletesInWorkout.push({id: member.atletaId, name: member.cognomeAtleta});
+                                }
+                            });
+                        } else if (workout.atletaId && workout.cognomeAtleta) {
+                             athletesInWorkout.push({id: workout.atletaId, name: workout.cognomeAtleta});
+                        }
+
+                        athletesInWorkout.forEach(athlete => {
+                            if (!athletesData.has(athlete.id)) {
+                                athletesData.set(athlete.id, {
+                                    id: athlete.id, 
+                                    name: athlete.name,
+                                    bike: { meters: 0, minutes: 0, epSum: 0, count: 0 },
+                                    boat: { meters: 0, minutes: 0, epSum: 0, count: 0 },
+                                    ergo: { meters: 0, minutes: 0, epSum: 0, count: 0 },
+                                });
+                            }
+                            const currentData = athletesData.get(athlete.id);
+                            
+                            currentData[type].meters += workoutMeters;
+                            currentData[type].minutes += workoutMinutes;
+                            
+                            if (workoutEp > 0) {
+                                currentData[type].epSum += workoutEp;
+                                currentData[type].count += 1;
+                            }
+                        });
+                    });
+                });
+
+                const rankedAthletes = Array.from(athletesData.values()).map(data => {
+                    const totalMeters = data.bike.meters + data.boat.meters + data.ergo.meters;
+                    const totalMinutes = data.bike.minutes + data.boat.minutes + data.ergo.minutes;
+                    
+                    const avgBikeEp = data.bike.count > 0 ? data.bike.epSum / data.bike.count : 0;
+                    const avgBoatEp = data.boat.count > 0 ? data.boat.epSum / data.boat.count : 0;
+                    const avgErgoEp = data.ergo.count > 0 ? data.ergo.epSum / data.ergo.count : 0;
+
+                    const volBarca = avgBoatEp;
+                    const volErgo = avgErgoEp * 0.75;
+                    const volBike = avgBikeEp * 0.50;
+                    
+                    const score = volBarca + volErgo + volBike;
+                    
+                    const gruppo = tempAthleteGroupCache.get(data.id) || 'N/D';
+
+                    return {
+                        ...data, 
+                        gruppo: gruppo,
+                        totalMeters,
+                        totalMinutes,
+                        score,
+                        avgBikeEp,
+                        avgBoatEp,
+                        avgErgoEp,
+                        volBarca,
+                        volErgo,
+                        volBike,
+                    };
+                });
+                
+                rankedAthletes.sort((a, b) => b.score - a.score);
+
+                renderRanking(rankedAthletes);
+                
+                infoMessage.textContent = 'Letture totali generate da questo filtro: ';
+                readsCountSpan.textContent = totalReads.toLocaleString('it-IT');
+                infoBox.classList.remove('hidden');
+
+            } catch (error) {
+                console.error("Errore nel caricamento dei dati: ", error);
+                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: INDICE MANCANTE. La query richiede l'indice composto: <code>allenamenti</code> > <code>tipo</code> (Asc), <code>data</code> (Asc). Crealo sulla console Firebase.</p>`;
+            } finally {
+                loaderOverlay.style.display = 'none';
+            }
+        }
+
+        // --- FUNZIONE DI RENDER (MODIFICATA) ---
+        function renderRanking(rankedAthletes) {
+            if (rankedAthletes.length === 0) {
+                resultsContainer.innerHTML = `<p class="text-center text-slate-400 p-8 text-xl">Nessun dato trovato.</p>`;
+                return;
+            }
+
+            const table = document.createElement('table');
+            table.className = "w-full text-white md:rounded-xl md:overflow-hidden md:bg-slate-900/80 md:border md:border-slate-700/60 md:shadow-2xl"; 
+            table.innerHTML = `
+                <thead class="hidden md:table-header-group">
+                    <tr>
+                        <th scope="col" class="w-16 text-center">#</th>
+                        <th scope="col">Atleta</th>
+                        <th scope="col">Gruppo</th>
+                        
+                        <th scope="col" class="text-right">Barca (Metri)</th>
+                        <th scope="col" class="text-right ep-col-min">EP Barca</th>
+                        <th scope="col" class="text-right">Ergo (Metri)</th>
+                        <th scope="col" class="text-right ep-col-min">EP Ergo</th>
+                        <th scope="col" class="text-right">Bike (Metri)</th>
+                        <th scope="col" class="text-right ep-col-min">EP Bike</th>
+
+                        <th scope="col" class="text-right ep-col-min">Vol Barca</th>
+                        <th scope="col" class="text-right ep-col-min">Vol Ergo</th>
+                        <th scope="col" class="text-right ep-col-min">Vol Bike</th>
+
+                        <th scope="col" class="text-right">Punteggio Tot.</th>
+                    </tr>
+                </thead>
+                <tbody class="block md:table-row-group">
+                    ${rankedAthletes.map((athlete, index) => {
+                        let rankClass = '';
+                        if (index === 0) rankClass = 'rank-1';
+                        if (index === 1) rankClass = 'rank-2';
+                        if (index === 2) rankClass = 'rank-3';
+
+                        const format = (num) => num.toLocaleString('it-IT', { maximumFractionDigits: 0 });
+                        const formatScore = (num) => num.toLocaleString('it-IT', { maximumFractionDigits: 2 });
+                        const formatEp = (num) => num > 0 ? `${num.toFixed(2)}%` : '-';
+                        
+                        // Funzione badge ora usa abbreviazioni
+                        const gruppoBadge = getGruppoBadge(athlete.gruppo);
+
+                        return `
+                        <tr id="athlete-row-${athlete.id || index}" class="block md:table-row">
+                            <!-- DESKTOP VIEW --><td data-label="#" class="hidden md:table-cell text-center font-bold text-xl rank-cell ${rankClass}">${index + 1}</td>
+                            <td data-label="Atleta" class="hidden md:table-cell font-bold text-lg athlete-cell">
+                                ${athlete.name}
+                            </td>
+                            <td data-label="Gruppo" class="hidden md:table-cell">${gruppoBadge}</td>
+                            <td data-label="Barca (Metri)" class="hidden md:table-cell text-right text-emerald-300">${format(athlete.boat.meters)}</td>
+                            <td data-label="EP Barca" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(athlete.avgBoatEp)}</td>
+                            <td data-label="Ergo (Metri)" class="hidden md:table-cell text-right text-sky-300">${format(athlete.ergo.meters)}</td>
+                            <td data-label="EP Ergo" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(athlete.avgErgoEp)}</td>
+                            <td data-label="Bike (Metri)" class="hidden md:table-cell text-right text-purple-300">${format(athlete.bike.meters)}</td>
+                            <td data-label="EP Bike" class="hidden md:table-cell text-right ep-col-min ep-value">${formatEp(athlete.avgBikeEp)}</td>
+                            <td data-label="Vol Barca" class="hidden md:table-cell text-right ep-col-min vol-value">${formatScore(athlete.volBarca)}%</td>
+                            <td data-label="Vol Ergo" class="hidden md:table-cell text-right ep-col-min vol-value">${formatScore(athlete.volErgo)}%</td>
+                            <td data-label="Vol Bike" class="hidden md:table-cell text-right ep-col-min vol-value">${formatScore(athlete.volBike)}%</td>
+                            <td data-label="Punteggio Tot." class="hidden md:table-cell text-right font-extrabold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-300">${formatScore(athlete.score)}</td>
+
+                            <!-- MOBILE VIEW (MODIFICATA) --><td colspan="13" class="md:hidden p-0 border-b-0">
+                                <div class="mobile-row-summary" data-athlete-id="${athlete.id || index}">
+                                    
+                                    <!-- Blocco Unico Verticale -->
+                                    <div class="mobile-main-info">
+                                        <!-- Riga 1: Pos, Atleta, Gruppo -->
+                                        <div class="mobile-row-line1">
+                                            <span class="mobile-rank-number ${rankClass}">${index + 1}.</span>
+                                            <span class="mobile-athlete-name">${athlete.name}</span>
+                                            <span class="mobile-group-badge">${gruppoBadge}</span>
+                                        </div>
+                                        <!-- Riga 2: Punteggio -->
+                                        <div class="mobile-row-line2">
+                                            <span class="mobile-score-label">Punteggio</span>
+                                            <span class="mobile-score-value">${formatScore(athlete.score)}</span>
+                                        </div>
+                                    </div>
+
+                                    <!-- Colonna Freccia -->
+                                    <div class="mobile-arrow-icon">
+                                        <svg class="h-6 w-6 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                                        </svg>
+                                    </div>
+                                </div>
+                                
+                                <div class="mobile-details" id="details-${athlete.id || index}">
+                                    <div class="mobile-details-item"><span>Barca (Metri)</span> <span class="text-emerald-300">${format(athlete.boat.meters)}</span></div>
+                                    <div class="mobile-details-item"><span>EP Barca</span> <span class="ep-value">${formatEp(athlete.avgBoatEp)}</span></div>
+                                    <div class="mobile-details-item"><span>Ergo (Metri)</span> <span class="text-sky-300">${format(athlete.ergo.meters)}</span></div>
+                                    <div class="mobile-details-item"><span>EP Ergo</span> <span class="ep-value">${formatEp(athlete.avgErgoEp)}</span></div>
+                                    <div class="mobile-details-item"><span>Bike (Metri)</span> <span class="text-purple-300">${format(athlete.bike.meters)}</span></div>
+                                    <div class="mobile-details-item"><span>EP Bike</span> <span class="ep-value">${formatEp(athlete.avgBikeEp)}</span></div>
+                                    <div class="mobile-details-item"><span>Vol Barca</span> <span class="vol-value">${formatScore(athlete.volBarca)}%</span></div>
+                                    <div class="mobile-details-item"><span>Vol Ergo</span> <span class="vol-value">${formatScore(athlete.volErgo)}%</span></div>
+                                    <!-- CORREZIONE BUG: Corretto 'div classExample-Bug' in 'div class' -->
+                                    <div class="mobile-details-item"><span>Vol Bike</span> <span class="vol-value">${formatScore(athlete.volBike)}%</span></div>
+                                </div>
+                            </td>
+                        </tr>
+                        `
+                    }).join('')}
+                </tbody>
+            `;
+            resultsContainer.innerHTML = '';
+            resultsContainer.appendChild(table);
+
+            // Aggiungi event listeners per i dettagli mobile
+            document.querySelectorAll('.mobile-row-summary').forEach(row => {
+                row.addEventListener('click', (event) => {
+                    const athleteId = row.dataset.athleteId;
+                    const detailsDiv = document.getElementById(`details-${athleteId}`);
+                    const arrowIcon = row.querySelector('.mobile-arrow-icon');
+                    
+                    if (detailsDiv && arrowIcon) {
+                        detailsDiv.classList.toggle('active');
+                        arrowIcon.classList.toggle('rotate-180');
+                    }
+                });
+            });
+        }
+
+        document.addEventListener('DOMContentLoaded', async () => { 
+            loaderText.textContent = 'Caricamento dati...';
+            
+            appView.classList.remove('hidden');
+            
+            const today = getTodayDateString();
+            const firstDayOfMonth = getFirstDayOfMonthString();
+            startDateInput.value = firstDayOfMonth;
+            endDateInput.value = today;
+            
+            filterBtn.addEventListener('click', loadAndProcessRankings);
+            
+            await loadPrecomputedRanking(); 
+        });
+    </script>
 </body>
 </html>
+
