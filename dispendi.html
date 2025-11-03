@@ -431,7 +431,6 @@
             } catch (error) {
                 console.error("Errore nel caricamento dei dati atleta:", error);
                 mainContent.classList.add('hidden');
-NORMALIZED_HEIGHT: 0.28
                 errorLoadingMessage.textContent = `Errore nel caricamento: ${error.message}. Riprova o contatta l'assistenza.`;
                 errorLoadingMessage.classList.remove('hidden');
             } finally {
@@ -490,9 +489,12 @@ NORMALIZED_HEIGHT: 0.28
 
          window.calculatePercentageBikeerg = function() {
             const selectedPercentageValue = percentageSelectBikeerg.value;
-            // L'utente vuole che i watt di base siano gli stessi
-            // Quindi usiamo baseWattsRowerg se disponibile, altrimenti baseWattsBikeerg
-            const baseWattsToUse = baseWattsRowerg > 0 ? baseWattsRowerg : baseWattsBikeerg;
+            
+            // --- MODIFICA ---
+            // Usa sempre e solo i watt di base della BikeErg
+            const baseWattsToUse = baseWattsBikeerg; 
+            // Vecchia logica rimossa:
+            // const baseWattsToUse = baseWattsRowerg > 0 ? baseWattsRowerg : baseWattsBikeerg;
 
             if (!selectedPercentageValue || baseWattsToUse <= 0) {
                 percentageBikeergResultsContainer.classList.add('hidden');
@@ -500,7 +502,7 @@ NORMALIZED_HEIGHT: 0.28
             }
 
             const percentage = parseFloat(selectedPercentageValue) / 100;
-            const finalWatts = baseWattsToUse * percentage; // Usa i watt di base (preferibilmente RowErg)
+            const finalWatts = baseWattsToUse * percentage; // Usa i watt di base della BikeErg
             
             // Usa 4000m per calcolare il tempo equivalente della BikeErg
             const finalTimeInSeconds = calculateTimeFromWattsBikeerg(finalWatts, 4000);
@@ -519,4 +521,3 @@ NORMALIZED_HEIGHT: 0.28
     </script>
 </body>
 </html>
-
