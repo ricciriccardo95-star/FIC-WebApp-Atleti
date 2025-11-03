@@ -53,8 +53,8 @@
             animation: spin 1s linear infinite; 
         }
         
-        /* Stili per input e select */
-        .date-input, .filter-select { 
+        /* Stili per select */
+        .filter-select { 
             background-color: #1E293B; 
             border: 1px solid #334155; 
             border-radius: 0.5rem; 
@@ -62,7 +62,6 @@
             color: #E2E8F0; 
             transition: border-color 0.3s, box-shadow 0.3s;
         }
-        .date-input { width: 180px; }
         .filter-select { 
             width: 100%;
             -webkit-appearance: none;
@@ -75,17 +74,12 @@
             padding-right: 2.5rem; /* Spazio per la freccia */
         }
         
-        .date-input:focus, .filter-select:focus {
+        .filter-select:focus {
             border-color: #3B82F6;
             outline: none;
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
         }
-        input[type="date"]::-webkit-calendar-picker-indicator,
-        input[type="month"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            cursor: pointer;
-        }
-        
+
         /* Stili tabella */
         table { border-collapse: collapse; }
         th, td { padding: 0.75rem 0.6rem; text-align: left; }
@@ -141,7 +135,7 @@
 
     <div id="app-view" class="pt-4 pb-4 md:p-10 max-w-screen-2xl mx-auto relative z-10 hidden">
         
-        <!-- Tasto Home (STILE AGGIORNATO) -->
+        <!-- Tasto Home -->
         <a href="../home.html" class="absolute top-4 left-4 md:top-6 md:left-6 inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-white font-semibold rounded-lg shadow transition-colors text-sm">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M12 19l-7-7 7-7"/><path d="M19 12H5"/></svg>
             Home
@@ -151,40 +145,32 @@
             Ranking
         </h1>
         
-        <!-- === SELETTORI DATA/MESE === -->
-        <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-2xl p-6 mb-8 flex flex-col md:flex-row justify-center items-center gap-8 mx-4 md:mx-0">
+        <!-- === SELETTORI RANKING (NUOVA VERSIONE) === -->
+        <div class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-2xl p-6 mb-8 flex flex-col md:flex-row justify-center items-center gap-6 mx-4 md:mx-0">
             
-            <!-- Zona GIORNO -->
+            <!-- Bottone Totale -->
             <div class="text-center">
-                <label for="dailyDateInput" class="text-slate-300 font-semibold mb-2 block">Ranking Giornaliero</label>
-                <div class="flex gap-3">
-                    <input type="date" id="dailyDateInput" class="date-input">
-                    <button id="loadDailyBtn" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/50">
-                        Carica
-                    </button>
-                </div>
+                <button id="loadTotalBtn" class="bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-blue-500/50 text-lg">
+                    Ranking Totale
+                </button>
                 <p class="text-xs text-slate-400 mt-2">
-                    (i) Mostra la classifica di un giorno specifico (agg. ogni ora)
+                    (i) Classifica di tutti gli allenamenti (agg. alle 03:00)
                 </p>
             </div>
             
-            <!-- Zona MESE -->
+            <!-- Bottone Mese Corrente -->
             <div class="text-center">
-                <label for="monthlyMonthInput" class="text-slate-300 font-semibold mb-2 block">Ranking Mensile</label>
-                <div class="flex gap-3">
-                    <input type="month" id="monthlyMonthInput" class="date-input">
-                    <button id="loadMonthlyBtn" class="bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-bold py-2 px-6 rounded-xl transition-all duration-300 shadow-lg hover:shadow-teal-500/50">
-                        Carica
-                    </button>
-                </div>
+                <button id="loadMonthlyBtn" class="bg-teal-600 hover:bg-teal-500 active:bg-teal-700 text-white font-bold py-3 px-8 rounded-xl transition-all duration-300 shadow-lg hover:shadow-teal-500/50 text-lg">
+                    Ranking Mese Corrente
+                </button>
                 <p class="text-xs text-slate-400 mt-2">
-                    (i) Mostra il riepilogo completo di un mese (agg. alle 02:00)
+                    (i) Riepilogo del mese corrente (agg. alle 02:00)
                 </p>
             </div>
         </div>
         <!-- === FINE SELETTORI === -->
 
-        <!-- === NUOVI FILTRI === -->
+        <!-- === FILTRI === -->
         <div id="filter-controls" class="bg-slate-900/80 border border-slate-700/60 rounded-xl shadow-xl p-4 mb-8 flex flex-col md:flex-row justify-center items-center gap-4 mx-4 md:mx-0 hidden">
             <div class_="w-full md:w-1/3">
                 <label for="filterGenere" class="text-slate-400 font-semibold mb-1 block text-sm">Filtra per Genere</label>
@@ -206,7 +192,7 @@
                 </select>
             </div>
         </div>
-        <!-- === FINE NUOVI FILTRI === -->
+        <!-- === FINE FILTRI === -->
 
 
         <div id="results-container" class="mx-4 md:mx-0">
@@ -231,13 +217,11 @@
         const loaderOverlay = document.getElementById('loader-overlay');
         const loaderText = document.getElementById('loader-text');
         const resultsContainer = document.getElementById('results-container');
-        const dailyDateInput = document.getElementById('dailyDateInput');
-        const loadDailyBtn = document.getElementById('loadDailyBtn');
-        const monthlyMonthInput = document.getElementById('monthlyMonthInput');
         const loadMonthlyBtn = document.getElementById('loadMonthlyBtn');
+        const loadTotalBtn = document.getElementById('loadTotalBtn'); // NUOVO
         const appView = document.getElementById('app-view');
         
-        // NUOVI Riferimenti Filtri
+        // Riferimenti Filtri
         const filterControls = document.getElementById('filter-controls');
         const filterGenere = document.getElementById('filterGenere');
         const filterGruppo = document.getElementById('filterGruppo');
@@ -246,14 +230,6 @@
         let allAthletesData = [];
 
         // --- FUNZIONI HELPER ---
-        function getTodayDateString() {
-            const now = new Date();
-            const year = now.getFullYear();
-            const month = String(now.getMonth() + 1).padStart(2, '0');
-            const day = String(now.getDate()).padStart(2, '0');
-            return `${year}-${month}-${day}`;
-        }
-
         function getCurrentMonthString() {
             const now = new Date();
             const year = now.getFullYear();
@@ -286,7 +262,7 @@
             return `<span class="badge ${bgColor} ${textColor}" title="${value}">${text}</span>`;
         }
 
-        // --- NUOVA FUNZIONE PER FILTRARE E RENDERIZZARE ---
+        // --- FUNZIONE PER FILTRARE E RENDERIZZARE ---
         function applyFiltersAndRender() {
             const selectedGenere = filterGenere.value;
             const selectedGruppo = filterGruppo.value;
@@ -307,23 +283,16 @@
         }
 
 
-        // --- FUNZIONE (ECONOMICA 1) - Carica Dati GIORNALIERI ---
-        async function loadDailyData() {
-            loaderText.textContent = 'Caricamento ranking giornaliero...';
+        // --- NUOVA FUNZIONE - Carica Dati TOTALI ---
+        async function loadTotalData() {
+            loaderText.textContent = 'Caricamento ranking totale...';
             loaderOverlay.style.display = 'flex';
             resultsContainer.innerHTML = '';
             filterControls.classList.add('hidden'); // Nasconde i filtri
             allAthletesData = []; // Resetta i dati
-            
-            const dateId = dailyDateInput.value;
-            if (!dateId) {
-                resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Seleziona una data valida.</p>`;
-                loaderOverlay.style.display = 'none';
-                return;
-            }
 
             try {
-                const docRef = firestore.doc(`riepiloghiGiornalieri/${dateId}`);
+                const docRef = firestore.doc(`rankingTotale/overall`);
                 const doc = await docRef.get(); // <-- 1 LETTURA
 
                 if (doc.exists) {
@@ -332,17 +301,17 @@
                     applyFiltersAndRender(); // Filtra e renderizza
                     filterControls.classList.remove('hidden'); // Mostra i filtri
                 } else {
-                    resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Documento ranking per ${dateId} non ancora disponibile.<br/></p>`;
+                    resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Documento ranking totale non ancora disponibile.<br/>(Viene generato ogni notte alle 03:00)</p>`;
                 }
             } catch (error) {
-                console.error("Errore nel caricamento del ranking giornaliero: ", error);
-                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: Impossibile caricare il ranking.</p>`;
+                console.error("Errore nel caricamento del ranking totale: ", error);
+                resultsContainer.innerHTML = `<p class="p-8 bg-red-900/40 border-2 border-red-700 rounded-xl text-red-200 shadow-xl">⚠️ ERRORE: Impossibile caricare il ranking totale.</p>`;
             } finally {
                 loaderOverlay.style.display = 'none';
             }
         }
         
-        // --- FUNZIONE (ECONOMICA 2) - Carica Dati MENSILI ---
+        // --- FUNZIONE (MODIFICATA) - Carica Dati MENSILI ---
         async function loadMonthlyData() {
             loaderText.textContent = 'Caricamento ranking del mese...';
             loaderOverlay.style.display = 'flex';
@@ -350,12 +319,8 @@
             filterControls.classList.add('hidden'); // Nasconde i filtri
             allAthletesData = []; // Resetta i dati
 
-            const monthId = monthlyMonthInput.value;
-            if (!monthId) {
-                resultsContainer.innerHTML = `<p class="text-center text-yellow-400 p-8 text-xl font-medium">Seleziona un mese valido.</p>`;
-                loaderOverlay.style.display = 'none';
-                return;
-            }
+            // Calcola automaticamente il mese corrente
+            const monthId = getCurrentMonthString(); 
             
             try {
                 const docRef = firestore.doc(`riepiloghiMensili/${monthId}`);
@@ -378,7 +343,7 @@
         }
 
 
-        // --- FUNZIONE DI RENDER (MODIFICATA per RANKING RELATIVO) ---
+        // --- FUNZIONE DI RENDER (INVARIATA) ---
         function renderRanking(rankedAthletes) {
             if (!rankedAthletes || rankedAthletes.length === 0) {
                 // Modifica messaggio se i dati master ci sono ma i filtri non danno risultati
@@ -416,16 +381,12 @@
                 </thead>
                 <tbody class="block md:table-row-group">
                     ${rankedAthletes.map((athlete, index) => {
-                        // MODIFICA: 'index' ora si basa sulla lista filtrata.
-                        // Usiamo 'index + 1' per il ranking relativo.
-                        
-                        // Troviamo il ranking relativo
                         const relativeRank = index + 1;
                         
                         let rankClass = '';
-                        if (index === 0) rankClass = 'rank-1'; // Basato su index
-                        if (index === 1) rankClass = 'rank-2'; // Basato su index
-                        if (index === 2) rankClass = 'rank-3'; // Basato su index
+                        if (index === 0) rankClass = 'rank-1';
+                        if (index === 1) rankClass = 'rank-2';
+                        if (index === 2) rankClass = 'rank-3';
 
                         const boatMeters = (athlete.boat && athlete.boat.meters) ? athlete.boat.meters : 0;
                         const boatEp = (athlete.avgBoatEp) ? athlete.avgBoatEp : 0;
@@ -460,7 +421,7 @@
                             <td data-label="Punteggio Tot." class="hidden md:table-cell text-right font-extrabold text-xl text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-sky-300">${formatScore(athlete.score)}</td>
 
                             <!-- MOBILE VIEW -->
-                            <td colspan="14" class="md:hidden p-0 border-b-0"> <!-- Colspan incrementato a 14 -->
+                            <td colspan="14" class="md:hidden p-0 border-b-0">
                                 <div class="mobile-row-summary" data-athlete-id="${athlete.id || index}">
                                     <div class="mobile-main-info">
                                         <div class="mobile-row-line1">
@@ -517,29 +478,22 @@
             });
         }
 
-        // --- GESTIONE AVVIO PAGINA ---
+        // --- GESTIONE AVVIO PAGINA (MODIFICATO) ---
         document.addEventListener('DOMContentLoaded', async () => { 
             loaderText.textContent = 'Caricamento...';
             appView.classList.remove('hidden');
-
-            // Imposta i valori predefiniti
-            const today = getTodayDateString();
-            const currentMonth = getCurrentMonthString();
-            dailyDateInput.value = today;
-            monthlyMonthInput.value = currentMonth;
             
             // Collega i bottoni alle rispettIVE funzioni
-            loadDailyBtn.addEventListener('click', loadDailyData);
+            loadTotalBtn.addEventListener('click', loadTotalData);
             loadMonthlyBtn.addEventListener('click', loadMonthlyData);
             
-            // NUOVI LISTENER PER I FILTRI
+            // LISTENER PER I FILTRI
             filterGenere.addEventListener('change', applyFiltersAndRender);
             filterGruppo.addEventListener('change', applyFiltersAndRender);
 
-            // Carica automaticamente il ranking MENSILE corrente all'avvio
-            await loadMonthlyData(); 
+            // Carica automaticamente il ranking TOTALE all'avvio
+            await loadTotalData(); 
         });
     </script>
 </body>
 </html>
-
