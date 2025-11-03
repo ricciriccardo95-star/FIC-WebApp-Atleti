@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="it" class="h-full">
 <head>
@@ -8,7 +7,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display.swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
@@ -43,6 +42,18 @@
             transform: translateY(-10px);
             box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
         }
+        /* --- STILI PER IL LOADER --- */
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader {
+            border-top-color: #3B82F6; /* sky-500 */
+            animation: spin 1s linear infinite;
+            border-width: 4px;
+            border-style: solid;
+            border-color: #475569; /* slate-600 */
+            border-radius: 9999px; /* rounded-full */
+            height: 4rem; /* h-16 */
+            width: 4rem; /* w-16 */
+        }
     </style>
 </head>
 <body class="antialiased">
@@ -50,7 +61,14 @@
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
-    <div class="p-4 md:p-8 max-w-7xl mx-auto">
+    <!-- === NUOVO: LOADER OVERLAY === -->
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+        <div class="loader"></div>
+        <p class="mt-4 text-slate-300">Caricamento...</p>
+    </div>
+
+    <!-- === MODIFICATO: Aggiunto id="main-content" e class="hidden" === -->
+    <div id="main-content" class="p-4 md:p-8 max-w-7xl mx-auto hidden">
         <div class="mb-8">
             <a href="../home.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
@@ -61,11 +79,10 @@
         <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-4">Carica Allenamenti</h1>
         <p class="text-lg text-slate-400 text-center mb-12">Seleziona il tipo di allenamento che vuoi registrare.</p>
 
-        <!-- MODIFICA: "grid-cols-1 md:grid-cols-2" è diventato "grid-cols-2" per applicare 2 colonne da mobile in su -->
+        <!-- Contenuto (invariato) -->
         <div class="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4 md:gap-8">
             
             <a href="peso.html" class="workout-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                <!-- Icona SVG -->
                 <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-green-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 21h18"/><path d="M6 21l-1-9H2l-1 9Z"/><path d="M18 21l1-9h3l1 9Z"/><path d="M12 3l4 4H8l4-4Z"/><path d="M12 7v14"/>
@@ -76,7 +93,6 @@
             </a>
             
             <a href="modulo_bike.html" class="workout-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                <!-- Icona SVG -->
                 <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <circle cx="5.5" cy="17.5" r="3.5"/><circle cx="18.5" cy="17.5" r="3.5"/><path d="M15 6l-4 4 4 4h3l-4-4 4-4h-3zM5 14l3-3 4 4 3-3"/>
@@ -87,7 +103,6 @@
             </a>
 
             <a href="modulo_ergo.html" class="workout-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                <!-- MODIFICA: Icona SVG "circle-gauge" -->
                 <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M15.6 2.7a10 10 0 1 0 5.7 5.7"/>
@@ -100,7 +115,6 @@
             </a>
 
             <a href="modulo_boat.html" class="workout-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                <!-- MODIFICA: Icona SVG "waves" -->
                 <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-blue-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M2 6c.6.5 1.2 1 2.5 1 2.5 0 2.5-2 5-2 2.5 0 2.5 2 5 2 2.5 0 2.5-2 5-2 1.3 0 1.9.5 2.5 1"/>
@@ -113,7 +127,6 @@
             </a>
             
             <a href="grafici_athletes.html" class="workout-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                <!-- Icona SVG -->
                 <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
                     <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/>
@@ -126,47 +139,37 @@
 
     </div>
 
+    <!-- === SCRIPT MODIFICATO === -->
+    <!-- Rimosso il vecchio script onAuthStateChanged e sostituito con auth-manager -->
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        // Importa l'auth-manager. 
+        // Questo script gestirà il redirect se l'utente NON è loggato.
+        import '../auth-manager.js';
 
-        const firebaseConfig = {
-            apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
-            authDomain: "database-atleti-fic.firebaseapp.com",
-            databaseURL: "https://database-atleti-fic-default-rDtb.firebaseio.com",
-            projectId: "database-atleti-fic",
-            storageBucket: "database-atleti-fic.appspot.com",
-            messagingSenderId: "860422140545",
-            appId: "1:860422140545:web:cd14c042a47f2650681380"
-        };
-
-        const app = initializeApp(firebaseConfig);
-        const auth = getAuth(app);
-        
+        const loader = document.getElementById('loader-overlay');
+        const mainContent = document.getElementById('main-content');
         const cards = document.querySelectorAll('.workout-card');
+        
+        // Ascolta l'evento 'authStateReady' inviato da auth-manager.js
+        document.addEventListener('authStateReady', (e) => {
+            const { athlete, error } = e.detail;
 
-        onAuthStateChanged(auth, (user) => {
-            if (user) {
-                // Utente loggato. Le card sono attive di default.
-                // Il cognome resta salvato in sessionStorage per essere usato dalle altre pagine.
+            if (athlete) {
+                // Utente loggato e dati disponibili
+                mainContent.classList.remove('hidden');
+                loader.style.display = 'none';
+                // Le card sono già abilitate di default
+            } else if (error) {
+                // Errore
+                mainContent.innerHTML = `<p class="text-center text-red-400 p-8">Errore di autenticazione: ${error.message}</p>`;
+                mainContent.classList.remove('hidden');
+                loader.style.display = 'none';
             } else {
                 // Utente non loggato
-                cards.forEach(card => {
-                    card.style.pointerEvents = 'none';
-                    card.style.opacity = '0.5';
-                });
-                // Inserisci un messaggio più evidente
-                const mainDiv = document.querySelector('.max-w-7xl');
-                const existingWarning = mainDiv.querySelector('.login-warning');
-                if (!existingWarning) {
-                    const warning = document.createElement('p');
-                    warning.className = 'text-center text-red-400 text-lg -mt-8 mb-12 login-warning';
-                    warning.innerHTML = 'Devi effettuare il <a href="../index.html" class="underline">login</a> per continuare.';
-                    mainDiv.insertBefore(warning, mainDiv.children[2]);
-                }
+                // auth-manager.js sta già gestendo il reindirizzamento a index.html.
+                // Il loader rimarrà visibile coprendo la pagina vuota fino al redirect.
             }
         });
     </script>
 </body>
 </html>
-
