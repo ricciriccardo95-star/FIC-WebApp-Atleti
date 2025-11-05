@@ -69,15 +69,20 @@
     </div>
 
     <div class="p-4 md:p-8 max-w-7xl mx-auto">
-        <header class="flex justify-between items-center mb-10 border-b border-slate-700 pb-4">
-            <div>
-                <h1 class="text-3xl md:text-4xl font-black text-slate-100">La Tua Gym</h1>
-                <p id="welcome-message" class="text-lg text-sky-400 font-semibold"></p>
+        <!-- MODIFICATO: Header ora contiene anche le stats -->
+        <header class="mb-10 border-b border-slate-700 pb-6">
+            <div class="flex justify-between items-center mb-4">
+                <div>
+                    <h1 class="text-3xl md:text-4xl font-black text-slate-100">La Tua Gym</h1>
+                    <p id="welcome-message" class="text-lg text-sky-400 font-semibold"></p>
+                </div>
+                <a href="home.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors flex-shrink-0">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+                    Home
+                </a>
             </div>
-            <a href="home.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
-                Home
-            </a>
+
+            <!-- RIMOZIONE: La sezione <div id="athlete-stats">...</div> è stata rimossa -->
         </header>
 
         <main id="main-content" class="hidden">
@@ -107,8 +112,6 @@
         // Importa solo le funzioni necessarie da firestore
         import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Rimuovi inizializzazione locale Firebase (app, auth, db, firebaseConfig)
-        
         const loader = document.getElementById('loader-overlay');
         const mainContent = document.getElementById('main-content');
         const welcomeMessage = document.getElementById('welcome-message');
@@ -117,8 +120,8 @@
         const imageLightbox = document.getElementById('image-lightbox');
         const lightboxImage = document.getElementById('lightbox-image');
         const closeLightboxBtn = document.getElementById('close-lightbox');
+        // RIMOZIONE: const statsContainer = document.getElementById('athlete-stats');
 
-        // Rimuovi onAuthStateChanged
         
         // Ascolta l'evento 'authStateReady'
         document.addEventListener('authStateReady', async (e) => {
@@ -128,12 +131,12 @@
                 // Utente loggato e dati atleta disponibili
                 if (athlete.cognome) {
                     welcomeMessage.textContent = `Benvenuto, ${athlete.cognome}`;
-                    // Salva il cognome in sessionStorage se necessario altrove
                     sessionStorage.setItem('atletaCognome', athlete.cognome);
                 } else {
                     welcomeMessage.textContent = 'Benvenuto';
-                    sessionStorage.removeItem('atletaCognome'); // Rimuovi se non presente
+                    sessionStorage.removeItem('atletaCognome'); 
                 }
+                // RIMOZIONE: displayAthleteStats(athlete);
                 await loadClientData(athlete); // Passa l'oggetto athlete
             } else if (error) {
                  // Errore
@@ -141,21 +144,22 @@
                 welcomeMessage.textContent = "Errore";
                 plansContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile verificare l'utente. Riprova il login.</p>`;
                 loader.classList.add('hidden');
-                mainContent.classList.remove('hidden'); // Mostra il messaggio di errore
+                mainContent.classList.remove('hidden'); 
             } else {
-                // Utente non loggato (auth-manager dovrebbe aver reindirizzato)
+                // Utente non loggato
                 window.location.href = 'index.html';
             }
         });
+        
+        // RIMOZIONE: La funzione displayAthleteStats(athlete) { ... } è stata rimossa
 
 
-        // Modifica loadClientData per accettare l'oggetto athlete
         async function loadClientData(athlete) {
             try {
                 // 1. Usa l'ID dell'atleta direttamente dall'oggetto athlete
                 const athleteId = athlete.id;
 
-                // 2. Carica i massimali dell'atleta (usa 'db' importato)
+                // 2. Carica i massimali dell'atleta
                 const massimaliMap = new Map();
                 const massimaliQuery = query(collection(db, 'massimali_atleti'), where('atletaId', '==', athleteId));
                 const massimaliSnapshot = await getDocs(massimaliQuery);
@@ -166,7 +170,7 @@
                     }
                 });
 
-                // 3. Carica la libreria di tutti gli esercizi (usa 'db' importato)
+                // 3. Carica la libreria di tutti gli esercizi
                 const eserciziMap = new Map();
                 const eserciziQuery = query(collection(db, "esercizi_pesistica"));
                 const eserciziSnapshot = await getDocs(eserciziQuery);
@@ -174,14 +178,14 @@
                     eserciziMap.set(doc.id, doc.data());
                 });
 
-                // 4. Carica tutte le schede di allenamento (usa 'db' importato)
+                // 4. Carica tutte le schede di allenamento
                 const schedeQuery = query(collection(db, "schede_pesistica"));
                 const schedeSnapshot = await getDocs(schedeQuery);
 
                 if(schedeSnapshot.empty) {
                     noPlansMessage.classList.remove('hidden');
                 } else {
-                    plansContainer.innerHTML = ''; // Pulisce prima di aggiungere nuove schede
+                    plansContainer.innerHTML = ''; 
                     const schede = schedeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     schede.sort((a, b) => a.nomeScheda.localeCompare(b.nomeScheda));
                     
@@ -189,13 +193,13 @@
                         const planElement = createPlanElement(scheda, massimaliMap, eserciziMap);
                         plansContainer.appendChild(planElement);
                     });
-                    noPlansMessage.classList.add('hidden'); // Nasconde il messaggio se ci sono schede
+                    noPlansMessage.classList.add('hidden'); 
                 }
 
             } catch (error) {
                 console.error("Errore nel caricamento dei dati: ", error);
                 plansContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-                noPlansMessage.classList.add('hidden'); // Nasconde msg "nessuna scheda" se c'è errore
+                noPlansMessage.classList.add('hidden'); 
             } finally {
                 loader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
@@ -222,7 +226,7 @@
 
             if (scheda.esercizi && scheda.esercizi.length > 0) {
                 scheda.esercizi.forEach(esercizio => {
-                    // Controllo di base per assicurarsi che esercizio.esercizioId esista
+                    // Controllo di base
                     if (!esercizio.esercizioId) {
                         console.warn("Esercizio senza ID trovato nella scheda:", scheda.nomeScheda, esercizio);
                         return; // Salta questo esercizio
@@ -230,30 +234,61 @@
 
                     const fullEsercizio = eserciziMap.get(esercizio.esercizioId);
                     const imageUrl = fullEsercizio?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
-                    
-                    const massimale = massimaliMap.get(esercizio.esercizioId) || 0;
-                    const percentuale = parseFloat(esercizio.percentuale) || 0;
-                    // Calcola peso solo se massimale e percentuale sono validi
-                    const pesoCalcolato = massimale > 0 && percentuale > 0 ? (massimale * percentuale / 100).toFixed(1) : '-';
-                    // Fallback per nome esercizio
                     const nomeEsercizio = esercizio.nome || fullEsercizio?.nome || 'Esercizio Sconosciuto';
+                    
+                    // --- GESTIONE LOGICA MODIFICATA ---
 
+                    // 1. Info Generali Esercizio
+                    const notaGeneraleEsercizio = fullEsercizio?.note || '';
+                    const tipoSerie = esercizio.tipo || 'fisse'; // 'fisse' o 'piramidale'
+                    
+                    const infoHtml = `
+                        <p class="font-bold text-lg text-slate-100">${nomeEsercizio}</p>
+                        ${notaGeneraleEsercizio ? `<p class="text-sm text-slate-400 italic mt-1">${notaGeneraleEsercizio}</p>` : ''}
+                        <p class="text-sm font-medium text-indigo-300 mt-2">Tipo: <span class="font-normal capitalize text-slate-300">${tipoSerie}</span></p>
+                    `;
 
+                    // 2. Costruisci l'HTML per ogni SET
+                    let setsHtml = '<div class="space-y-3 mt-3">';
+                    if (esercizio.sets && esercizio.sets.length > 0) {
+                        esercizio.sets.forEach(set => {
+                            const massimale = massimaliMap.get(esercizio.esercizioId) || 0;
+                            const percentuale = parseFloat(set.percentuale) || 0;
+                            const pesoCalcolato = massimale > 0 && percentuale > 0 ? (massimale * percentuale / 100).toFixed(1) : '-';
+                            const setNoteHtml = set.note ? `<p class="text-xs text-amber-300/80 mt-1 italic pl-2">Nota: ${set.note}</p>` : '';
+
+                            setsHtml += `
+                                <div class="bg-slate-700/50 p-3 rounded-lg">
+                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                        <p class="text-slate-300 font-mono text-sm">
+                                            <span class="font-bold text-white">${set.serie || '-'}</span> x <span class="font-bold text-white">${set.ripetizioni || '-'}</span> @ <span class="font-bold text-white">${set.percentuale || '-'}%</span>
+                                        </p>
+                                        <div class="flex items-center gap-2 bg-slate-800 p-2 rounded-lg flex-shrink-0">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+                                            <p class="text-lg font-bold text-white">${pesoCalcolato} kg</p>
+                                        </div>
+                                    </div>
+                                    ${setNoteHtml}
+                                </div>
+                            `;
+                        });
+                    } else {
+                        // Fallback se 'sets' è vuoto o non definito
+                        setsHtml += `<p class="text-slate-400">Dettagli serie non disponibili.</p>`;
+                    }
+                    setsHtml += '</div>';
+
+                    // 3. Assembla l'elemento esercizio
                     exerciseList.innerHTML += `
-                        <div class="flex flex-col sm:flex-row items-center gap-4 p-4 bg-slate-800 rounded-lg">
-                            <img src="${imageUrl}" alt="${nomeEsercizio}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
-                            <div class="flex-grow text-center sm:text-left">
-                                <p class="font-bold text-lg text-slate-100">${nomeEsercizio}</p>
-                                <p class="text-slate-400 font-mono text-sm">
-                                    ${esercizio.serie || '-'} x ${esercizio.ripetizioni || '-'} @ ${esercizio.percentuale || '-'}%
-                                </p>
-                            </div>
-                            <div class="flex items-center gap-3 bg-slate-700 p-3 rounded-lg sm:ml-auto">
-                                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-                                <p class="text-xl font-bold text-white">${pesoCalcolato} kg</p>
+                        <div class="flex flex-col sm:flex-row items-start gap-4 p-4 bg-slate-800 rounded-lg">
+                            <img src="${imageUrl}" alt="${nomeEsercizio}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image sm:mt-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
+                            <div class="flex-grow w-full">
+                                ${infoHtml}
+                                ${setsHtml}
                             </div>
                         </div>
                     `;
+                    // --- FINE GESTIONE MODIFICATA ---
                 });
             } else {
                 exerciseList.innerHTML = `<p class="text-slate-400">Nessun esercizio in questa scheda.</p>`;
