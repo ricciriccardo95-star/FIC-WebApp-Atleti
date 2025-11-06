@@ -20,6 +20,17 @@
         .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; }
         .dynamic-field { display: none; }
+         /* Stile Select (per icona freccia)*/
+         .form-select {
+             -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25em;
+            padding-right: 2.5rem; /* Spazio per la freccia */
+        }
     </style>
     
     <!--
@@ -115,10 +126,21 @@
                 </div>
             </div>
         </div>
+
+        <!-- NUOVE NOTE FINALI (da modulo_boat.html) -->
+        <div class="mt-6 text-sm text-slate-400 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
+            <h4 class="font-bold text-slate-200 mb-2">N.B. (Note Importanti):</h4>
+            <ol class="list-decimal list-inside space-y-1">
+                <li>Non inserire la <strong class="text-slate-300">media</strong> dei lavori, ma il valore <strong class="text-slate-300">totale</strong> per ogni intervallo (es. tempo totale o distanza totale).</li>
+                <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se il lavoro supera l'ora, scrivere 60 + minuti (es. 1h 02m &rarr; <strong class="text-slate-300">62</strong>).</li>
+            </ol>
+        </div>
+        <!-- FINE NOTE -->
+
         <div class="text-center mt-8">
-            <!-- Corretto il link per tornare indietro, dalla cartella CARICA DATI alla root -->
-            <a href="../home.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
-                ← Torna alla Home
+            <!-- Link corretto per tornare alla selezione (come modulo_boat) -->
+            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
+                ← Torna alla Selezione
             </a>
         </div>
     </div>
@@ -310,11 +332,15 @@
                     
                     const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} (${labelText})</label>`;
                     
+                    // *** MODIFICA: Aggiunto inputMode (come da modulo_boat) ***
+                    const inputMode = isDistanceMode ? 'inputmode="numeric"' : 'inputmode="decimal"'; 
+                    
                     const inputAttributes = isDistanceMode 
                         ? 'oninput="formatTimeInput(event)" maxlength="7"' 
                         : 'step="any"'; 
 
-                    const input = `<input type="${inputType}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${inputAttributes}>`;
+                    // *** MODIFICA: Aggiunto ${inputMode} ***
+                    const input = `<input type="${inputType}" ${inputMode} id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${inputAttributes}>`;
                     
                     container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
                 }
@@ -491,4 +517,3 @@
     </script>
 </body>
 </html>
-
