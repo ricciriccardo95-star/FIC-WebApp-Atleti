@@ -76,10 +76,24 @@
                                    class="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none">
                         </div>
                     </div>
+
+                    <!-- 
+                      BLOCCO AGGIUNTO: Link per recupero password
+                    -->
+                    <div class="text-right">
+                        <a href="#" id="forgot-password-link" class="text-sm font-medium text-sky-400 hover:text-sky-300">
+                            Password dimenticata?
+                        </a>
+                    </div>
+                    <!-- 
+                      FINE BLOCCO AGGIUNTO 
+                    -->
+
                     <p id="error-message" class="text-red-500 text-sm text-center hidden"></p>
+                    
                     <div>
-                        <button type="submit"
-                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500 transition-colors">
+                        <button type="submit" id="login-button"
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500 transition-colors disabled:opacity-50">
                             Accedi
                         </button>
                     </div>
@@ -89,14 +103,17 @@
     </div>
 
     <!-- SCRIPT CENTRALIZZATO: gestisce il reindirizzamento SE GIA' LOGGATO -->
-    <!-- Questo script DEVE essere caricato prima di quello inline per ridurre la race condition -->
     <script type="module" src="auth-manager.js"></script>
 
     <!-- SCRIPT SPECIFICO DELLA PAGINA: gestisce solo il SUBMIT DEL FORM -->
     <script type="module">
-        // Importa solo ciò che serve per il login
+        // Importa solo ciò che serve per il login E per il reset password
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
-        import { getAuth, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+        import { 
+            getAuth, 
+            signInWithEmailAndPassword,
+            sendPasswordResetEmail  // <-- AGGIUNTO
+        } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         // NOTA: la configurazione è già in auth-manager.js,
         // ma per le importazioni modulari di Firebase, è più sicuro reinizializzare qui
@@ -115,10 +132,13 @@
         const auth = getAuth(app);
 
         const loginForm = document.getElementById('login-form');
+        const loginButton = document.getElementById('login-button'); // <-- AGGIUNTO Riferimento al pulsante
         const errorMessage = document.getElementById('error-message');
         
-        // Tutta la logica 'handleAuth' e 'onAuthStateChanged' è stata rimossa
-        // e ora vive in 'auth-manager.js'.
+        // --- NUOVO: Riferimento al link di recupero password ---
+        const forgotPasswordLink = document.getElementById('forgot-password-link');
+        
+        // Tutta la logica 'handleAuth' e 'onAuthStateChanged' è in 'auth-manager.js'.
 
         function startLoginAnimation() {
             const logoContainer = document.getElementById('logo-container');
@@ -133,33 +153,82 @@
             }, 500);
         }
 
-        // --- CORREZIONE ---
         // Avviamo l'animazione direttamente.
-        // Se l'utente è loggato, 'auth-manager.js' (caricato sopra)
-        // lo reindirizzerà a 'home.html' prima che questa animazione
-        // diventi rilevante, risolvendo l'errore.
         startLoginAnimation();
 
 
+        // --- MODIFICA: Funzione per mostrare messaggi (errore o successo) ---
+        function showMessage(message, type = 'error') {
+            errorMessage.textContent = message;
+            // Resetta le classi di colore e visibilità
+            errorMessage.classList.remove('hidden', 'text-red-500', 'text-green-400');
+            
+            if (type === 'hide') {
+                errorMessage.classList.add('hidden');
+            } else if (type === 'success') {
+                errorMessage.classList.add('text-green-400'); // Colore per successo
+            } else {
+                // Default è 'error'
+                errorMessage.classList.add('text-red-500'); // Colore per errore
+            }
+        }
+
+        // --- NUOVO: Listener per il recupero password ---
+        forgotPasswordLink.addEventListener('click', async (e) => {
+            e.preventDefault(); // Impedisce al link di ricaricare la pagina
+            
+            const email = loginForm.email.value;
+            if (!email) {
+                showMessage("Per favore, inserisci la tua email nel campo apposito.", 'error');
+                return;
+            }
+
+            // Disabilita i pulsanti e mostra un messaggio di caricamento
+            loginButton.disabled = true;
+            showMessage("Invio email di recupero...", 'success'); // Messaggio di stato
+
+            try {
+                await sendPasswordResetEmail(auth, email);
+                showMessage("Email inviata! Controlla la tua casella di posta.", 'success');
+            
+            } catch (error) {
+                // Gestione errori
+                console.error("Errore invio email reset:", error.code, error.message);
+                if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
+                    showMessage("Nessun utente trovato con questa email.", 'error');
+                } else {
+                    showMessage("Si è verificato un errore. Riprova.", 'error');
+                }
+            } finally {
+                // Riabilita il pulsante in ogni caso
+                loginButton.disabled = false;
+            }
+        });
+
+
+        // --- Listener per il submit del LOGIN ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = loginForm.email.value;
             const password = loginForm.password.value;
-            errorMessage.classList.add('hidden');
+            showMessage("", 'hide'); // Nasconde messaggi precedenti
+            loginButton.disabled = true; // <-- AGGIUNTO
+            loginButton.textContent = "Verifica..."; // <-- AGGIUNTO
 
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
                     // Successo!
                     // Non serve fare nulla. 'auth-manager.js' rileverà il cambio
-                    // di stato, recupererà i dati e reindirizzerà a home.html.
+                    // di stato e reindirizzerà a home.html.
+                    // (Il pulsante non viene riabilitato perché la pagina cambierà)
                 })
                 .catch((error) => {
                     console.error("Login Error:", error.code, error.message);
-                    errorMessage.textContent = "Credenziali non valide. Riprova.";
-                    errorMessage.classList.remove('hidden');
+                    showMessage("Credenziali non valide. Riprova.", 'error');
+                    loginButton.disabled = false; // <-- AGGIUNTO
+                    loginButton.textContent = "Accedi"; // <-- AGGIUNTO
                 });
         });
     </script>
 </body>
 </html>
-
