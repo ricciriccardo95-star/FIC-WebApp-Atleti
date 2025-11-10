@@ -54,6 +54,29 @@
         #image-lightbox {
             transition: opacity 0.3s ease;
         }
+        
+        /* Stili per i Tab (Schede/Circuiti) */
+        .tab-btn {
+            padding: 0.5rem 1rem;
+            border-bottom: 2px solid transparent;
+            font-weight: 600;
+            color: #94a3b8; /* slate-400 */
+            transition: all 0.2s;
+            cursor: pointer;
+        }
+        .tab-btn:hover {
+            color: #e2e8f0; /* slate-200 */
+        }
+        .tab-btn.active {
+            color: #3b82f6; /* blue-500 */
+            border-bottom-color: #3b82f6;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
     </style>
      <!-- Carica l'auth-manager -->
      <script type="module" src="auth-manager.js"></script>
@@ -69,7 +92,6 @@
     </div>
 
     <div class="p-4 md:p-8 max-w-7xl mx-auto">
-        <!-- MODIFICATO: Header ora contiene anche le stats -->
         <header class="mb-10 border-b border-slate-700 pb-6">
             <div class="flex justify-between items-center mb-4">
                 <div>
@@ -81,19 +103,39 @@
                     Home
                 </a>
             </div>
-
-            <!-- RIMOZIONE: La sezione <div id="athlete-stats">...</div> è stata rimossa -->
         </header>
 
         <main id="main-content" class="hidden">
-            <h2 class="text-2xl font-bold text-white mb-6">Le Tue Schede di Allenamento</h2>
-            <div id="plans-container" class="space-y-6">
-                <!-- Le schede verranno inserite qui da JS -->
+            <!-- Tabs -->
+            <div class="mb-6 flex border-b border-slate-700">
+                <button id="tab-btn-schede" class="tab-btn active" data-tab="schede">Schede</button>
+                <button id="tab-btn-circuiti" class="tab-btn" data-tab="circuiti">Circuiti</button>
             </div>
-             <div id="no-plans-message" class="hidden text-center py-16 px-6 bg-slate-900/70 border border-slate-700/50 rounded-xl">
-                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-slate-500"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-                <h3 class="text-xl font-bold text-white">Nessuna scheda trovata</h3>
-                <p class="text-slate-400 mt-2">Non ci sono ancora schede di allenamento disponibili. Contatta il tuo allenatore.</p>
+
+            <!-- Contenuto Tab Schede (ATTIVO DI DEFAULT) -->
+            <div id="schede-content" class="tab-content active">
+                <h2 class="text-2xl font-bold text-white mb-6">Le Tue Schede di Allenamento</h2>
+                <div id="plans-container" class="space-y-6">
+                    <!-- Le schede verranno inserite qui da JS -->
+                </div>
+                <div id="no-schede-message" class="hidden text-center py-16 px-6 bg-slate-900/70 border border-slate-700/50 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-slate-500"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
+                    <h3 class="text-xl font-bold text-white">Nessuna scheda trovata</h3>
+                    <p class="text-slate-400 mt-2">Non ci sono ancora schede di allenamento disponibili. Contatta il tuo allenatore.</p>
+                </div>
+            </div>
+
+            <!-- Contenuto Tab Circuiti (NASCOSTO) -->
+            <div id="circuiti-content" class="tab-content">
+                <h2 class="text-2xl font-bold text-white mb-6">I Tuoi Circuiti</h2>
+                <div id="circuits-container" class="space-y-6">
+                    <!-- I circuiti verranno inseriti qui da JS -->
+                </div>
+                <div id="no-circuits-message" class="hidden text-center py-16 px-6 bg-slate-900/70 border border-slate-700/50 rounded-xl">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-slate-500"><path d="M12 2.8c.9-.1 1.8.2 2.5.8 1.1 1 1.5 2.5 1 4L12 18 8.5 7.5c-.5-1.4 0-3 1-4 .8-.5 1.7-.8 2.5-.7z"/><path d="M12 18c-1.9 0-3.5-1-4.5-2.5s-1.5-3.5-1-5.5c.3-1.1.8-2.1 1.5-3M12 18c1.9 0 3.5-1 4.5-2.5s1.5-3.5 1-5.5c-.3-1.1-.8-2.1-1.5-3"/></svg>
+                    <h3 class="text-xl font-bold text-white">Nessun circuito trovato</h3>
+                    <p class="text-slate-400 mt-2">Non ci sono ancora circuiti disponibili. Contatta il tuo allenatore.</p>
+                </div>
             </div>
         </main>
     </div>
@@ -116,11 +158,18 @@
         const mainContent = document.getElementById('main-content');
         const welcomeMessage = document.getElementById('welcome-message');
         const plansContainer = document.getElementById('plans-container');
-        const noPlansMessage = document.getElementById('no-plans-message');
+        const noSchedeMessage = document.getElementById('no-schede-message'); // ID Modificato
         const imageLightbox = document.getElementById('image-lightbox');
         const lightboxImage = document.getElementById('lightbox-image');
         const closeLightboxBtn = document.getElementById('close-lightbox');
-        // RIMOZIONE: const statsContainer = document.getElementById('athlete-stats');
+        
+        // --- NUOVI ELEMENTI DOM PER TAB E CIRCUITI ---
+        const tabBtnSchede = document.getElementById('tab-btn-schede');
+        const tabBtnCircuiti = document.getElementById('tab-btn-circuiti');
+        const schedeContent = document.getElementById('schede-content');
+        const circuitiContent = document.getElementById('circuiti-content');
+        const circuitsContainer = document.getElementById('circuits-container');
+        const noCircuitsMessage = document.getElementById('no-circuits-message');
 
         
         // Ascolta l'evento 'authStateReady'
@@ -136,7 +185,6 @@
                     welcomeMessage.textContent = 'Benvenuto';
                     sessionStorage.removeItem('atletaCognome'); 
                 }
-                // RIMOZIONE: displayAthleteStats(athlete);
                 await loadClientData(athlete); // Passa l'oggetto athlete
             } else if (error) {
                  // Errore
@@ -151,9 +199,6 @@
             }
         });
         
-        // RIMOZIONE: La funzione displayAthleteStats(athlete) { ... } è stata rimossa
-
-
         async function loadClientData(athlete) {
             try {
                 // 1. Usa l'ID dell'atleta direttamente dall'oggetto athlete
@@ -178,14 +223,21 @@
                     eserciziMap.set(doc.id, doc.data());
                 });
 
-                // 4. Carica tutte le schede di allenamento
+                // 4. Carica tutte le schede E I CIRCUITI (MODIFICATO)
                 const schedeQuery = query(collection(db, "schede_pesistica"));
-                const schedeSnapshot = await getDocs(schedeQuery);
+                const circuitiQuery = query(collection(db, "circuiti_pesistica")); // NUOVO
 
-                if(schedeSnapshot.empty) {
-                    noPlansMessage.classList.remove('hidden');
+                // Carica entrambi in parallelo
+                const [schedeSnapshot, circuitiSnapshot] = await Promise.all([
+                    getDocs(schedeQuery),
+                    getDocs(circuitiQuery)
+                ]);
+
+                // 5. Processa le schede
+                if (schedeSnapshot.empty) {
+                    noSchedeMessage.classList.remove('hidden');
                 } else {
-                    plansContainer.innerHTML = ''; 
+                    plansContainer.innerHTML = '';
                     const schede = schedeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     schede.sort((a, b) => a.nomeScheda.localeCompare(b.nomeScheda));
                     
@@ -193,13 +245,31 @@
                         const planElement = createPlanElement(scheda, massimaliMap, eserciziMap);
                         plansContainer.appendChild(planElement);
                     });
-                    noPlansMessage.classList.add('hidden'); 
+                    noSchedeMessage.classList.add('hidden');
+                }
+
+                // 6. Processa i circuiti (NUOVO BLOCCO)
+                if (circuitiSnapshot.empty) {
+                    noCircuitsMessage.classList.remove('hidden');
+                } else {
+                    circuitsContainer.innerHTML = '';
+                    const circuiti = circuitiSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    // Ordina per nome circuito
+                    circuiti.sort((a, b) => a.nomeCircuito.localeCompare(b.nomeCircuito));
+                    
+                    circuiti.forEach(circuito => {
+                        const circuitElement = createCircuitElement(circuito, eserciziMap); // Nuova funzione
+                        circuitsContainer.appendChild(circuitElement);
+                    });
+                    noCircuitsMessage.classList.add('hidden');
                 }
 
             } catch (error) {
                 console.error("Errore nel caricamento dei dati: ", error);
                 plansContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-                noPlansMessage.classList.add('hidden'); 
+                circuitsContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
+                noSchedeMessage.classList.add('hidden');
+                noCircuitsMessage.classList.add('hidden');
             } finally {
                 loader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
@@ -225,10 +295,13 @@
             exerciseList.className = 'space-y-4';
 
             if (scheda.esercizi && scheda.esercizi.length > 0) {
-                scheda.esercizi.forEach(esercizio => {
+                 // Ordina per 'ordine'
+                const orderedExercises = (scheda.esercizi || []).sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
+
+                orderedExercises.forEach(esercizio => {
                     // Controllo di base
                     if (!esercizio.esercizioId) {
-                        console.warn("Esercizio senza ID trovato nella scheda:", scheda.nomeScheda, esercizio);
+                        console.warn("Esercizio scheda senza ID:", scheda.nomeScheda, esercizio);
                         return; // Salta questo esercizio
                     }
 
@@ -236,11 +309,9 @@
                     const imageUrl = fullEsercizio?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
                     const nomeEsercizio = esercizio.nome || fullEsercizio?.nome || 'Esercizio Sconosciuto';
                     
-                    // --- GESTIONE LOGICA MODIFICATA ---
-
-                    // 1. Info Generali Esercizio
+                    // --- GESTIONE LOGICA ---
                     const notaGeneraleEsercizio = fullEsercizio?.note || '';
-                    const tipoSerie = esercizio.tipo || 'fisse'; // 'fisse' o 'piramidale'
+                    const tipoSerie = esercizio.tipo || 'fisse';
                     
                     const infoHtml = `
                         <p class="font-bold text-lg text-slate-100">${nomeEsercizio}</p>
@@ -248,7 +319,7 @@
                         <p class="text-sm font-medium text-indigo-300 mt-2">Tipo: <span class="font-normal capitalize text-slate-300">${tipoSerie}</span></p>
                     `;
 
-                    // 2. Costruisci l'HTML per ogni SET
+                    // Costruisci l'HTML per ogni SET
                     let setsHtml = '<div class="space-y-3 mt-3">';
                     if (esercizio.sets && esercizio.sets.length > 0) {
                         esercizio.sets.forEach(set => {
@@ -273,12 +344,11 @@
                             `;
                         });
                     } else {
-                        // Fallback se 'sets' è vuoto o non definito
                         setsHtml += `<p class="text-slate-400">Dettagli serie non disponibili.</p>`;
                     }
                     setsHtml += '</div>';
 
-                    // 3. Assembla l'elemento esercizio
+                    // Assembla l'elemento esercizio
                     exerciseList.innerHTML += `
                         <div class="flex flex-col sm:flex-row items-start gap-4 p-4 bg-slate-800 rounded-lg">
                             <img src="${imageUrl}" alt="${nomeEsercizio}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image sm:mt-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
@@ -288,7 +358,6 @@
                             </div>
                         </div>
                     `;
-                    // --- FINE GESTIONE MODIFICATA ---
                 });
             } else {
                 exerciseList.innerHTML = `<p class="text-slate-400">Nessun esercizio in questa scheda.</p>`;
@@ -299,6 +368,86 @@
             details.appendChild(content);
             return details;
         }
+        
+        // --- NUOVA FUNZIONE: CREA ELEMENTO CIRCUITO ---
+        function createCircuitElement(circuito, eserciziMap) {
+            const details = document.createElement('details');
+            details.className = 'plan-card bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg overflow-hidden';
+
+            const summary = document.createElement('summary');
+            summary.className = 'flex justify-between items-center p-4 md:p-6';
+            summary.innerHTML = `
+                <h3 class="text-xl font-bold text-white">${circuito.nomeCircuito}</h3>
+                <div class="icon text-purple-400"> <!-- Colore diverso -->
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
+                </div>
+            `;
+
+            const content = document.createElement('div');
+            content.className = 'p-4 md:p-6 border-t border-slate-700/50';
+
+            // Aggiungi info Lavoro/Recupero
+            const timingInfo = document.createElement('div');
+            timingInfo.className = 'flex gap-4 mb-4 p-3 bg-slate-800 rounded-lg';
+            timingInfo.innerHTML = `
+                <div class="flex-1 text-center">
+                    <p class="text-sm font-medium text-slate-400">LAVORO</p>
+                    <p class="text-xl font-bold text-white">${circuito.tempoLavoro || 'N/A'}</p>
+                </div>
+                <div class="flex-1 text-center border-l border-slate-600">
+                    <p class="text-sm font-medium text-slate-400">RECUPERO</p>
+                    <p class="text-xl font-bold text-white">${circuito.tempoRecupero || 'N/A'}</p>
+                </div>
+            `;
+            content.appendChild(timingInfo);
+
+            const exerciseList = document.createElement('div');
+            exerciseList.className = 'space-y-4';
+
+            if (circuito.esercizi && circuito.esercizi.length > 0) {
+                // Ordina per 'ordine'
+                const orderedExercises = (circuito.esercizi || []).sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
+
+                orderedExercises.forEach(esercizio => {
+                    if (!esercizio.esercizioId) {
+                        console.warn("Esercizio circuito senza ID:", circuito.nomeCircuito, esercizio);
+                        return;
+                    }
+
+                    const fullEsercizio = eserciziMap.get(esercizio.esercizioId);
+                    const imageUrl = fullEsercizio?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
+                    const nomeEsercizio = esercizio.nome || fullEsercizio?.nome || 'Esercizio Sconosciuto';
+                    const notaGeneraleEsercizio = fullEsercizio?.note || '';
+
+                    // Dati specifici del circuito
+                    const pesoHtml = `Peso: <span class="font-bold text-white">${esercizio.peso || 'N/A'}</span>`;
+                    const noteHtml = esercizio.note ? `<p class="text-sm text-amber-300/80 mt-1 italic">Nota: ${esercizio.note}</p>` : '';
+                    const notaGeneraleHtml = notaGeneraleEsercizio ? `<p class="text-sm text-slate-400 italic mt-1">${notaGeneraleEsercizio}</p>` : '';
+
+                    exerciseList.innerHTML += `
+                        <div class="flex flex-col sm:flex-row items-start gap-4 p-4 bg-slate-800 rounded-lg">
+                            <img src="${imageUrl}" alt="${nomeEsercizio}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image sm:mt-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
+                            <div class="flex-grow w-full">
+                                <p class="font-bold text-lg text-purple-300">${nomeEsercizio}</p>
+                                ${notaGeneraleHtml}
+                                <div class="mt-3 bg-slate-700/50 p-3 rounded-lg">
+                                    <p class="text-slate-300 font-mono text-sm">${pesoHtml}</p>
+                                    ${noteHtml}
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+            } else {
+                exerciseList.innerHTML = `<p class="text-slate-400">Nessun esercizio in questo circuito.</p>`;
+            }
+
+            content.appendChild(exerciseList);
+            details.appendChild(summary);
+            details.appendChild(content);
+            return details;
+        }
+
 
         // --- GESTIONE LIGHTBOX IMMAGINE ---
 
@@ -330,6 +479,24 @@
                 closeImageLightbox();
             }
         });
+        
+        // --- NUOVA GESTIONE TAB ---
+        function switchTab(tab) {
+            if (tab === 'schede') {
+                schedeContent.classList.add('active');
+                circuitiContent.classList.remove('active');
+                tabBtnSchede.classList.add('active');
+                tabBtnCircuiti.classList.remove('active');
+            } else if (tab === 'circuiti') {
+                schedeContent.classList.remove('active');
+                circuitiContent.classList.add('active');
+                tabBtnSchede.classList.remove('active');
+                tabBtnCircuiti.classList.add('active');
+            }
+        }
+
+        tabBtnSchede.addEventListener('click', () => switchTab('schede'));
+        tabBtnCircuiti.addEventListener('click', () => switchTab('circuiti'));
 
     </script>
 </body>
