@@ -69,12 +69,10 @@
             /* Per select: Rimuove l'aspetto di default e lo gestisce Tailwind (non necessario qui, ma utile) */
         }
     </style>
-     <!-- Carica l'auth-manager -->
      <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased p-4 md:p-8">
-     <!-- Loader Overlay -->
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+     <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600 border-t-sky-500"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
@@ -131,9 +129,8 @@
         // Importa db da auth-manager
         import { db } from './auth-manager.js';
         // Importa solo le funzioni necessarie da firestore
-        import { collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        // Rimuovi inizializzazione locale Firebase (app, auth, db)
+        // *** MODIFICA: Aggiunto 'orderBy' ***
+        import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // Riferimenti al DOM
         const loaderOverlay = document.getElementById('loader-overlay');
@@ -150,7 +147,7 @@
 
         let currentAthlete = null; // Salva i dati dell'atleta loggato
 
-        // --- Funzioni di Utility ---
+        // --- Funzioni di Utility (Invariate) ---
         
         function setDefaultDates() {
             const today = new Date();
@@ -251,82 +248,85 @@
             `;
         }
 
-        // --- Funzione Principale di Caricamento ---
+        // --- Funzione Principale di Caricamento (MODIFICATA) ---
         
-        async function fetchWorkouts(cognomeAtleta, startFilterDate, endFilterDate, tipoFilter) {
+        async function fetchWorkouts(athleteId, startFilterDate, endFilterDate, tipoFilter) {
             loadingMessage.classList.remove('hidden');
             errorMessage.classList.add('hidden');
             noDataMessage.classList.add('hidden');
             workoutList.innerHTML = ''; 
 
-            if (!cognomeAtleta) {
-                errorMessage.textContent = "Cognome dell'atleta non disponibile.";
+            // *** MODIFICA 1: Controllo su athleteId ***
+            if (!athleteId) {
+                errorMessage.textContent = "ID dell'atleta non disponibile.";
                 errorMessage.classList.remove('hidden');
                 loadingMessage.classList.add('hidden');
                 return;
             }
 
-            const startTime = startFilterDate ? new Date(startFilterDate).getTime() : 0;
-            const endTime = endFilterDate ? new Date(endFilterDate).getTime() + 86400000 : Infinity; 
+            // *** MODIFICA 2: Rimosso filtro JS, ora la query filtra tutto ***
             
             try {
-                // Usa 'db' importato
-                const q = query(
+                // Costruisci la query
+                let q_parts = [
                     collection(db, "allenamenti"),
-                    where("cognomeAtleta", "==", cognomeAtleta.toUpperCase()) // Assicurati che il cognome sia maiuscolo
-                );
+                    where("atletaId", "==", athleteId),     // <-- Filtro di sicurezza per ID
+                    where("data", ">=", startFilterDate),  // <-- Filtro per data inizio
+                    where("data", "<=", endFilterDate)     // <-- Filtro per data fine
+                ];
                 
-                const querySnapshot = await getDocs(q);
-                let filteredWorkouts = [];
-
-                if (!querySnapshot.empty) {
-                    querySnapshot.forEach((doc) => {
-                        const data = doc.data();
-                        
-                        const workoutDate = new Date(data.data); 
-                        const workoutTime = workoutDate.getTime();
-                        const isWithinDateRange = !isNaN(workoutTime) && workoutTime >= startTime && workoutTime < endTime;
-                        const isCorrectType = tipoFilter === 'TUTTI' || (data.tipo && data.tipo.toUpperCase() === tipoFilter.toUpperCase());
-                        
-                        if (isWithinDateRange && isCorrectType) {
-                            filteredWorkouts.push(data);
-                        }
-                    });
+                // Aggiungi il filtro tipo *solo se* non è "TUTTI"
+                if (tipoFilter !== 'TUTTI') {
+                    q_parts.push(where("tipo", "==", tipoFilter.toUpperCase()));
                 }
                 
-                if (filteredWorkouts.length === 0) {
+                // Aggiungi ordinamento per data
+                q_parts.push(orderBy("data", "desc"));
+                
+                // Crea la query finale
+                const q = query(...q_parts);
+                
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
                     noDataMessage.classList.remove('hidden');
                 } else {
                     let resultsHtml = '';
-                    filteredWorkouts.sort((a, b) => new Date(b.data).getTime() - new Date(a.data).getTime());
-                    filteredWorkouts.forEach((data) => {
-                        resultsHtml += formatWorkoutData(data);
+                    // I dati sono già filtrati e ordinati da Firestore
+                    querySnapshot.forEach((doc) => {
+                        resultsHtml += formatWorkoutData(doc.data());
                     });
                     workoutList.innerHTML = resultsHtml;
                 }
 
             } catch (error) {
                 console.error("Errore nel recupero degli allenamenti:", error);
-                errorMessage.textContent = "Errore nel database: Impossibile caricare i dati degli allenamenti.";
+                
+                // *** MODIFICA 3: Gestione Errore Indice Mancante ***
+                if (error.code === 'failed-precondition') {
+                     errorMessage.textContent = "Errore Database: Indice non trovato. Contatta l'amministratore per creare l'indice (atletaId, data) in Firestore.";
+                } else {
+                    errorMessage.textContent = "Errore nel database: Impossibile caricare i dati degli allenamenti.";
+                }
                 errorMessage.classList.remove('hidden');
             } finally {
                 loadingMessage.classList.add('hidden');
             }
         }
 
-        // --- Gestione Stato Autenticazione e Inizializzazione ---
+        // --- Gestione Stato Autenticazione e Inizializzazione (MODIFICATA) ---
         
         applyFiltersBtn.addEventListener('click', () => {
-            if (currentAthlete && currentAthlete.cognome) {
+            // *** MODIFICA 4: Controllo e passaggio di athlete.id ***
+            if (currentAthlete && currentAthlete.id) { 
                 fetchWorkouts(
-                    currentAthlete.cognome, // Usa il cognome dai dati dell'atleta
+                    currentAthlete.id, // <-- Passa l'ID
                     startDateInput.value,
                     endDateInput.value,
                     tipoFilterSelect.value
                 );
             } else {
-                 // Mostra messaggio se i dati atleta non sono ancora pronti
-                 errorMessage.textContent = "Dati atleta non ancora caricati. Attendi o ricarica la pagina.";
+                 errorMessage.textContent = "ID atleta non ancora caricato. Attendi o ricarica la pagina.";
                  errorMessage.classList.remove('hidden');
             }
         });
@@ -342,8 +342,9 @@
                  setDefaultDates();
                  tipoFilterSelect.value = 'TUTTI'; 
                  // Carica i dati iniziali
+                 // *** MODIFICA 5: Passaggio di athlete.id all'avvio ***
                  fetchWorkouts(
-                     athlete.cognome,
+                     athlete.id, 
                      startDateInput.value,
                      endDateInput.value,
                      tipoFilterSelect.value 
