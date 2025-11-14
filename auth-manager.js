@@ -27,7 +27,7 @@ export const db = getFirestore(app);
 
 // *** 2. INIZIALIZZA APP CHECK (VERSIONE DI PRODUZIONE) ***
 const appCheck = initializeAppCheck(app, {
-  provider: new ReCaptchaV3Provider('6LcQ7wwsAAAAAHKXql8POR7OFWD_NIWFCO3pwA2vV'),
+  provider: new ReCaptchaV3Provider('6LeQ7wwsAAAAAHXKqRPOR70fWD_NfWFO03pwkZvY'),
   isTokenAutoRefreshEnabled: true
 });
 
