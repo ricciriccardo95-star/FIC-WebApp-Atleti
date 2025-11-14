@@ -91,11 +91,13 @@ const authStateManager = async () => {
                 // --- UTENTE CON EMAIL LOGGATO ---
                 athlete = window.getCurrentAthlete(); // Prova a leggere dalla cache
 
-                if (!athlete || athlete.email !== user.email) {
-                    console.log("Dati atleta non in cache o email non corrispondente. Recupero da Firestore...");
+                // --- MODIFICA 1: Controlla lo UID invece dell'email ---
+                if (!athlete || athlete.uid !== user.uid) {
+                    // --- MODIFICA 2: Aggiornato messaggio di log ---
+                    console.log("Dati atleta non in cache o UID non corrispondente. Recupero da Firestore...");
                     try {
-                        // Questa riga ora è sicura
-                        const q = query(collection(db, "atleti"), where("email", "==", user.email.toLowerCase()));
+                        // --- MODIFICA 3: Query basata su UID ---
+                        const q = query(collection(db, "atleti"), where("uid", "==", user.uid));
                         const querySnapshot = await getDocs(q);
 
                         if (!querySnapshot.empty) {
@@ -103,6 +105,7 @@ const authStateManager = async () => {
                             const athleteData = athleteDoc.data();
                             athlete = { // Aggiorna la variabile athlete locale
                                 id: athleteDoc.id,
+                                uid: user.uid, // <-- AGGIUNTA FONDAMENTALE per il caching
                                 cognome: athleteData.cognome,
                                 email: user.email,
                                 gruppo: athleteData.gruppo || null
