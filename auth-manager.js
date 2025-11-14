@@ -6,6 +6,9 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+// *** 1. AGGIUNGI IMPORT PER APP CHECK ***
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+
 // Usa la stessa configurazione che hai in index.html
 const firebaseConfig = {
     apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
@@ -21,6 +24,13 @@ const firebaseConfig = {
 export const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
+
+// *** 2. INIZIALIZZA APP CHECK (VERSIONE DI PRODUZIONE) ***
+const appCheck = initializeAppCheck(app, {
+  provider: new ReCaptchaV3Provider('6LcQ7wwsAAAAAHKXql8POR7OFWD_NIWFCO3pwA2vV'),
+  isTokenAutoRefreshEnabled: true
+});
+
 
 const CACHE_KEY = 'currentAthlete';
 
@@ -57,7 +67,9 @@ const isLoginPage = () => {
     // Check if the path ends with /index.html or is exactly /
     const path = window.location.pathname;
     // Considera anche la root del sito (es. "http://tuosito.com/")
-    return path.endsWith('/index.html') || path.endsWith('/');
+    // Assumendo che la tua app sia in 'WEB APP ATLETI/', il path potrebbe essere /WEB%20APP%20ATLETI/ o /WEB%20APP%20ATLETI/index.html
+    const normalizedPath = path.toLowerCase();
+    return normalizedPath.endsWith('/index.html') || normalizedPath.endsWith('/');
 };
 
 
@@ -103,7 +115,7 @@ const authStateManager = async () => {
                             return; // Esce dalla funzione onAuthStateChanged
                         }
                     } catch (dbError) {
-                        console.error("Errore durante il recupero dati da Firestore (forse rete assente):", dbError);
+                        console.error("Errore during recupero dati da Firestore (forse rete assente):", dbError);
                         localStorage.removeItem(CACHE_KEY);
                         // Esegui logout se il database fallisce (errore intermittente)
                         await window.appLogout();
@@ -133,7 +145,21 @@ const authStateManager = async () => {
 
                 // Reindirizzamento se non siamo già su index.html
                 if (!isLoginPage()) {
-                    window.location.href = 'index.html';
+                    // CORREZIONE: Il reindirizzamento deve tornare INDIETRO alla index.
+                    const path = window.location.pathname;
+                    const segments = path.split('/').filter(Boolean);
+                    
+                    // Se il percorso ha più segmenti E l'ultimo segmento è un file .html
+                    // (es. ['RISULTATI', 'home_ranking.html']), allora siamo in una sottocartella.
+                    if (segments.length > 1 && segments[segments.length - 1].endsWith('.html')) {
+                         window.location.href = '../index.html'; // Torna su di un livello
+                    } else if (segments.length === 1 && segments[0].endsWith('.html')) {
+                         // Siamo al livello root (es. /home.html)
+                         window.location.href = 'index.html'; // Vai a index.html nella stessa cartella
+                    }
+                    // Se il path è solo '/' (isLoginPage() sarebbe true) o altro, non fa nulla
+                    // Questa logica gestisce /RISULTATI/home_ranking.html -> ../index.html
+                    // E /home.html -> index.html
                     return;
                 }
                 
