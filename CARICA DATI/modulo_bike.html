@@ -33,12 +33,6 @@
         }
     </style>
     
-    <!--
-      Carica l'auth-manager.
-      Questo gestirà il controllo auth e il redirect SE NON LOGGATI.
-      Il percorso '../' presume che questo file sia in una sottocartella (WEB APP ATLETI/CARICA DATI/).
-      Assicurati che auth-manager.js sia nella cartella 'WEB APP ATLETI/'.
-    -->
     <script type="module" src="../auth-manager.js"></script>
 
 </head>
@@ -46,7 +40,6 @@
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
     
-    <!-- Il loader è visibile di default e viene nascosto dall'evento 'authStateReady' -->
     <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
@@ -56,15 +49,12 @@
         <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Allenamento BikeErg</h1>
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
             
-            <!-- Contenitore per info atleta loggato -->
             <div id="athlete-info-container">
                 <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
             </div>
             
-            <!-- Contenuto del form, nascosto finché l'utente non è verificato -->
             <div id="form-content" class="hidden space-y-6">
                 
-                <!-- 1. SCELTA PRINCIPALE -->
                 <div>
                     <label for="workoutMode" class="form-label">Modalità Allenamento</label>
                     <select id="workoutMode" class="form-select">
@@ -74,7 +64,6 @@
                     </select>
                 </div>
 
-                <!-- 2. SCELTA TIPO DI LAVORO (per Distanza) -->
                 <div id="tipo-lavoro-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="tipoLavoroSelect" class="form-label">Tipo di Lavoro (Distanza)</label>
@@ -86,7 +75,6 @@
                     </div>
                 </div>
 
-                <!-- 3. CAMPI DINAMICI PER DISTANZA (Polarizzato o Steady State) -->
                 <div id="distanza-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="distanzaSelect" class="form-label">Distanza Specifica</label>
@@ -96,7 +84,6 @@
                     </div>
                 </div>
 
-                <!-- 4. CAMPI DINAMICI PER TEMPO (Logica invariata) -->
                 <div id="tempo-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
@@ -108,26 +95,21 @@
                     </div>
                 </div>
 
-                <!-- 5. CAMPI COMUNI (Intervalli) -->
                 <div id="intervalli-common" class="dynamic-field space-y-6">
                      <div>
                         <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
-                            <!-- Popolato da JS -->
-                        </select>
+                            </select>
                     </div>
                     <div id="intervalli-inputs-container" class="space-y-4"></div>
                 </div>
-                <!-- Fine Campi Dinamici -->
-                
                 <div class="pt-4">
                     <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
                 </div>
             </div>
         </div>
 
-        <!-- NUOVE NOTE FINALI (da modulo_boat.html) -->
         <div class="mt-6 text-sm text-slate-400 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
             <h4 class="font-bold text-slate-200 mb-2">N.B. (Note Importanti):</h4>
             <ol class="list-decimal list-inside space-y-1">
@@ -135,10 +117,7 @@
                 <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se il lavoro supera l'ora, scrivere 60 + minuti (es. 1h 02m &rarr; <strong class="text-slate-300">62</strong>).</li>
             </ol>
         </div>
-        <!-- FINE NOTE -->
-
         <div class="text-center mt-8">
-            <!-- Link corretto per tornare alla selezione (come modulo_boat) -->
             <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
                 ← Torna alla Selezione
             </a>
@@ -152,14 +131,15 @@
     </div>
 
     <script type="module">
-        // Importa l'istanza 'db' da auth-manager.js (presumendo sia nella cartella genitore)
+        // Importa l'istanza 'db' da auth-manager.js
         import { db } from '../auth-manager.js';
         
-        // Importa solo le funzioni Firestore necessarie per QUESTA pagina
+        // Importa solo le funzioni Firestore necessarie
         import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Rimuovi: initializeApp, getAuth, onAuthStateChanged, getFirestore, query, where, getDocs
-        // Rimuovi: firebaseConfig, app, auth
+        // *** NUOVE COSTANTI PER RECORD MONDIALI (da usare come 4000m) ***
+        const RECORD_MONDO_M_4000M_BIKE = '05:35.8';
+        const RECORD_MONDO_F_4000M_BIKE = '06:21.1';
 
         const loaderOverlay = document.getElementById('loader-overlay');
         const athleteInfo = document.getElementById('athlete-info');
@@ -171,18 +151,23 @@
 
         // --- DEFINIZIONE DISTANZE ---
         const distanzePolarizzate = [
-// ... existing code ... -->
+            { value: '500', text: '500 pol (50%)' },
+            { value: '750', text: '750 pol (33,3%)' },
+            { value: '1000', text: '1000 pol (25%)' },
+            { value: '1500', text: '1500 pol (16,6%)' },
+            { value: '2000', text: '2000 pol (12%)' },
+            { value: '3000', text: '3000 pol (8,33%)' },
+            { value: '4000', text: '4000 pol (6,25%)' },
             { value: '5000', text: '5000 pol (5%)' },
             { value: '6000', text: '6000 pol (4,16%)' },
-            { value: '8000', text: '8000 pol' },
             { value: '10000', text: '10000 pol (2,5%)' }
         ];
 
         const distanzeSteadyState = [
-// ... existing code ... -->
+            { value: '2000', text: '2000' },
+            { value: '4000', text: '4000' },
             { value: '5000', text: '5000' },
             { value: '6000', text: '6000' },
-            { value: '8000', text: '8000' },
             { value: '10000', text: '10000' },
             { value: '16000', text: '16000' },
             { value: '20000', text: '20000' }
@@ -196,7 +181,7 @@
             showModal(document.getElementById('messageBox'));
         }
 
-        // --- FUNZIONI DI CALCOLO EP (Specifiche per BIKE) ---
+        // --- FUNZIONI DI CALCOLO EP (MODIFICATA PER EP1 e EP2) ---
         function timeToSeconds(timeStr) {
             if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
@@ -221,45 +206,79 @@
         }
 
         function calculateBikeEP(workoutData, athleteData) {
-            if (!athleteData || !athleteData.bikeerg) return null; // Usa bikeerg
-            if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) return null;
+            // Valori di default
+            let ep1 = null; // Nuovo EP basato sul record del mondo
+            let ep2 = null; // Vecchio EP (ora EP2) basato sul record personale
 
-            const recordBikeSeconds = timeToSeconds(athleteData.bikeerg); // Usa bikeerg
-            if (recordBikeSeconds <= 0) {
-                console.warn("Record BikeErg non valido o assente per l'atleta.");
-                return null;
+            if (!athleteData) {
+                console.warn("Dati atleta non disponibili.");
+                return { ep1, ep2 }; // { null, null }
             }
-            
-            // Formula Watt specifica per BikeErg (Potrebbe essere diversa dal RowErg)
-            // Assumendo la stessa formula per ora: Watt = 2.8 * (Distanza / Tempo)^3
-            // NOTA: La distanza di riferimento per BikeErg è 4000m, NON 2000m. Correggo.
-            const wattRecordPersonale = 2.8 * Math.pow(4000 / recordBikeSeconds, 3);
-            if (wattRecordPersonale <= 0) return null;
+            if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) {
+                console.warn("Dati intervalli non validi.");
+                return { ep1, ep2 };
+            }
 
+            // --- 1. Calcola i Watt dell'allenamento (logica esistente, invariata) ---
             let wattAllenamento = 0;
             const intervals = workoutData.intervalli.map(i => timeToSeconds(i) || parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n) && n > 0);
-            if (intervals.length === 0) return null;
+            if (intervals.length === 0) return { ep1, ep2 };
 
             const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
 
             if (workoutData.modalita === 'tempo') {
-                // Se la modalità è tempo, l'input degli intervalli è la DISTANZA percorsa.
-                const mediaMetri = mediaIntervalli; // Giusto
+                const mediaMetri = mediaIntervalli; 
                 const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60;
                 if (tempoSelezionatoSec > 0) wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
             } else if (workoutData.modalita === 'distanza') {
-                // Se la modalità è distanza, l'input degli intervalli è il TEMPO impiegato.
-                const mediaTempoSec = mediaIntervalli; // Giusto
+                const mediaTempoSec = mediaIntervalli; 
                 const distanzaSelezionata = parseInt(workoutData.distanza, 10); 
                 if (mediaTempoSec > 0) wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
             }
 
+            if (wattAllenamento <= 0) {
+                 console.warn("Watt allenamento non calcolabili.");
+                return { ep1, ep2 };
+            }
 
-            if (wattAllenamento > 0) {
-                return (wattAllenamento / wattRecordPersonale) * 100;
+            // --- 2. Calcola EP2 (Record Personale) (logica esistente, standard 4000m) ---
+            if (athleteData.bikeerg) { // Usa bikeerg (record 4k)
+                const recordBikeSeconds = timeToSeconds(athleteData.bikeerg); 
+                if (recordBikeSeconds > 0) {
+                    // Distanza di riferimento per BikeErg è 4000m
+                    const wattRecordPersonale = 2.8 * Math.pow(4000 / recordBikeSeconds, 3);
+                    if (wattRecordPersonale > 0) {
+                        ep2 = (wattAllenamento / wattRecordPersonale) * 100;
+                    }
+                } else {
+                    console.warn("Record BikeErg personale non valido o assente.");
+                }
+            } else {
+                 console.warn("Campo 'bikeerg' mancante in athleteData per EP2.");
+            }
+
+            // --- 3. Calcola EP1 (Record Mondiale) (nuova logica, standard 4000m) ---
+            const gender = athleteData.genere; 
+            let worldRecordSeconds = 0;
+
+            if (gender === 'M') {
+                worldRecordSeconds = timeToSeconds(RECORD_MONDO_M_4000M_BIKE);
+            } else if (gender === 'F') {
+                worldRecordSeconds = timeToSeconds(RECORD_MONDO_F_4000M_BIKE);
+            } else {
+                console.warn(`Genere atleta non specificato ('${gender}') nel database. EP1 non calcolabile.`);
             }
             
-            return null;
+            if (worldRecordSeconds > 0) {
+                 // *** MODIFICA CHIAVE: Usa 4000m come distanza di riferimento ***
+                 const wattRecordMondiale = 2.8 * Math.pow(4000 / worldRecordSeconds, 3);
+                 if (wattRecordMondiale > 0) {
+                    ep1 = (wattAllenamento / wattRecordMondiale) * 100;
+                 }
+            }
+
+            // Restituisci l'oggetto con entrambi i valori
+            return { ep1, ep2 };
         }
 
         // --- LOGICA DI SETUP PAGINA ---
@@ -326,15 +345,11 @@
                     const labelText = isDistanceMode ? 'Tempo' : 'Distanza';
                     
                     const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} (${labelText})</label>`;
-                    
-                    // *** MODIFICA: Aggiunto inputMode (come da modulo_boat) ***
                     const inputMode = isDistanceMode ? 'inputmode="numeric"' : 'inputmode="decimal"'; 
-                    
                     const inputAttributes = isDistanceMode 
                         ? 'oninput="formatTimeInput(event)" maxlength="7"' 
                         : 'step="any"'; 
 
-                    // *** MODIFICA: Aggiunto ${inputMode} ***
                     const input = `<input type="${inputType}" ${inputMode} id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${inputAttributes}>`;
                     
                     container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
@@ -373,6 +388,8 @@
             }
 
             const mode = document.getElementById('workoutMode').value;
+            
+            // *** MODIFICA: Aggiornato 'ep' a 'ep1' e 'ep2' ***
             const workoutData = {
                 tipo: workoutType.toUpperCase(), // BIKE
                 atletaId: currentAthleteId,
@@ -381,8 +398,9 @@
                 data: new Date().toISOString().split('T')[0],
                 timestamp: serverTimestamp(),
                 intervalli: [],
-                ep: null,
-                tipoLavoro: null // Nuovo campo
+                ep1: null, // Nuovo campo per EP mondiale
+                ep2: null, // Il vecchio 'ep' ora è 'ep2'
+                tipoLavoro: null 
             };
 
             if (!mode) {
@@ -430,21 +448,35 @@
                  btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             
+            // *** MODIFICA: Blocco calcolo EP aggiornato per EP1 e EP2 ***
             const athleteData = await fetchAthleteRecord(currentAthleteId);
             if (athleteData) {
                 try {
-                    const epValueToSave = calculateBikeEP(workoutData, athleteData); // Usa calculateBikeEP
-                    if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
-                        workoutData.ep = parseFloat(epValueToSave.toFixed(2));
+                    // Ora 'epValues' è un oggetto: { ep1: ..., ep2: ... }
+                    const epValues = calculateBikeEP(workoutData, athleteData); // Usa calculateBikeEP
+                    
+                    // Salva EP1 (Mondiale)
+                    if (epValues.ep1 !== null && epValues.ep1 > 0 && isFinite(epValues.ep1)) {
+                        workoutData.ep1 = parseFloat(epValues.ep1.toFixed(2));
                     } else {
-                        console.warn("EP non calcolato o non valido. Controlla che 'bikeerg' (record 4k) sia presente nel profilo atleta.");
+                        console.warn("EP1 (Mondiale) non calcolato o non valido."); 
                     }
+
+                    // Salva EP2 (Personale)
+                    if (epValues.ep2 !== null && epValues.ep2 > 0 && isFinite(epValues.ep2)) {
+                        workoutData.ep2 = parseFloat(epValues.ep2.toFixed(2));
+                    } else {
+                        console.warn("EP2 (Personale) non calcolato o non valido. Controlla che 'bikeerg' (record 4k) sia presente nel profilo atleta.");
+                    }
+
                 } catch(epError) {
                     console.error("Errore durante il calcolo EP:", epError);
                 }
             } else {
                 console.warn(`Record atleta ${currentAthleteId} non trovato. L'EP non può essere calcolato.`);
             }
+            // *** FINE MODIFICA BLOCCO EP ***
+
 
             try {
                 // 'db' è importato
