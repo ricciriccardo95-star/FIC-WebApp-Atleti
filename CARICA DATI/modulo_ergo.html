@@ -33,7 +33,6 @@
             padding-right: 2.5rem; /* Spazio per la freccia */
         }
     </style>
-    <!-- Carica l'auth-manager -->
     <script type="module" src="../auth-manager.js"></script>
 </head>
 <body class="antialiased">
@@ -47,15 +46,12 @@
         <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Allenamento RowErg</h1>
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
             
-            <!-- Contenitore per info atleta loggato -->
             <div id="athlete-info-container">
                 <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
             </div>
             
-            <!-- Contenuto del form, nascosto finché l'utente non è verificato -->
             <div id="form-content" class="hidden space-y-6">
                 
-                <!-- 1. SCELTA PRINCIPALE -->
                 <div>
                     <label for="workoutMode" class="form-label">Modalità Allenamento</label>
                     <select id="workoutMode" class="form-select">
@@ -65,7 +61,6 @@
                     </select>
                 </div>
 
-                <!-- 2. SCELTA TIPO DI LAVORO (per Distanza) -->
                 <div id="tipo-lavoro-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="tipoLavoroSelect" class="form-label">Tipo di Lavoro (Distanza)</label>
@@ -77,7 +72,6 @@
                     </div>
                 </div>
 
-                <!-- 3. CAMPI DINAMICI PER DISTANZA (Polarizzato o Steady State) -->
                 <div id="distanza-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="distanzaSelect" class="form-label">Distanza Specifica</label>
@@ -87,7 +81,6 @@
                     </div>
                 </div>
 
-                <!-- 4. CAMPI DINAMICI PER TEMPO (Logica invariata) -->
                 <div id="tempo-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
@@ -99,26 +92,21 @@
                     </div>
                 </div>
 
-                <!-- 5. CAMPI COMUNI (Intervalli) -->
                 <div id="intervalli-common" class="dynamic-field space-y-6">
                      <div>
                         <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
-                            <!-- Popolato da JS -->
-                        </select>
+                            </select>
                     </div>
                     <div id="intervalli-inputs-container" class="space-y-4"></div>
                 </div>
-                <!-- Fine Campi Dinamici -->
-                
                 <div class="pt-4">
                     <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
                 </div>
             </div>
         </div>
 
-        <!-- NUOVE NOTE FINALI (da modulo_bike.html) -->
         <div class="mt-6 text-sm text-slate-400 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
             <h4 class="font-bold text-slate-200 mb-2">N.B. (Note Importanti):</h4>
             <ol class="list-decimal list-inside space-y-1">
@@ -126,10 +114,7 @@
                 <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se il lavoro supera l'ora, scrivere 60 + minuti (es. 1h 02m &rarr; <strong class="text-slate-300">62</strong>).</li>
             </ol>
         </div>
-        <!-- FINE NOTE -->
-
         <div class="text-center mt-8">
-            <!-- Link corretto per tornare alla selezione (come modulo_bike) -->
             <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
                 ← Torna alla Selezione
             </a>
@@ -148,7 +133,9 @@
         // Importa solo le funzioni necessarie da firestore
         import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Rimuovi inizializzazione locale Firebase (app, auth, db)
+        // *** NUOVE COSTANTI PER RECORD MONDIALI (come da tua conferma) ***
+        const RECORD_MONDO_M_2000M = '05:35.8';
+        const RECORD_MONDO_F_2000M = '06:21.1';
         
         const loaderOverlay = document.getElementById('loader-overlay');
         const athleteInfo = document.getElementById('athlete-info');
@@ -192,7 +179,7 @@
             showModal(document.getElementById('messageBox'));
         }
 
-        // --- FUNZIONI DI CALCOLO EP (INVARIATE) ---
+        // --- FUNZIONI DI CALCOLO EP (MODIFICATA PER EP1 e EP2) ---
         function timeToSeconds(timeStr) {
             if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
@@ -217,21 +204,23 @@
         }
 
         function calculateErgoEP(workoutData, athleteData) {
-            if (!athleteData || !athleteData.rowerg) return null;
-            if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) return null;
+            // Valori di default
+            let ep1 = null; // Nuovo EP basato sul record del mondo
+            let ep2 = null; // Vecchio EP (ora EP2) basato sul record personale
 
-            const recordErgoSeconds = timeToSeconds(athleteData.rowerg);
-            if (recordErgoSeconds <= 0) {
-                console.warn("Record RowErg non valido o assente per l'atleta.");
-                return null;
+            if (!athleteData) {
+                console.warn("Dati atleta non disponibili.");
+                return { ep1, ep2 }; // { null, null }
             }
-            
-            const wattRecordPersonale = 2.8 * Math.pow(2000 / recordErgoSeconds, 3);
-            if (wattRecordPersonale <= 0) return null;
+            if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) {
+                console.warn("Dati intervalli non validi.");
+                return { ep1, ep2 };
+            }
 
+            // --- 1. Calcola i Watt dell'allenamento (logica esistente, invariata) ---
             let wattAllenamento = 0;
             const intervals = workoutData.intervalli.map(i => timeToSeconds(i) || parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n) && n > 0);
-            if (intervals.length === 0) return null;
+            if (intervals.length === 0) return { ep1, ep2 };
 
             const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
 
@@ -245,11 +234,50 @@
                 if (mediaTempoSec > 0) wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
             }
 
-            if (wattAllenamento > 0) {
-                return (wattAllenamento / wattRecordPersonale) * 100;
+            if (wattAllenamento <= 0) {
+                 console.warn("Watt allenamento non calcolabili.");
+                return { ep1, ep2 };
+            }
+
+            // --- 2. Calcola EP2 (Record Personale) (logica esistente) ---
+            if (athleteData.rowerg) {
+                const recordErgoSeconds = timeToSeconds(athleteData.rowerg);
+                if (recordErgoSeconds > 0) {
+                    const wattRecordPersonale = 2.8 * Math.pow(2000 / recordErgoSeconds, 3);
+                    if (wattRecordPersonale > 0) {
+                        // Il vecchio 'ep' ora si chiama 'ep2'
+                        ep2 = (wattAllenamento / wattRecordPersonale) * 100;
+                    }
+                } else {
+                    console.warn("Record RowErg personale non valido o assente.");
+                }
+            } else {
+                 console.warn("Campo 'rowerg' mancante in athleteData per EP2.");
+            }
+
+
+            // --- 3. Calcola EP1 (Record Mondiale) (nuova logica) ---
+            // Assicurati che il documento atleta abbia il campo 'genere' ('M' o 'F')
+            const gender = athleteData.genere; 
+            let worldRecordSeconds = 0;
+
+            if (gender === 'M') {
+                worldRecordSeconds = timeToSeconds(RECORD_MONDO_M_2000M);
+            } else if (gender === 'F') {
+                worldRecordSeconds = timeToSeconds(RECORD_MONDO_F_2000M);
+            } else {
+                console.warn(`Genere atleta non specificato ('${gender}') nel database. EP1 non calcolabile.`);
             }
             
-            return null;
+            if (worldRecordSeconds > 0) {
+                 const wattRecordMondiale = 2.8 * Math.pow(2000 / worldRecordSeconds, 3);
+                 if (wattRecordMondiale > 0) {
+                    ep1 = (wattAllenamento / wattRecordMondiale) * 100;
+                 }
+            }
+
+            // Restituisci l'oggetto con entrambi i valori
+            return { ep1, ep2 };
         }
 
 
@@ -364,6 +392,8 @@
             }
 
             const mode = document.getElementById('workoutMode').value;
+            
+            // *** MODIFICA: Aggiornato 'ep' a 'ep1' e 'ep2' ***
             const workoutData = {
                 tipo: workoutType.toUpperCase(),
                 atletaId: currentAthleteId,
@@ -372,7 +402,8 @@
                 data: new Date().toISOString().split('T')[0],
                 timestamp: serverTimestamp(),
                 intervalli: [],
-                ep: null,
+                ep1: null, // Nuovo campo per EP mondiale
+                ep2: null, // Il vecchio 'ep' ora è 'ep2'
                 tipoLavoro: null 
             };
 
@@ -421,22 +452,35 @@
                  btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             
+            // *** MODIFICA: Blocco calcolo EP aggiornato per EP1 e EP2 ***
             const athleteData = await fetchAthleteRecord(currentAthleteId);
 
             if (athleteData) {
                 try {
-                    const epValueToSave = calculateErgoEP(workoutData, athleteData);
-                    if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
-                        workoutData.ep = parseFloat(epValueToSave.toFixed(2));
+                    // Ora 'epValues' è un oggetto: { ep1: ..., ep2: ... }
+                    const epValues = calculateErgoEP(workoutData, athleteData); 
+                    
+                    // Salva EP1 (Mondiale)
+                    if (epValues.ep1 !== null && epValues.ep1 > 0 && isFinite(epValues.ep1)) {
+                        workoutData.ep1 = parseFloat(epValues.ep1.toFixed(2));
                     } else {
-                        console.warn("EP non calcolato o non valido.");
+                        console.warn("EP1 (Mondiale) non calcolato o non valido."); 
                     }
+
+                    // Salva EP2 (Personale)
+                    if (epValues.ep2 !== null && epValues.ep2 > 0 && isFinite(epValues.ep2)) {
+                        workoutData.ep2 = parseFloat(epValues.ep2.toFixed(2));
+                    } else {
+                        console.warn("EP2 (Personale) non calcolato o non valido.");
+                    }
+
                 } catch(epError) {
                      console.error("Errore during EP calculation:", epError);
                 }
             } else {
-                console.warn(`Record atleta ${currentAthleteId} non trovato. L'EP non può essere calcolato.`);
+                console.warn(`Record atleta ${currentAthleteId} non trovato. EP1 e EP2 non possono essere calcolati.`);
             }
+            // *** FINE MODIFICA BLOCCO EP ***
 
             try {
                 // Usa 'db' importato
@@ -452,7 +496,7 @@
 
             } catch (error) {
                 console.error("Errore salvataggio: ", error);
-                showMessageBox("Si è verificato un errore durante il salvataggio.");
+                showMessageBox("Si è verificato un errore during il salvataggio.");
             } finally {
                 btn.disabled = false;
                 btn.textContent = 'Salva Allenamento';
