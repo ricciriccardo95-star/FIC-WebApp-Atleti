@@ -3,7 +3,6 @@ const CACHE_NAME = 'fic-pwa-cache-v1.37';
 // Lista dei file fondamentali dell'applicazione da mettere in cache.
 // Aggiungi qui tutte le pagine e le risorse principali della tua PWA.
 const urlsToCache = [
-  '/',
   'index.html',
   'manifest.json',
   'storico_wo.html',
