@@ -1,8 +1,11 @@
-// auth-manager.js (versione aggiornata)
+// auth-manager.js (Versione aggiornata per Atleti - Fix App Check)
+
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { initializeAppCheck, ReCaptchaV3Provider, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+
+// IMPORTANTE: Usiamo ReCaptchaEnterpriseProvider perché la chiave è su Google Cloud Console
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
@@ -10,10 +13,10 @@ const firebaseConfig = {
   projectId: "database-atleti-fic",
   storageBucket: "database-atleti-fic.appspot.com",
   messagingSenderId: "860422140545",
-  appId: "1:860422140545:web:cd14c047f2650681380"
+  appId: "1:860422140545:web:cd14c047f2650681380" // App ID Atleti
 };
 
-// Inizializza in modo idempotente (evita doppie inizializzazioni)
+// Inizializza in modo idempotente
 let app;
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
@@ -24,26 +27,31 @@ if (!getApps().length) {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// App Check: usa ReCaptcha in produzione, fallback a debug in localhost
+// --- CONFIGURAZIONE APP CHECK ---
 try {
   const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
+
   if (isLocalhost) {
-    // Debug mode: per sviluppo, impostare FIREBASE_APPCHECK_DEBUG_TOKEN nell'ambiente del browser
-    // (seguire la guida Firebase per ottenere il token) oppure usare provider di debug.
-    // Qui usiamo ReCaptchaV3Provider ma puoi sostituire con debug provider se preferisci.
-    initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider('6LeQ7wwsAAAAAHXKqRPOR70fWD_NfWFO03pwkZvY'),
-      isTokenAutoRefreshEnabled: true
-    });
-  } else {
-    initializeAppCheck(app, {
-      provider: new ReCaptchaV3Provider('6LeQ7wwsAAAAAHXKqRPOR70fWD_NfWFO03pwkZvY'),
-      isTokenAutoRefreshEnabled: true
-    });
+    // Attiva il token di debug per localhost per non consumare quota o avere errori di dominio
+    // Cerca nella console del browser: "App Check debug token: ..."
+    self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; 
+    console.log("App Check: Modalità DEBUG attiva (localhost).");
   }
+
+  // Usa ReCaptchaEnterpriseProvider per le chiavi create su Google Cloud
+  const appCheck = initializeAppCheck(app, {
+    provider: new ReCaptchaEnterpriseProvider('6LeQ7wwsAAAAAHXKqRPOR70fWD_NfWFO03pwkZvY'),
+    isTokenAutoRefreshEnabled: true
+  });
+  
+  if (!isLocalhost) {
+    console.log("App Check: Attivo in modalità PRODUZIONE (Enterprise Provider).");
+  }
+
 } catch (e) {
   console.warn("AppCheck init warning:", e.message);
 }
+// -------------------------------
 
 const CACHE_KEY = 'currentAthlete';
 
@@ -105,8 +113,7 @@ const authStateManager = async () => {
             localStorage.setItem(CACHE_KEY, JSON.stringify(athlete));
             console.log("Dati atleta in cache:", athlete);
           } else {
-            console.error("Utente autenticato ma non trovato in 'atleti'. Non effettuo subito logout.");
-            // NON forzare logout immediato: lascia un messaggio e disabilita funzioni che richiedono dati profilo
+            console.error("Utente autenticato ma non trovato in 'atleti'.");
             document.dispatchEvent(new CustomEvent('authStateReady', {
               detail: { athlete: null, error: { code: 'no-athlete-doc', message: 'Utente non presente in collection atleti' } }
             }));
@@ -114,7 +121,6 @@ const authStateManager = async () => {
           }
         } catch (dbError) {
           console.error("Errore nel recupero dati da Firestore:", dbError);
-          // Non rimuovere la cache e non eseguire logout forzato; segnala errore
           document.dispatchEvent(new CustomEvent('authStateReady', {
             detail: { athlete: null, error: dbError }
           }));
@@ -143,8 +149,6 @@ const authStateManager = async () => {
           window.location.href = '../index.html';
         } else if (segments.length === 1 && segments[0].endsWith('.html')) {
           window.location.href = 'index.html';
-        } else {
-          // se siamo già in root o index, non fare nulla
         }
         return;
       }
