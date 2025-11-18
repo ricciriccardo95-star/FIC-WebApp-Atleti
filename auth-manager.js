@@ -1,11 +1,11 @@
-// auth-manager.js (Versione aggiornata per Atleti - Fix App Check)
+// auth-manager.js (Versione aggiornata per Atleti - Fix App Check - Provider Standard)
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// IMPORTANTE: Usiamo ReCaptchaEnterpriseProvider perché la chiave è su Google Cloud Console
-import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+// MODIFICA: Importiamo ReCaptchaV3Provider invece di Enterprise
+import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
@@ -13,7 +13,7 @@ const firebaseConfig = {
   projectId: "database-atleti-fic",
   storageBucket: "database-atleti-fic.appspot.com",
   messagingSenderId: "860422140545",
-  appId: "1:860422140545:web:cd14c047f2650681380" // App ID Atleti
+  appId: "1:860422140545:web:cd14c047f2650681380" 
 };
 
 // Inizializza in modo idempotente
@@ -27,25 +27,24 @@ if (!getApps().length) {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// --- CONFIGURAZIONE APP CHECK ---
+// --- CONFIGURAZIONE APP CHECK (MODIFICATA) ---
 try {
   const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
   if (isLocalhost) {
     // Attiva il token di debug per localhost per non consumare quota o avere errori di dominio
-    // Cerca nella console del browser: "App Check debug token: ..."
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; 
     console.log("App Check: Modalità DEBUG attiva (localhost).");
   }
 
-  // Usa ReCaptchaEnterpriseProvider per le chiavi create su Google Cloud
+  // MODIFICA: Uso di ReCaptchaV3Provider con la NUOVA chiave standard
   const appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider('6LeQ7wwsAAAAAHXKqRPOR70fWD_NfWFO03pwkZvY'),
+    provider: new ReCaptchaV3Provider('6LcbnxAsAAAAAHAF5Hmlx9gF_5qqM_Q7gdPu9QMH'),
     isTokenAutoRefreshEnabled: true
   });
   
   if (!isLocalhost) {
-    console.log("App Check: Attivo in modalità PRODUZIONE (Enterprise Provider).");
+    console.log("App Check: Attivo in modalità PRODUZIONE (Standard V3 Provider).");
   }
 
 } catch (e) {
