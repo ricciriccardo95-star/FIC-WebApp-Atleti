@@ -4,7 +4,7 @@
   per forzare il browser a installare il nuovo Service Worker.
   Es. 'fic-pwa-cache-v1.39'
 */
-const CACHE_NAME = 'fic-pwa-cache-v1.39'; // <-- INCREMENTA QUESTA VERSIONE
+const CACHE_NAME = 'fic-pwa-cache-v1.40'; // <-- INCREMENTA QUESTA VERSIONE
 
 // Lista dei file fondamentali dell'applicazione da mettere in cache.
 const urlsToCache = [
