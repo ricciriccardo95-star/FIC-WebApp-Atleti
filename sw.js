@@ -1,12 +1,7 @@
-/*
-  IMPORTANTE: Aggiorna questo numero di versione!
-  Qualsiasi modifica a questo file richiede un incremento della versione
-  per forzare il browser a installare il nuovo Service Worker.
-  Es. 'fic-pwa-cache-v1.39'
-*/
-const CACHE_NAME = 'fic-pwa-cache-v1.40'; // <-- INCREMENTA QUESTA VERSIONE
+const CACHE_NAME = 'fic-pwa-cache-v1.41';
 
 // Lista dei file fondamentali dell'applicazione da mettere in cache.
+// Aggiungi qui tutte le pagine e le risorse principali della tua PWA.
 const urlsToCache = [
   '/',
   'index.html',
@@ -26,19 +21,11 @@ const urlsToCache = [
   'logo.png',
   'LOGO FIC APP (192).png',
   'LOGO FIC APP (512).png'
-  // Potresti aggiungere una pagina 'offline.html' generica qui
-  // 'offline.html'
 ];
 
-// Evento 'install':
+// Evento 'install': viene eseguito quando il service worker viene installato per la prima volta.
+// Qui mettiamo in cache tutti i file dell'app shell.
 self.addEventListener('install', event => {
-  console.log('Nuovo Service Worker in installazione...');
-  
-  // MODIFICA 1: Forza il nuovo Service Worker ad attivarsi subito
-  // non appena l'installazione è completata, senza aspettare
-  // che i vecchi client (schede) vengano chiusi.
-  self.skipWaiting();
-
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => {
@@ -51,9 +38,9 @@ self.addEventListener('install', event => {
   );
 });
 
-// Evento 'activate':
+// Evento 'activate': viene eseguito dopo l'installazione, quando il service worker prende il controllo della pagina.
+// Qui eliminiamo le vecchie cache per liberare spazio.
 self.addEventListener('activate', event => {
-  console.log('Nuovo Service Worker in attivazione...');
   event.waitUntil(
     caches.keys().then(cacheNames => {
       return Promise.all(
@@ -65,79 +52,45 @@ self.addEventListener('activate', event => {
           return caches.delete(cacheName);
         })
       );
-    }).then(() => {
-      // MODIFICA 2: Forza il SW attivato a prendere il controllo
-      // immediato di tutte le pagine aperte.
-      console.log('Service Worker attivo e pronto a prendere il controllo.');
-      return self.clients.claim();
     })
   );
 });
 
-// Evento 'fetch':
+// Evento 'fetch': intercetta tutte le richieste di rete dalla PWA.
 self.addEventListener('fetch', event => {
-  // MODIFICA 3: Strategia "Network-First" (Rete prima, poi Cache)
-  // Questa strategia prova *prima* a scaricare la risorsa dalla rete.
-  // - Se ci riesce, la restituisce all'utente e AGGIORNA la cache.
-  // - Se fallisce (es. offline), prova a prenderla dalla cache.
-  // Questo garantisce che gli utenti abbiano sempre i dati più freschi
-  // quando sono online, mantenendo la funzionalità offline.
-  
   event.respondWith(
-    // 1. Prova prima la rete
-    fetch(event.request)
-      .then(networkResponse => {
-        // 2. Risposta ricevuta dalla rete
-        
-        // Clona la risposta. Una risposta può essere letta solo una volta.
-        // Ci serve una copia per la cache e una da inviare al browser.
-        const responseToCache = networkResponse.clone();
+    caches.match(event.request)
+      .then(response => {
+        // Se la risorsa è già in cache, la restituisco subito.
+        if (response) {
+          return response;
+        }
 
-        caches.open(CACHE_NAME)
-          .then(cache => {
-            // Aggiorna la cache con la nuova risposta dalla rete
-            // Usiamo 'put' per sovrascrivere la vecchia versione
-            cache.put(event.request, responseToCache);
-          });
-        
-        // Restituisce la risposta fresca dalla rete
-        return networkResponse;
-      })
-      .catch(error => {
-        // 3. La rete ha fallito (es. sei offline)
-        console.warn(`Richiesta di rete fallita per: ${event.request.url}. Cerco in cache...`, error);
-        
-        // Prova a cercare una corrispondenza nella cache
-        return caches.match(event.request)
-          .then(cachedResponse => {
-            if (cachedResponse) {
-              // Trovata in cache, restituisci la versione offline
-              console.log('Risorsa trovata in cache (offline):', event.request.url);
-              return cachedResponse;
+        // Altrimenti, effettuo la richiesta di rete.
+        return fetch(event.request).then(
+          networkResponse => {
+            // Se la richiesta ha successo, la clono e la metto in cache per il futuro.
+            if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+              return networkResponse;
             }
 
-            // Non trovato neanche in cache.
-            // Se è una richiesta di navigazione (una pagina HTML),
-            // potresti voler mostrare una pagina 'offline.html' generica.
-            if (event.request.mode === 'navigate') {
-              console.warn('Pagina non trovata in cache, restituisco fallback generico.');
-              // return caches.match('/offline.html'); // Decommenta se crei una pagina offline.html
-            }
+            const responseToCache = networkResponse.clone();
+            caches.open(CACHE_NAME)
+              .then(cache => {
+                cache.put(event.request, responseToCache);
+              });
 
-            // Per altre risorse (immagini, script) o se non c'è fallback,
-            // l'errore si propagherà al browser.
-            console.error('Risorsa non trovata né in rete né in cache:', event.request.url);
-            return new Response('Contenuto non disponibile offline.', {
-              status: 404,
-              headers: { 'Content-Type': 'text/plain' }
-            });
-          });
+            return networkResponse;
+          }
+        );
       })
   );
 });
 
-/*
-  Il vecchio listener 'message' per skipWaiting non è più necessario
-  perché ora usiamo self.skipWaiting() direttamente nell'evento 'install'.
-*/
-// self.addEventListener('message', ...);
+// Evento 'message': ascolta i messaggi inviati dalla pagina.
+// Utilizzato per forzare l'attivazione del nuovo service worker.
+self.addEventListener('message', event => {
+  if (event.data && event.data.action === 'skipWaiting') {
+    self.skipWaiting();
+  }
+});
