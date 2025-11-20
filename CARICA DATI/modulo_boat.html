@@ -57,14 +57,12 @@
         .summary-value { font-weight: 600; color: #E2E8F0; text-align: right; }
         
     </style>
-    <!-- Carica l'auth-manager -->
     <script type="module" src="../auth-manager.js"></script>
 </head>
 <body class="antialiased">
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
     
-    <!-- Loader Overlay (visibile di default) -->
     <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
@@ -73,19 +71,16 @@
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
         <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Allenamento Barca</h1>
         
-        <!-- MESSAGGIO DI AVVISO -->
         <div class="mb-6 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-center">
             <p class="font-semibold text-yellow-300">Per le imbarcazioni multiple l'inserimento deve essere fatto <strong class="text-white">SOLO da un componente</strong> dell'equipaggio.</p>
         </div>
         
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
             
-             <!-- Contenitore per info atleta loggato -->
-            <div id="athlete-info-container">
+             <div id="athlete-info-container">
                 <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
             </div>
 
-            <!-- Contenuto del form, nascosto finché l'utente non è verificato -->
             <div id="form-content" class="hidden space-y-6">
             
                 <div>
@@ -97,8 +92,7 @@
                 </div>
 
                 <div id="crew-selection-container" class="dynamic-field grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <!-- I selettori per gli atleti verranno generati qui -->
-                </div>
+                    </div>
 
                 <div>
                     <label for="workoutMode" class="form-label">Modalità Allenamento</label>
@@ -109,7 +103,6 @@
                     </select>
                 </div>
 
-                <!-- SCELTA TIPO DI LAVORO (per Distanza) -->
                 <div id="tipo-lavoro-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="tipoLavoroSelect" class="form-label">Tipo di Lavoro (Distanza)</label>
@@ -121,7 +114,6 @@
                     </div>
                 </div>
                 
-                <!-- Campi Dinamici -->
                 <div id="distanza-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="distanzaSelect" class="form-label">Distanza Specifica</label>
@@ -137,8 +129,7 @@
                             <option value="">-- Seleziona tempo --</option>
                             <option value="30">30 minuti</option>
                             <option value="45">45 minuti</option>
-                             <!-- Aggiungere altri tempi se necessario -->
-                        </select>
+                             </select>
                     </div>
                 </div>
                 <div id="intervalli-common" class="dynamic-field space-y-6">
@@ -146,19 +137,15 @@
                         <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
-                            <!-- Popolato da JS -->
-                        </select>
+                            </select>
                     </div>
                     <div id="intervalli-inputs-container" class="space-y-4"></div>
                 </div>
-                <!-- Fine Campi Dinamici -->
                 <div class="pt-4">
                     <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
                 </div>
-            </div> <!-- Fine #form-content -->
-        </div>
+            </div> </div>
 
-        <!-- NOTE FINALI -->
         <div class="mt-6 text-sm text-slate-400 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
             <h4 class="font-bold text-slate-200 mb-2">N.B. (Note Importanti):</h4>
             <ol class="list-decimal list-inside space-y-1">
@@ -174,22 +161,18 @@
         </div>
     </div>
     
-    <!-- MODALE MESSAGGIO OK (Standard) -->
     <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
     <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
         <p id="messageText" class="mb-6 text-lg"></p>
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
 
-    <!-- NUOVO MODALE DI RIEPILOGO -->
     <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-lg hidden z-50">
         <div class="p-6">
             <h3 class="text-2xl font-bold text-white mb-4">Riepilogo Dati</h3>
             <div id="summary-content" class="mb-6 max-h-[60vh] overflow-y-auto pr-2">
-                <!-- Il contenuto del riepilogo verrà iniettato qui -->
-            </div>
+                </div>
             
-            <!-- Avviso EP > 110% -->
             <div id="ep-warning" class="hidden mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-center">
                 <p class="font-bold text-lg text-red-300">ATTENZIONE: EP Superiore al 110%!</p>
                 <p class="text-red-400">Il valore EP calcolato sembra molto alto. Sei sicuro che i dati siano corretti?</p>
@@ -201,10 +184,6 @@
             </div>
         </div>
     </div>
-    <!-- FINE MODALE RIEPILOGO -->
-
-
-    <!-- Script V11 -->
     <script type="module">
         // Importa db da auth-manager
         import { db } from '../auth-manager.js';
@@ -591,7 +570,7 @@
                 data: new Date().toISOString().split('T')[0],
                 timestamp: serverTimestamp(),
                 intervalli: [],
-                ep: null,
+                ep1: null, // *** MODIFICA: ep -> ep1 ***
                 tipoLavoro: null
             };
 
@@ -668,7 +647,7 @@
             const epValueToSave = calculateBoatEP(workoutData, boatType);
             // let epDisplay = "N/A"; // Rimosso, non più necessario per il display
             if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
-                workoutData.ep = parseFloat(epValueToSave.toFixed(2));
+                workoutData.ep1 = parseFloat(epValueToSave.toFixed(2)); // *** MODIFICA: ep -> ep1 ***
                 // epDisplay = `${workoutData.ep}%`; // Rimosso
             } else {
                 console.warn(`EP non calcolato per ${boatType}.`);
@@ -813,3 +792,4 @@
     </script>
 </body>
 </html>
+```
