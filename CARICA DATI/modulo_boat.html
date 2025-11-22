@@ -103,7 +103,7 @@
                 </div>
 
                 <div id="crew-selection-container" class="dynamic-field grid grid-cols-1 md:grid-cols-2 gap-4">
-                    </div>
+                </div>
 
                 <div>
                     <label for="workoutMode" class="form-label">Modalità Allenamento</label>
@@ -203,7 +203,7 @@
 
         const loaderOverlay = document.getElementById('loader-overlay');
         const workoutType = 'boat';
-        let allAthletes = []; // Cache per la lista atleti
+        let allAthletes = []; // Cache per la lista atleti (non più usata per le select, ma mantenuta se servisse in futuro)
         let worldRecords = new Map(); // Cache per i record mondiali
 
         // Variabili per l'atleta autenticato
@@ -219,7 +219,7 @@
         const modalBackdrop = document.getElementById('modal-backdrop');
         const messageBox = document.getElementById('messageBox');
         const summaryModal = document.getElementById('summaryModal');
-        const epWarning = document.getElementById('ep-warning'); // <-- RIGA AGGIUNTA
+        const epWarning = document.getElementById('ep-warning');
 
         // --- DEFINIZIONE DISTANZE ---
         const distanzePolarizzate = [
@@ -259,7 +259,7 @@
             showModal(messageBox);
         }
         
-        // --- FUNZIONI DI CALCOLO EP (Invariate) ---
+        // --- FUNZIONI DI CALCOLO EP ---
         function timeToSeconds(timeStr) {
             if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
@@ -328,7 +328,7 @@
         }
 
 
-        // --- LOGICA DI SETUP PAGINA (Invariata) ---
+        // --- LOGICA DI SETUP PAGINA ---
         async function setupPage() {
             // 1. Popola imbarcazioni
             const boatTypes = ["M1X", "W1X", "M2X", "W2X", "M2-", "W2-", "M4X", "W4X", "M4-", "W4-", "M8+", "W8+"];
@@ -349,32 +349,20 @@
             const today = new Date().toISOString().split('T')[0];
             document.getElementById('workoutDate').value = today;
 
-            // 4. Carica e Caching atleti
-            try {
-                const q = query(collection(db, 'atleti'), orderBy('cognome'));
-                const athletesSnapshot = await getDocs(q);
-                athletesSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    allAthletes.push({ 
-                        id: doc.id, 
-                        cognome: data.cognome, 
-                        nome: data.nome,
-                        gruppo: data.gruppo,
-                        genere: data.genere
-                    });
-                });
-            } catch (error) { console.error("Error loading athletes: ", error); }
-            
-            // 5. Carica e Caching record mondiali
+            // 4. Carica e Caching record mondiali
             await fetchWorldRecords();
         }
 
-        // --- GESTIONE DINAMICA FORM (Invariata) ---
+        // --- GESTIONE DINAMICA FORM (MODIFICATA) ---
         function generateCrewSelectors() {
+            // Questa funzione ora serve solo a gestire l'icona M/F e nascondere il container
             const container = document.getElementById('crew-selection-container');
             const boatType = document.getElementById('boatTypeSelect').value;
             const genderIndicator = document.getElementById('gender-indicator');
+            
+            // Pulisci e nascondi
             container.innerHTML = '';
+            container.style.display = 'none'; 
             
             if (boatType.startsWith('M')) {
                 genderIndicator.innerHTML = `<div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">M</div>`;
@@ -383,72 +371,7 @@
             } else {
                 genderIndicator.innerHTML = '';
             }
-
-            let crewSize = 0;
-            if (boatType.includes('1')) crewSize = 1;
-            else if (boatType.includes('2')) crewSize = 2;
-            else if (boatType.includes('4')) crewSize = 4;
-            else if (boatType.includes('8')) crewSize = 8;
-            
-            if(crewSize > 0) container.style.display = 'grid'; else container.style.display = 'none';
-
-            const athleteOptions = allAthletes
-                .map(a => {
-                    const optionValue = `${a.id}|${a.cognome}, ${a.nome || ''}`;
-                    return `<option 
-                                value="${optionValue}" 
-                                data-cognome="${a.cognome}" 
-                                data-nome="${a.nome || ''}" 
-                                data-gruppo="${a.gruppo || ''}" 
-                                data-genere="${a.genere || ''}">
-                                ${a.cognome} ${a.nome ? a.nome.charAt(0) + '.' : ''}
-                            </option>`;
-                }).join('');
-
-            let allSelectsHTML = ''; 
-            for (let i = 1; i <= crewSize; i++) {
-                const selectHTML = `
-                    <div>
-                        <label for="atleta-${i}" class="form-label">Atleta ${i}</label>
-                        <select id="atleta-${i}" class="form-select crew-member-select">
-                            <option value="">-- Seleziona --</option>
-                            ${athleteOptions}
-                        </select>
-                    </div>
-                `;
-                allSelectsHTML += selectHTML;
-            }
-            container.innerHTML = allSelectsHTML; 
-
-            if (crewSize > 0 && currentAthleteId) { 
-                const firstSelect = document.getElementById('atleta-1');
-                if (firstSelect) {
-                        const targetOption = Array.from(firstSelect.options).find(opt => opt.value === currentAthleteValueString);
-                        
-                        if (targetOption) {
-                            targetOption.selected = true;
-                        } else {
-                             console.warn(`Atleta loggato (${currentAthleteCognome}) non trovato nella lista 'allAthletes'. Lo aggiungo.`);
-                             const missingOption = document.createElement('option');
-                             missingOption.value = currentAthleteValueString;
-                             missingOption.textContent = `${currentAthlete.cognome} ${currentAthlete.nome ? currentAthlete.nome.charAt(0) + '.' : ''}`;
-                             missingOption.setAttribute('data-cognome', currentAthlete.cognome);
-                             missingOption.setAttribute('data-nome', currentAthlete.nome || '');
-                             missingOption.setAttribute('data-gruppo', currentAthlete.gruppo || '');
-                             missingOption.setAttribute('data-genere', currentAthlete.genere || '');
-                             missingOption.selected = true;
-                             firstSelect.appendChild(missingOption);
-                        }
-                        
-                        firstSelect.disabled = true; 
-                        
-                        const label = document.querySelector('label[for="atleta-1"]');
-                        if (label && !label.querySelector('.badge')) {
-                            label.innerHTML += ' <span class="badge bg-sky-500 text-white">Tu</span>';
-                        }
-                    }
-                }
-            }
+        }
 
         function updateFormVisibility() {
             const mode = document.getElementById('workoutMode').value;
@@ -533,7 +456,7 @@
             updateFormVisibility();
         }
 
-        // --- NUOVA LOGICA DI SALVATAGGIO (Divisa in 2 fasi) ---
+        // --- NUOVA LOGICA DI SALVATAGGIO (MODIFICATA) ---
 
         // FASE 1: Validazione e apertura modale di riepilogo
         async function initiateSaveProcess() {
@@ -557,31 +480,24 @@
             const mode = modeSelect.value;
             const modeText = modeSelect.options[modeSelect.selectedIndex].text;
             
-            const crewMemberSelects = document.querySelectorAll('.crew-member-select');
+            // --- COSTRUZIONE EQUIPAGGIO (SOLO UTENTE LOGGATO) ---
             const equipaggio = [];
-            let crewIsValid = true;
             let crewNames = []; // Per il riepilogo
             
-            // 1. Costruzione Equipaggio
-            crewMemberSelects.forEach(select => {
-                const selectedOption = select.options[select.selectedIndex];
-                if(select.value) {
-                    const atletaId = select.value.split('|')[0]; 
-                    const cognome = selectedOption.getAttribute('data-cognome');
-                    const nome = selectedOption.getAttribute('data-nome') || '';
-                    
-                    equipaggio.push({
-                        atletaId: atletaId,
-                        cognomeAtleta: cognome,
-                        nomeAtleta: nome,
-                        gruppo: selectedOption.getAttribute('data-gruppo') || '',
-                        genere: selectedOption.getAttribute('data-genere') || ''
-                    });
-                    crewNames.push(`${cognome} ${nome}`); // Aggiungi nome per riepilogo
-                } else {
-                    crewIsValid = false;
-                }
-            });
+            if (currentAthlete) {
+                equipaggio.push({
+                    atletaId: currentAthlete.id,
+                    cognomeAtleta: currentAthlete.cognome,
+                    nomeAtleta: currentAthlete.nome || '',
+                    gruppo: currentAthlete.gruppo || '',
+                    genere: currentAthlete.genere || ''
+                });
+                crewNames.push(`${currentAthlete.cognome} ${currentAthlete.nome || ''}`);
+            } else {
+                // Questo non dovrebbe accadere se i controlli di auth funzionano
+                showMessageBox("Errore: Utente non identificato. Ricarica la pagina.");
+                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
+            }
             
             const firstCrewMember = equipaggio[0] || {}; 
 
@@ -592,16 +508,16 @@
                 modalita: mode,
                 atletaId: firstCrewMember.atletaId || null, 
                 cognomeAtleta: firstCrewMember.cognomeAtleta || null, 
-                data: selectedDate, // USA LA DATA SELEZIONATA
+                data: selectedDate,
                 timestamp: serverTimestamp(),
                 intervalli: [],
-                ep1: null, // *** MODIFICA: ep -> ep1 ***
+                ep1: null, 
                 tipoLavoro: null
             };
 
-            // 2. Validazioni
-            if (!boatType || !crewIsValid || equipaggio.length === 0) {
-                showMessageBox("Seleziona un'imbarcazione e tutti i membri dell'equipaggio.");
+            // Validazioni
+            if (!boatType) {
+                showMessageBox("Seleziona un'imbarcazione.");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
             if (!mode) {
@@ -675,10 +591,8 @@
 
             // 3. Calcola l'EP
             const epValueToSave = calculateBoatEP(workoutData, boatType);
-            // let epDisplay = "N/A"; // Rimosso, non più necessario per il display
             if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
-                workoutData.ep1 = parseFloat(epValueToSave.toFixed(2)); // *** MODIFICA: ep -> ep1 ***
-                // epDisplay = `${workoutData.ep}%`; // Rimosso
+                workoutData.ep1 = parseFloat(epValueToSave.toFixed(2)); 
             } else {
                 console.warn(`EP non calcolato per ${boatType}.`);
             }
@@ -690,7 +604,7 @@
             const summaryContent = document.getElementById('summary-content');
             let summaryHTML = `
                 <div class="summary-item"><span class="summary-label">Imbarcazione</span><span class="summary-value">${boatTypeText}</span></div>
-                <div class="summary-item"><span class="summary-label">Equipaggio</span><span class="summary-value">${crewNames.join('<br>')}</span></div>
+                <div class="summary-item"><span class="summary-label">Atleta</span><span class="summary-value">${crewNames[0]}</span></div>
                 <div class="summary-item"><span class="summary-label">Modalità</span><span class="summary-value">${modeText}</span></div>
             `;
             
@@ -700,12 +614,10 @@
 
             summaryHTML += `<div class="summary-item"><span class="summary-label">N. Intervalli</span><span class="summary-value">${workoutData.intervalli.length}</span></div>`;
             summaryHTML += `<div class="summary-item"><span class="summary-label">Valori Intervalli</span><span class="summary-value">${workoutData.intervalli.join(', ')}</span></div>`;
-            // RIMOSSA LA RIGA CHE MOSTRA L'EP
-            // summaryHTML += `<div class="summary-item"><span class="summary-label">EP Calcolato</span><span class="summary-value font-bold text-lg ${epValueToSave > 110 ? 'text-red-400' : 'text-green-400'}">${epDisplay}</span></div>`;
             
             summaryContent.innerHTML = summaryHTML;
 
-            // 6. Controlla l'avviso EP (Questa logica rimane invariata)
+            // 6. Controlla l'avviso EP
             if (epValueToSave > 110) {
                 epWarning.classList.remove('hidden');
             } else {
@@ -714,7 +626,6 @@
             
             // 7. Mostra modale
             showModal(summaryModal);
-            // Il bottone 'saveWorkoutBtn' rimane disabilitato
         }
         
         // FASE 2: Conferma e salvataggio effettivo
@@ -785,7 +696,7 @@
                 currentAthleteCognome = athlete.cognome;
                 currentAthleteValueString = `${athlete.id}|${athlete.cognome}, ${athlete.nome || ''}`;
                 
-                athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athlete.cognome}</strong> (come Atleta 1)`;
+                athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
                 formContent.classList.remove('hidden');
                 
                 await setupPage(); 
