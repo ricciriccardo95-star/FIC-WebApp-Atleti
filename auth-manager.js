@@ -1,11 +1,11 @@
-// auth-manager.js (Versione aggiornata per Atleti - Fix App Check - Provider Standard)
+// auth-manager.js (CORRETTO per reCAPTCHA Enterprise)
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// MODIFICA: Importiamo ReCaptchaV3Provider invece di Enterprise
-import { initializeAppCheck, ReCaptchaV3Provider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
+// *** MODIFICA FONDAMENTALE: Importa ReCaptchaEnterpriseProvider ***
+import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyAQ_0F8KCks_4Wn2h2aTIepQY9VrIkWpUQ",
@@ -16,7 +16,7 @@ const firebaseConfig = {
   appId: "1:860422140545:web:cd14c047f2650681380" 
 };
 
-// Inizializza in modo idempotente
+// Inizializza in modo idempotente (previene errori se il file viene caricato due volte)
 let app;
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
@@ -27,24 +27,25 @@ if (!getApps().length) {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// --- CONFIGURAZIONE APP CHECK (MODIFICATA) ---
+// --- CONFIGURAZIONE APP CHECK (CORRETTA) ---
 try {
   const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
   if (isLocalhost) {
-    // Attiva il token di debug per localhost per non consumare quota o avere errori di dominio
+    // Attiva il token di debug per localhost
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; 
     console.log("App Check: Modalità DEBUG attiva (localhost).");
   }
 
-  // MODIFICA: Uso di ReCaptchaV3Provider con la NUOVA chiave standard
+  // *** FIX ERRORE 400: Usiamo ReCaptchaEnterpriseProvider ***
+  // Le chiavi create nella console Firebase SONO di tipo Enterprise.
   const appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaV3Provider('6LcbnxAsAAAAAHAF5Hmlx9gF_5qqM_Q7gdPu9QMH'),
+    provider: new ReCaptchaEnterpriseProvider('6LcbnxAsAAAAAHAF5Hmlx9gF_5qqM_Q7gdPu9QMH'),
     isTokenAutoRefreshEnabled: true
   });
   
   if (!isLocalhost) {
-    console.log("App Check: Attivo in modalità PRODUZIONE (Standard V3 Provider).");
+    console.log("App Check: Attivo in modalità PRODUZIONE (Enterprise Provider).");
   }
 
 } catch (e) {
@@ -144,10 +145,14 @@ const authStateManager = async () => {
       if (!isLoginPage()) {
         const path = window.location.pathname;
         const segments = path.split('/').filter(Boolean);
-        if (segments.length > 1 && segments[segments.length - 1].endsWith('.html')) {
-          window.location.href = '../index.html';
-        } else if (segments.length === 1 && segments[0].endsWith('.html')) {
-          window.location.href = 'index.html';
+        // Gestione percorsi relativi (es. se siamo in /CARICA DATI/ o nella root)
+        if (segments.length > 0 && (segments[segments.length - 1].endsWith('.html') || segments[segments.length - 1] === '')) {
+             // Se siamo in una sottocartella (es. CARICA DATI) torniamo su di uno
+             if (path.includes('/CARICA DATI/') || path.includes('/RISULTATI/') || path.includes('/CALENDARIO/')) {
+                 window.location.href = '../index.html';
+             } else {
+                 window.location.href = 'index.html';
+             }
         }
         return;
       }
