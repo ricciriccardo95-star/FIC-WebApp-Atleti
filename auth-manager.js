@@ -40,7 +40,7 @@ try {
   // *** FIX ERRORE 400: Usiamo ReCaptchaEnterpriseProvider ***
   // Le chiavi create nella console Firebase SONO di tipo Enterprise.
   const appCheck = initializeAppCheck(app, {
-    provider: new ReCaptchaEnterpriseProvider('6LcbnxAsAAAAAHAF5Hmlx9gF_5qqM_Q7gdPu9QMH'),
+    provider: new ReCaptchaEnterpriseProvider('6LdySxgsAAAAAOPjpX_oQPGTAJoqxJTNe9758JE0'),
     isTokenAutoRefreshEnabled: true
   });
   
