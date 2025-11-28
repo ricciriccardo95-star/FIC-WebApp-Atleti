@@ -13,7 +13,7 @@ const firebaseConfig = {
   projectId: "database-atleti-fic",
   storageBucket: "database-atleti-fic.appspot.com",
   messagingSenderId: "860422140545",
-  appId: "1:860422140545:web:cd14c047f2650681380" 
+  appId: "1:860422140545:web:cd14c042a47f2650681380" 
 };
 
 // Inizializza in modo idempotente (previene errori se il file viene caricato due volte)
