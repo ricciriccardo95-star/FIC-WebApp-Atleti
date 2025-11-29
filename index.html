@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>FIC Atleti - Accesso</title>
-    <script src="tailwind.js"></script>
+    <script src="https://cdn.tailwindcss.com"></script> 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -37,22 +37,119 @@
         }
         #logo-container { transition: transform 1s ease-in-out; }
         #login-form-container { transition: opacity 1s ease-in; }
+        
+        /* Stili per il modale e checkbox */
+        .custom-checkbox {
+            accent-color: #0284c7; /* Sky 600 */
+            width: 1.25rem;
+            height: 1.25rem;
+            cursor: pointer;
+        }
+        
+        /* Stile per la sezione disabilitata */
+        .disabled-section {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(100%);
+        }
     </style>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FIC Canottaggio">
-    <link rel="apple-touch-icon" href="LOGO R4P(192).png">
-    <link rel="manifest" href="manifest.json">
+    <link rel="icon" href="logo.png">
 </head>
-<body class="antialiased">
+<body class="antialiased overflow-hidden">
 
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
+    <!-- MODALE PRIVACY -->
+    <div id="privacy-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm hidden">
+        <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
+            
+            <!-- Header Modale con Logo e Titolo -->
+            <div class="p-6 border-b border-slate-700 bg-slate-800/50 rounded-t-xl flex items-center gap-4">
+                <img src="logo.png" alt="FIC Logo" class="h-12 w-auto object-contain">
+                <div>
+                    <h2 class="text-xl font-black text-white tracking-tight leading-tight">FIC - ATLETI</h2>
+                    <p class="text-xs text-slate-400 font-medium uppercase tracking-wide">Informativa Privacy</p>
+                </div>
+            </div>
+
+            <!-- Contenuto Scrollabile -->
+            <div class="p-6 overflow-y-auto custom-scrollbar text-slate-300 text-sm leading-relaxed space-y-4">
+                <p>
+                    Letta e compresa l’informativa resa ai sensi dell’art. 13 del Regolamento UE n. 2016/679 (GDPR) dalla 
+                    <strong class="text-white">Federazione Italiana Canottaggio (FIC)</strong>, in qualità di Titolare del trattamento e pubblicata sul sito federale.
+                </p>
+
+                <div class="bg-slate-700/30 p-4 rounded-lg border border-slate-600 space-y-4 mt-4">
+                    <p class="font-semibold text-white mb-2">Dichiaro di:</p>
+
+                    <!-- Checkbox 14 anni -->
+                    <label class="flex items-start gap-3 cursor-pointer group">
+                        <input type="checkbox" id="check-14-years" class="custom-checkbox mt-1 bg-slate-700 border-slate-500 rounded focus:ring-sky-500">
+                        <span class="group-hover:text-white transition-colors">
+                            Aver compiuto 14 anni <span class="text-red-400">*</span>
+                        </span>
+                    </label>
+
+                    <hr class="border-slate-600/50 my-2">
+
+                    <!-- SEZIONE CONSENSO (Inizialmente disabilitata) -->
+                    <div id="consent-section" class="space-y-3 transition-all duration-300 disabled-section">
+                        <p class="text-slate-300">
+                            Autorizzo al trattamento dei miei dati, nei limiti e per le finalità indicate da FIC all'art. III, punti nn. 1-11 dell'informativa, compresa la eventuale comunicazione dei miei dati a soggetti terzi indicati nella medesima informativa.
+                        </p>
+                        
+                        <!-- Link richiesto -->
+                        <div class="mb-2">
+                             <a href="https://www.canottaggio.org/wp-content/uploads/2024/05/informativa-tesserati-modulo-rev-TP.pdf" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline hover:text-sky-300 font-medium break-all flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                                </svg>
+                                canottaggio.org (Trattamento dei dati)
+                            </a>
+                        </div>
+                        
+                        <div class="flex flex-col sm:flex-row gap-4 mt-2">
+                            <label class="flex items-center gap-2 cursor-pointer p-3 rounded-md border border-slate-600 bg-slate-800 hover:bg-slate-700 transition-all has-[:checked]:border-green-500 has-[:checked]:bg-green-500/10">
+                                <input type="radio" name="privacy_consent" value="yes" disabled class="w-4 h-4 text-sky-600 focus:ring-sky-500 bg-slate-700 border-gray-500">
+                                <span class="text-white font-medium">ACCONSENTO <span class="text-red-400">*</span></span>
+                            </label>
+
+                            <label class="flex items-center gap-2 cursor-pointer p-3 rounded-md border border-slate-600 bg-slate-800 hover:bg-slate-700 transition-all has-[:checked]:border-red-500 has-[:checked]:bg-red-500/10">
+                                <input type="radio" name="privacy_consent" value="no" disabled class="w-4 h-4 text-red-600 focus:ring-red-500 bg-slate-700 border-gray-500">
+                                <span class="text-white font-medium">NON ACCONSENTO</span>
+                            </label>
+                        </div>
+                    </div>
+                </div>
+
+                <p class="text-xs text-slate-400 italic mt-2">
+                    Consapevole che il mancato conferimento dei dati determina l’impossibilità di procedere a registrarmi e utilizzare la presente App federale.
+                </p>
+                
+                <div id="consent-error" class="text-red-400 text-sm font-medium hidden bg-red-500/10 p-2 rounded border border-red-500/20">
+                    È necessario dare il consenso per proseguire.
+                </div>
+            </div>
+
+            <!-- Footer con bottone -->
+            <div class="p-6 border-t border-slate-700 bg-slate-800/50 rounded-b-xl flex justify-end">
+                <button id="btn-accept-privacy" disabled 
+                    class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-900/20">
+                    Conferma e Procedi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- LOGIN VIEW (Standard) -->
     <div id="login-view" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-sm">
             <div id="logo-container" class="text-center transform translate-y-0">
-                <img src="logo.png" alt="Logo FIC" class="mx-auto mb-4 w-48 h-auto">
+                <img src="logo.png" alt="Logo FIC" class="mx-auto mb-4 w-48 h-auto object-contain">
                 <h1 id="app-title" class="text-2xl sm:text-3xl font-black text-slate-100 tracking-tight opacity-0 transition-opacity duration-1000">
                     FIC - ATLETI
                 </h1>
@@ -64,27 +161,28 @@
                         <label for="email" class="block text-sm font-medium text-slate-400">Email Utente</label>
                         <div class="mt-1">
                             <input id="email" name="email" type="email" autocomplete="email" required
-                                   class="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none">
+                                   class="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all">
                         </div>
                     </div>
                     <div>
                         <label for="password" class="block text-sm font-medium text-slate-400">Password</label>
                         <div class="mt-1">
                             <input id="password" name="password" type="password" autocomplete="current-password" required
-                                   class="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none">
+                                   class="w-full bg-slate-800 border border-slate-700 rounded-md p-3 text-white placeholder-slate-500 focus:ring-2 focus:ring-sky-500 focus:border-sky-500 outline-none transition-all">
                         </div>
                     </div>
 
                     <div class="text-right">
-                        <a href="#" id="forgot-password-link" class="text-sm font-medium text-sky-400 hover:text-sky-300">
+                        <a href="#" id="forgot-password-link" class="text-sm font-medium text-sky-400 hover:text-sky-300 transition-colors">
                             Password dimenticata?
                         </a>
                     </div>
+
                     <p id="error-message" class="text-red-500 text-sm text-center hidden"></p>
                     
                     <div>
                         <button type="submit" id="login-button"
-                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500 transition-colors disabled:opacity-50">
+                                class="w-full flex justify-center py-3 px-4 border border-transparent rounded-md shadow-sm text-sm font-bold text-white bg-sky-600 hover:bg-sky-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-slate-900 focus:ring-sky-500 transition-all disabled:opacity-50">
                             Accedi
                         </button>
                     </div>
@@ -93,71 +191,136 @@
         </div>
     </div>
 
+    <!-- Carico auth-manager come richiesto originariamente -->
     <script type="module" src="auth-manager.js"></script>
 
     <script type="module">
-        // *** INIZIO BLOCCO MODIFICATO ***
+        // 1. Importa l'istanza 'auth' GIA' creata da auth-manager.js (Ripristinato)
+        import { auth } from './auth-manager.js';
 
-        // Importa l'istanza 'auth' GIA' INIZIALIZZATA (e configurata con AppCheck) da auth-manager.js
-        import { auth } from "./auth-manager.js";
-        
-        // Importa SOLO le funzioni che ti servono
+        // 2. Importa SOLO le funzioni che ti servono (come nel file originale)
         import { 
             signInWithEmailAndPassword,
             sendPasswordResetEmail
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-        
-        // Rimosse: initializeApp, getAuth, firebaseConfig, app = initializeApp, auth = getAuth
-        // L'istanza 'auth' è ora disponibile e pronta all'uso.
 
-        // *** FINE BLOCCO MODIFICATO ***
-
-
+        // --- ELEMENTI DOM LOGIN ---
         const loginForm = document.getElementById('login-form');
-        const loginButton = document.getElementById('login-button'); // <-- AGGIUNTO Riferimento al pulsante
+        const loginButton = document.getElementById('login-button');
         const errorMessage = document.getElementById('error-message');
-        
-        // --- NUOVO: Riferimento al link di recupero password ---
         const forgotPasswordLink = document.getElementById('forgot-password-link');
         
-        // Tutta la logica 'handleAuth' e 'onAuthStateChanged' è in 'auth-manager.js'.
+        // --- ELEMENTI DOM PRIVACY ---
+        const privacyModal = document.getElementById('privacy-modal');
+        const check14 = document.getElementById('check-14-years');
+        const radiosConsent = document.getElementsByName('privacy_consent');
+        const consentSection = document.getElementById('consent-section');
+        const btnAcceptPrivacy = document.getElementById('btn-accept-privacy');
+        const consentError = document.getElementById('consent-error');
 
+        // --- GESTIONE PRIVACY E AVVIO ---
+        const STORAGE_KEY_PRIVACY = 'fic_privacy_policy_accepted_v1';
+
+        document.addEventListener('DOMContentLoaded', () => {
+            const hasAccepted = localStorage.getItem(STORAGE_KEY_PRIVACY);
+
+            if (hasAccepted === 'true') {
+                // Se ha già accettato in passato, avvia subito la schermata di login
+                startLoginAnimation();
+            } else {
+                // Se NON ha accettato, mostra il modale
+                privacyModal.classList.remove('hidden');
+            }
+        });
+
+        // 1. Gestione Checkbox 14 anni -> Sblocca/Blocca sezione Consenso
+        check14.addEventListener('change', () => {
+            if (check14.checked) {
+                // Sblocca la sezione consenso
+                consentSection.classList.remove('disabled-section');
+                radiosConsent.forEach(r => r.disabled = false);
+            } else {
+                // Blocca la sezione consenso
+                consentSection.classList.add('disabled-section');
+                radiosConsent.forEach(r => {
+                    r.disabled = true;
+                    r.checked = false; // Reset selezione
+                });
+                // Disabilita anche il bottone finale perché abbiamo resettato il consenso
+                btnAcceptPrivacy.disabled = true;
+                consentError.classList.add('hidden');
+            }
+        });
+
+        // 2. Gestione Radio Consenso -> Sblocca/Blocca Bottone Finale
+        function updateFinalButtonState() {
+            // Verifica quale radio è selezionato
+            let consentValue = null;
+            for (const radio of radiosConsent) {
+                if (radio.checked) consentValue = radio.value;
+            }
+
+            // Il bottone si attiva SOLO se Acconsento è selezionato (check14 è implicito perché altrimenti i radio sono disabilitati)
+            if (consentValue === 'yes') {
+                btnAcceptPrivacy.disabled = false;
+                consentError.classList.add('hidden');
+            } else {
+                btnAcceptPrivacy.disabled = true;
+                if (consentValue === 'no') {
+                    consentError.classList.remove('hidden');
+                } else {
+                    consentError.classList.add('hidden');
+                }
+            }
+        }
+
+        radiosConsent.forEach(r => r.addEventListener('change', updateFinalButtonState));
+
+
+        btnAcceptPrivacy.addEventListener('click', () => {
+            // Salva preferenza
+            localStorage.setItem(STORAGE_KEY_PRIVACY, 'true');
+            
+            // Chiudi modale
+            privacyModal.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+            setTimeout(() => {
+                privacyModal.classList.add('hidden');
+                // Avvia animazione Login solo ora
+                startLoginAnimation();
+            }, 500);
+        });
+
+        // --- ANIMAZIONE LOGIN ---
         function startLoginAnimation() {
             const logoContainer = document.getElementById('logo-container');
             const appTitle = document.getElementById('app-title');
             const loginFormContainer = document.getElementById('login-form-container');
-             setTimeout(() => {
+            
+            setTimeout(() => {
                 logoContainer.style.transform = 'translateY(-80%)';
                 appTitle.style.opacity = '1';
                 setTimeout(() => {
                     loginFormContainer.style.opacity = '1';
                 }, 500);
-            }, 500);
+            }, 300);
         }
 
-        // Avviamo l'animazione direttamente.
-        startLoginAnimation();
-
-
-        // --- MODIFICA: Funzione per mostrare messaggi (errore o successo) ---
+        // --- HELPERS E LOGICA LOGIN (Originale) ---
         function showMessage(message, type = 'error') {
             errorMessage.textContent = message;
-            // Resetta le classi di colore e visibilità
             errorMessage.classList.remove('hidden', 'text-red-500', 'text-green-400');
             
             if (type === 'hide') {
                 errorMessage.classList.add('hidden');
             } else if (type === 'success') {
-                errorMessage.classList.add('text-green-400'); // Colore per successo
+                errorMessage.classList.add('text-green-400');
             } else {
-                // Default è 'error'
-                errorMessage.classList.add('text-red-500'); // Colore per errore
+                errorMessage.classList.add('text-red-500');
             }
         }
 
-        // --- NUOVO: Listener per il recupero password ---
         forgotPasswordLink.addEventListener('click', async (e) => {
-            e.preventDefault(); // Impedisce al link di ricaricare la pagina
+            e.preventDefault(); 
             
             const email = loginForm.email.value;
             if (!email) {
@@ -165,16 +328,14 @@
                 return;
             }
 
-            // Disabilita i pulsanti e mostra un messaggio di caricamento
             loginButton.disabled = true;
-            showMessage("Invio email di recupero...", 'success'); // Messaggio di stato
+            showMessage("Invio email di recupero...", 'success'); 
 
             try {
                 await sendPasswordResetEmail(auth, email);
                 showMessage("Email inviata! Controlla la tua casella di posta.", 'success');
             
             } catch (error) {
-                // Gestione errori
                 console.error("Errore invio email reset:", error.code, error.message);
                 if (error.code === 'auth/user-not-found' || error.code === 'auth/invalid-email') {
                     showMessage("Nessun utente trovato con questa email.", 'error');
@@ -182,33 +343,27 @@
                     showMessage("Si è verificato un errore. Riprova.", 'error');
                 }
             } finally {
-                // Riabilita il pulsante in ogni caso
                 loginButton.disabled = false;
             }
         });
 
-
-        // --- Listener per il submit del LOGIN ---
         loginForm.addEventListener('submit', (e) => {
             e.preventDefault();
             const email = loginForm.email.value;
             const password = loginForm.password.value;
-            showMessage("", 'hide'); // Nasconde messaggi precedenti
-            loginButton.disabled = true; // <-- AGGIUNTO
-            loginButton.textContent = "Verifica..."; // <-- AGGIUNTO
+            showMessage("", 'hide');
+            loginButton.disabled = true;
+            loginButton.textContent = "Verifica...";
 
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    // Successo!
-                    // Non serve fare nulla. 'auth-manager.js' rileverà il cambio
-                    // di stato e reindirizzerà a home.html.
-                    // (Il pulsante non viene riabilitato perché la pagina cambierà)
+                    // Successo! auth-manager.js farà il redirect (o la tua logica successiva)
                 })
                 .catch((error) => {
                     console.error("Login Error:", error.code, error.message);
                     showMessage("Credenziali non valide. Riprova.", 'error');
-                    loginButton.disabled = false; // <-- AGGIUNTO
-                    loginButton.textContent = "Accedi"; // <-- AGGIUNTO
+                    loginButton.disabled = false;
+                    loginButton.textContent = "Accedi";
                 });
         });
     </script>
