@@ -1,10 +1,10 @@
-// auth-manager.js (CORRETTO per reCAPTCHA Enterprise)
+// auth-manager.js (AGGIORNATO per includere Record e Dati completi)
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-// *** MODIFICA FONDAMENTALE: Importa ReCaptchaEnterpriseProvider ***
+// Importa ReCaptchaEnterpriseProvider
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
 
 const firebaseConfig = {
@@ -16,7 +16,7 @@ const firebaseConfig = {
   appId: "1:860422140545:web:cd14c042a47f2650681380" 
 };
 
-// Inizializza in modo idempotente (previene errori se il file viene caricato due volte)
+// Inizializza in modo idempotente
 let app;
 if (!getApps().length) {
   app = initializeApp(firebaseConfig);
@@ -27,27 +27,19 @@ if (!getApps().length) {
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// --- CONFIGURAZIONE APP CHECK (CORRETTA) ---
+// --- CONFIGURAZIONE APP CHECK ---
 try {
   const isLocalhost = location.hostname === "localhost" || location.hostname === "127.0.0.1";
 
   if (isLocalhost) {
-    // Attiva il token di debug per localhost
     self.FIREBASE_APPCHECK_DEBUG_TOKEN = true; 
-    console.log("App Check: Modalità DEBUG attiva (localhost).");
   }
 
-  // *** FIX ERRORE 400: Usiamo ReCaptchaEnterpriseProvider ***
-  // Le chiavi create nella console Firebase SONO di tipo Enterprise.
   const appCheck = initializeAppCheck(app, {
     provider: new ReCaptchaEnterpriseProvider('6LdySxgsAAAAAOPjpX_oQPGTAJoqxJTNe9758JE0'),
     isTokenAutoRefreshEnabled: true
   });
   
-  if (!isLocalhost) {
-    console.log("App Check: Attivo in modalità PRODUZIONE (Enterprise Provider).");
-  }
-
 } catch (e) {
   console.warn("AppCheck init warning:", e.message);
 }
@@ -70,6 +62,7 @@ window.getCurrentAthlete = () => {
 window.appLogout = async () => {
   try {
     await signOut(auth);
+    localStorage.removeItem(CACHE_KEY); // Pulisce la cache al logout
   } catch (error) {
     console.error('Logout Error', error);
   }
@@ -85,17 +78,33 @@ const authStateManager = async () => {
   try {
     await setPersistence(auth, browserLocalPersistence);
   } catch (pErr) {
-    console.warn("Impossibile impostare persistenza, procedo comunque:", pErr);
+    console.warn("Impossibile impostare persistenza:", pErr);
   }
 
   onAuthStateChanged(auth, async (user) => {
     let athlete = null;
 
     if (user && user.email) {
-      athlete = window.getCurrentAthlete();
+      // 1. Controlla se abbiamo dati in cache e se corrispondono all'utente attuale
+      const cachedAthlete = window.getCurrentAthlete();
+      
+      // Se c'è cache valida, usala temporaneamente per velocità, ma...
+      // NOTA: Per essere sicuri di avere i record aggiornati, facciamo SEMPRE il fetch o invalidiamo la cache
+      // se mancano i campi rowerg/bikeerg.
+      
+      let needFetch = true;
 
-      if (!athlete || athlete.uid !== user.uid) {
-        console.log("Cache mancante o UID diverso. Recupero da Firestore...");
+      if (cachedAthlete && cachedAthlete.uid === user.uid) {
+         // Se abbiamo già i campi record nella cache, potremmo evitare il fetch, 
+         // ma per sicurezza (se li aggiorni da un'altra parte) è meglio ricaricare o controllare se mancano.
+         if (cachedAthlete.rowerg !== undefined && cachedAthlete.bikeerg !== undefined) {
+             athlete = cachedAthlete;
+             needFetch = false; 
+         }
+      }
+
+      if (needFetch) {
+        console.log("Recupero dati completi (inclusi record) da Firestore...");
         try {
           const q = query(collection(db, "atleti"), where("uid", "==", user.uid));
           const querySnapshot = await getDocs(q);
@@ -103,15 +112,32 @@ const authStateManager = async () => {
           if (!querySnapshot.empty) {
             const athleteDoc = querySnapshot.docs[0];
             const athleteData = athleteDoc.data();
+            
+            // --- COSTRUZIONE OGGETTO COMPLETO ---
             athlete = {
               id: athleteDoc.id,
               uid: user.uid,
-              cognome: athleteData.cognome || null,
               email: user.email,
-              gruppo: athleteData.gruppo || null
+              
+              // Dati Anagrafici
+              cognome: athleteData.cognome || '',
+              nome: athleteData.nome || '',
+              societa: athleteData.societa || '',
+              gruppo: athleteData.gruppo || '',
+              
+              // Record / Dati Tecnici (Quelli che mancavano!)
+              // Mappiamo sia i nuovi nomi (rowerg/bikeerg) che i vecchi (pb_2000...) per compatibilità
+              rowerg: athleteData.rowerg || athleteData.pb_2000 || '--:--',
+              bikeerg: athleteData.bikeerg || athleteData.pb_6000 || '--:--',
+              
+              // Altri campi utili se servono
+              peso: athleteData.peso || '',
+              altezza: athleteData.altezza || ''
             };
+
+            // Aggiorna la cache
             localStorage.setItem(CACHE_KEY, JSON.stringify(athlete));
-            console.log("Dati atleta in cache:", athlete);
+            console.log("Dati atleta aggiornati in cache:", athlete);
           } else {
             console.error("Utente autenticato ma non trovato in 'atleti'.");
             document.dispatchEvent(new CustomEvent('authStateReady', {
@@ -128,36 +154,32 @@ const authStateManager = async () => {
         }
       }
 
+      // Redirect se siamo nella login page
       if (isLoginPage()) {
         window.location.href = 'home.html';
         return;
       }
 
-      console.log('Dispatching authStateReady (LOGGED IN). Athlete:', athlete);
+      // Notifica l'applicazione che i dati sono pronti
       document.dispatchEvent(new CustomEvent('authStateReady', {
         detail: { athlete: athlete, error: null }
       }));
 
     } else {
-      // NON autenticato o anonimo
+      // NON autenticato
       localStorage.removeItem(CACHE_KEY);
 
       if (!isLoginPage()) {
         const path = window.location.pathname;
-        const segments = path.split('/').filter(Boolean);
-        // Gestione percorsi relativi (es. se siamo in /CARICA DATI/ o nella root)
-        if (segments.length > 0 && (segments[segments.length - 1].endsWith('.html') || segments[segments.length - 1] === '')) {
-             // Se siamo in una sottocartella (es. CARICA DATI) torniamo su di uno
-             if (path.includes('/CARICA DATI/') || path.includes('/RISULTATI/') || path.includes('/CALENDARIO/')) {
-                 window.location.href = '../index.html';
-             } else {
-                 window.location.href = 'index.html';
-             }
+        // Gestione redirect per sottocartelle
+        if (path.includes('/CARICA DATI/') || path.includes('/RISULTATI/') || path.includes('/CALENDARIO/')) {
+             window.location.href = '../index.html';
+        } else {
+             window.location.href = 'index.html';
         }
         return;
       }
 
-      console.log('Dispatching authStateReady (LOGGED OUT).');
       document.dispatchEvent(new CustomEvent('authStateReady', {
         detail: { athlete: null, error: null }
       }));
