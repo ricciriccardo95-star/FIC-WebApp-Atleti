@@ -16,7 +16,7 @@
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
             min-height: 100vh;
-            padding-bottom: 2rem; /* Aggiunge spazio in fondo */
+            padding-bottom: 2rem;
         }
         .background-gradient {
             position: fixed; top: 50%; left: 50%;
@@ -40,39 +40,41 @@
         .input-group { margin-bottom: 1.5rem; }
         .input-group label {
             display: block;
-            color: #94A3B8; /* slate-400 */
-            font-weight: 500; /* medium */
+            color: #94A3B8;
+            font-weight: 500;
             margin-bottom: 0.5rem;
             text-align: left;
         }
-        .input-group select {
+        .input-group select, .input-group input {
             width: 100%;
-            padding: 0.75rem 1rem; /* p-3 */
-            border-radius: 0.5rem; /* rounded-lg */
-            border: 1px solid #334155; /* border-slate-700 */
-            background-color: #1E293B; /* bg-slate-800 */
-            color: #E2E8F0; /* text-slate-200 */
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: 1px solid #334155;
+            background-color: #1E293B;
+            color: #E2E8F0;
             outline: none;
+        }
+        .input-group select {
             cursor: pointer;
-            appearance: none; /* Nasconde freccia di default */
+            appearance: none;
             background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3E%3Cpath stroke='%2394A3B8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3E%3C/svg%3E");
             background-repeat: no-repeat;
             background-position: right 0.75rem center;
             background-size: 1.25em 1.25em;
         }
-        .input-group select:focus {
-            border-color: #3B82F6; /* focus:border-sky-500 */
-            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); /* Simula focus ring */
+        .input-group select:focus, .input-group input:focus {
+            border-color: #3B82F6;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
         }
         .result-container {
             margin-top: 1rem;
             padding: 1rem 1.5rem;
-            background-color: #1E293B; /* bg-slate-800 */
-            border: 1px solid #334155; /* border-slate-700 */
-            border-radius: 0.75rem; /* rounded-xl */
-            font-size: 1.125rem; /* text-lg */
-            font-weight: 600; /* semibold */
-            color: #E2E8F0; /* text-slate-200 */
+            background-color: #1E293B;
+            border: 1px solid #334155;
+            border-radius: 0.75rem;
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: #E2E8F0;
             min-height: 50px;
             display: flex;
             align-items: center;
@@ -80,27 +82,21 @@
             transition: background-color 0.3s ease-in-out;
         }
         .result-label {
-            color: #94A3B8; /* slate-400 */
-            font-size: 0.875rem; /* text-sm */
+            color: #94A3B8;
+            font-size: 0.875rem;
             margin-right: 1rem;
         }
         .result-value {
             font-family: monospace;
-            font-weight: 700; /* bold */
+            font-weight: 700;
         }
-        .error-container {
-            background-color: rgba(239, 68, 68, 0.1); /* bg-red-500/10 */
-            color: #F87171; /* text-red-400 */
-            border-color: #EF4444; /* border-red-500 */
-        }
-         /* Stile loader */
+        /* Stile loader */
         @keyframes spin { to { transform: rotate(360deg); } }
         .loader {
             border-top-color: #3498db;
             animation: spin 1s linear infinite;
         }
     </style>
-     <!-- Carica l'auth-manager -->
      <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased">
@@ -108,7 +104,6 @@
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
-    <!-- Loader Overlay -->
     <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento dati atleta...</p>
@@ -123,11 +118,15 @@
             </a>
         </header>
 
-        <!-- Container principale -->
         <div id="main-content" class="hidden space-y-8">
-            <!-- Informazioni Atleta -->
-            <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6">
-                <h2 class="text-2xl font-bold text-white mb-4">Dati Atleta</h2>
+            <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 relative group">
+                <div class="flex justify-between items-start mb-4">
+                    <h2 class="text-2xl font-bold text-white">Dati Atleta</h2>
+                    <button onclick="openEditModal()" class="text-sky-400 hover:text-sky-300 transition-colors p-2 rounded-lg hover:bg-slate-800" title="Modifica Record">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.828 2.828 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5L17 3z"></path></svg>
+                    </button>
+                </div>
+                
                 <div id="athlete-info-container" class="space-y-3">
                     <p id="athlete-cognome" class="text-lg"><span class="font-medium text-slate-400">Cognome:</span> <span class="font-bold text-sky-400">Caricamento...</span></p>
                     <p id="record-rowerg" class="text-lg"><span class="font-medium text-slate-400">Record RowErg (2000m):</span> <span class="font-bold">N/D</span></p>
@@ -135,7 +134,6 @@
                 </div>
             </div>
 
-            <!-- Calcolatore Dispendi RowErg -->
             <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6">
                 <h2 class="text-2xl font-bold text-white mb-6">Calcolo Dispendi RowErg</h2>
                 <div id="rowerg-record-summary" class="mb-6 space-y-2 hidden">
@@ -153,13 +151,12 @@
                     </div>
                 </div>
                  <p id="record-rowerg-missing-message" class="text-center text-yellow-400 bg-yellow-900/30 p-4 rounded-lg mb-6 hidden">
-                    Record RowErg mancante nel profilo atleta. Impossibile calcolare.
+                    Record RowErg mancante. Clicca sull'icona matita in alto per aggiungerlo.
                 </p>
                 <div class="input-group">
                     <label for="percentageSelectRowerg">Seleziona una percentuale:</label>
                     <select id="percentageSelectRowerg" class="w-full" onchange="calculatePercentageRowerg()" disabled>
                         <option value="">Seleziona...</option>
-                        <!-- Opzioni Percentuali -->
                         <script>
                             const percentages = [50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130];
                             percentages.forEach(p => document.write(`<option value="${p}">${p}%</option>`));
@@ -182,7 +179,6 @@
                 </div>
             </div>
 
-            <!-- Calcolatore Dispendi BikeErg -->
             <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6">
                 <h2 class="text-2xl font-bold text-white mb-6">Calcolo Dispendi BikeErg</h2>
                 <div id="bikeerg-record-summary" class="mb-6 space-y-2 hidden">
@@ -200,13 +196,12 @@
                     </div>
                 </div>
                  <p id="record-bikeerg-missing-message" class="text-center text-yellow-400 bg-yellow-900/30 p-4 rounded-lg mb-6 hidden">
-                    Record BikeErg mancante nel profilo atleta. Impossibile calcolare.
+                    Record BikeErg mancante. Clicca sull'icona matita in alto per aggiungerlo.
                 </p>
                 <div class="input-group">
                     <label for="percentageSelectBikeerg">Seleziona una percentuale:</label>
                     <select id="percentageSelectBikeerg" class="w-full" onchange="calculatePercentageBikeerg()" disabled>
                          <option value="">Seleziona...</option>
-                         <!-- Opzioni Percentuali -->
                          <script>
                             percentages.forEach(p => document.write(`<option value="${p}">${p}%</option>`));
                         </script>
@@ -233,9 +228,37 @@
         </p>
     </div>
 
-    <!-- Modals -->
-    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
-    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40 backdrop-blur-sm transition-opacity"></div>
+    
+    <div id="editModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-900 border border-slate-700 rounded-xl p-6 shadow-2xl hidden z-50">
+        <h3 class="text-xl font-bold text-white mb-4">Modifica Record Personali</h3>
+        
+        <div class="space-y-4">
+            <div class="input-group">
+                <label for="edit-rowerg">RowErg 2000m</label>
+                <input type="text" id="edit-rowerg" placeholder="MM:SS.d (es. 06:20.5)" class="font-mono">
+                <p class="text-xs text-slate-500 mt-1">Formato richiesto: MM:SS.d (es. 06:20.5)</p>
+            </div>
+            
+            <div class="input-group">
+                <label for="edit-bikeerg">BikeErg 4000m</label>
+                <input type="text" id="edit-bikeerg" placeholder="MM:SS.d (es. 08:30.0)" class="font-mono">
+                <p class="text-xs text-slate-500 mt-1">Formato richiesto: MM:SS.d (es. 08:30.0)</p>
+            </div>
+        </div>
+
+        <div class="flex justify-end gap-3 mt-6">
+            <button onclick="closeEditModal()" class="px-4 py-2 rounded-lg bg-slate-700 hover:bg-slate-600 text-slate-300 font-medium transition-colors">
+                Annulla
+            </button>
+            <button onclick="saveRecords()" id="btn-save-records" class="px-4 py-2 rounded-lg bg-sky-600 hover:bg-sky-500 text-white font-bold shadow-lg shadow-sky-900/20 transition-all flex items-center">
+                <span id="btn-save-text">Salva Modifiche</span>
+                <div id="btn-save-loader" class="loader h-4 w-4 border-2 border-white/30 border-t-white ml-2 hidden"></div>
+            </button>
+        </div>
+    </div>
+
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/90 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
         <p id="messageText" class="mb-6 text-lg"></p>
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
@@ -243,18 +266,19 @@
     <script type="module">
         // Importa db da auth-manager
         import { db } from './auth-manager.js';
-        // Importa solo le funzioni necessarie da firestore
-        import { collection, query, where, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-        // Rimuovi inizializzazione locale Firebase (app, auth, db)
+        // Importa updateDoc
+        import { collection, query, where, getDocs, doc, getDoc, updateDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         // --- ELEMENTI DOM ---
         const loaderOverlay = document.getElementById('loader-overlay');
         const mainContent = document.getElementById('main-content');
         const errorLoadingMessage = document.getElementById('error-loading');
+        
+        // Athlete Info
         const athleteCognomeEl = document.getElementById('athlete-cognome').querySelector('span:last-child');
         const recordRowergEl = document.getElementById('record-rowerg').querySelector('span:last-child');
         const recordBikeergEl = document.getElementById('record-bikeerg').querySelector('span:last-child');
+        
         // RowErg Elements
         const recordRowergMissingMessage = document.getElementById('record-rowerg-missing-message');
         const rowergRecordSummary = document.getElementById('rowerg-record-summary');
@@ -266,6 +290,7 @@
         const percentageWattRowergContainer = document.getElementById('percentage-watt-rowerg-container').querySelector('.result-value');
         const percentageTimeRowergContainer = document.getElementById('percentage-time-rowerg-container').querySelector('.result-value');
         const percentageMediaRowergContainer = document.getElementById('percentage-media-rowerg-container').querySelector('.result-value');
+        
         // BikeErg Elements
         const recordBikeergMissingMessage = document.getElementById('record-bikeerg-missing-message');
         const bikeergRecordSummary = document.getElementById('bikeerg-record-summary');
@@ -278,12 +303,19 @@
         const percentageTimeBikeergContainer = document.getElementById('percentage-time-bikeerg-container').querySelector('.result-value');
         const percentageMediaBikeergContainer = document.getElementById('percentage-media-bikeerg-container').querySelector('.result-value');
 
+        // Edit Modal Elements
+        const editRowergInput = document.getElementById('edit-rowerg');
+        const editBikeergInput = document.getElementById('edit-bikeerg');
+        const btnSaveRecords = document.getElementById('btn-save-records');
+        const btnSaveText = document.getElementById('btn-save-text');
+        const btnSaveLoader = document.getElementById('btn-save-loader');
 
         // --- VARIABILI GLOBALI ---
         let baseWattsRowerg = 0;
         let baseWattsBikeerg = 0;
+        let currentAthleteId = null; // Per salvare l'ID dell'atleta corrente
 
-        // --- FUNZIONI DI UTILITÀ ---
+        // --- FUNZIONI UTILS UI ---
         function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
         function hideModal(modal) { document.getElementById('modal-backdrop').classList.add('hidden'); modal.classList.add('hidden'); }
         function showMessageBox(message) {
@@ -291,6 +323,86 @@
             showModal(document.getElementById('messageBox'));
         }
 
+        // --- EXPORT FUNZIONI MODALE PER HTML ---
+        window.openEditModal = function() {
+            // Pre-fill inputs with current values (puliti da N/D)
+            const currentRow = recordRowergEl.textContent.trim();
+            const currentBike = recordBikeergEl.textContent.trim();
+            
+            editRowergInput.value = currentRow !== 'N/D' ? currentRow : '';
+            editBikeergInput.value = currentBike !== 'N/D' ? currentBike : '';
+            
+            showModal(document.getElementById('editModal'));
+        }
+
+        window.closeEditModal = function() {
+            hideModal(document.getElementById('editModal'));
+        }
+
+        // --- VALIDATORE FORMATO TEMPO ---
+        function isValidTimeFormat(timeStr) {
+            if (!timeStr) return true; // Permetti stringa vuota (cancellazione record)
+            // Regex: MM:SS.d o M:SS.d (es. 6:20.5 o 06:20.5)
+            // Accetta : o . come separatori se necessario, ma standardizziamo su : per minuti e . per decimi
+            const regex = /^\d{1,2}:\d{2}\.\d{1}$/;
+            return regex.test(timeStr);
+        }
+
+        // --- LOGICA SALVATAGGIO ---
+        window.saveRecords = async function() {
+            if (!currentAthleteId) {
+                showMessageBox("Errore: ID atleta non trovato.");
+                return;
+            }
+
+            const newRowVal = editRowergInput.value.trim();
+            const newBikeVal = editBikeergInput.value.trim();
+
+            if ((newRowVal && !isValidTimeFormat(newRowVal)) || (newBikeVal && !isValidTimeFormat(newBikeVal))) {
+                showMessageBox("Formato non valido. Usa MM:SS.d (es. 06:20.5)");
+                return;
+            }
+
+            // UI Loading state
+            btnSaveRecords.disabled = true;
+            btnSaveText.textContent = "Salvataggio...";
+            btnSaveLoader.classList.remove('hidden');
+
+            try {
+                const athleteRef = doc(db, "atleti", currentAthleteId);
+                
+                await updateDoc(athleteRef, {
+                    rowerg: newRowVal,
+                    bikeerg: newBikeVal
+                });
+
+                // Ricarica i dati per aggiornare la UI e i calcoli
+                // Non facciamo una nuova chiamata al DB completa, aggiorniamo la UI e ricalcoliamo
+                // Oppure richiamiamo loadAthleteData simulando il refresh
+                
+                // Aggiorna visivamente
+                recordRowergEl.textContent = newRowVal || 'N/D';
+                recordBikeergEl.textContent = newBikeVal || 'N/D';
+                
+                // Rilancia la logica di calcolo (simulando ricaricamento parziale)
+                processRowergData(newRowVal);
+                processBikeergData(newBikeVal);
+
+                closeEditModal();
+                showMessageBox("Record aggiornati con successo!");
+
+            } catch (error) {
+                console.error("Errore salvataggio:", error);
+                showMessageBox("Errore durante il salvataggio: " + error.message);
+            } finally {
+                btnSaveRecords.disabled = false;
+                btnSaveText.textContent = "Salva Modifiche";
+                btnSaveLoader.classList.add('hidden');
+            }
+        }
+
+
+        // --- LOGICA DI CALCOLO E FORMATTAZIONE ---
         function convertTimeToSeconds(timeString) {
             if (!timeString || typeof timeString !== 'string') return 0;
             timeString = timeString.replace(',', '.');
@@ -299,58 +411,35 @@
             if (parts.length !== 2) return 0;
             const minutes = parseInt(parts[0], 10);
             const seconds = parseFloat(parts[1]);
-            if (isNaN(minutes) || isNaN(seconds) || minutes < 0 || seconds < 0 || seconds >= 60) {
-                console.warn(`Formato tempo non valido: ${timeString}`);
-                return 0;
-            }
+            if (isNaN(minutes) || isNaN(seconds) || minutes < 0 || seconds < 0 || seconds >= 60) return 0;
             return (minutes * 60) + seconds;
         }
 
-        // --- FORMULE ---
-        // Formula standard Concept2 per i Watt (RowErg)
         function calculateWattsRowerg(totalSeconds, distance) {
             if (totalSeconds <= 0 || distance <= 0) return 0;
-            // W = 2.8 * (dist / t)^3
             return 2.8 * Math.pow(distance / totalSeconds, 3);
         }
 
-        // Formula Concept2 per i Watt (BikeErg)
-        // Basata sullo screenshot del C2 Pace Calculator:
-        // I Watt sono calcolati dalla media /1000m (t_1000),
-        // ma usa la stessa formula del RowErg (che usa la media /500m).
-        // W_bike(t_1000) = W_row(t_500) dove t_1000 = t_500.
-        // W = 2.8 * (500 / t_1000)^3
         function calculateWattsBikeerg(totalSeconds, distance) {
             if (totalSeconds <= 0 || distance <= 0) return 0;
-            // La distanza (es. 4000) viene divisa in 4 segmenti (da 1000m)
-            const numSegments = 4; // Assumiamo 4 segmenti (es. 4000m / 1000m)
+            const numSegments = 4; 
             const t_1000 = totalSeconds / numSegments;
             if (t_1000 <= 0) return 0;
-            // Calcola i watt usando la media /1000m come se fosse una media /500m
             return 2.8 * Math.pow(500 / t_1000, 3);
         }
 
-        // Formula inversa: calcola il tempo dai Watt (RowErg)
         function calculateTimeFromWattsRowerg(watts, distance) {
             if (watts <= 0 || distance <= 0) return 0;
-            // t = dist / (W / 2.8)^(1/3)
             return distance / Math.pow(watts / 2.8, 1/3);
         }
 
-        // Formula inversa: calcola il tempo dai Watt (BikeErg)
         function calculateTimeFromWattsBikeerg(watts, distance) {
             if (watts <= 0 || distance <= 0) return 0; 
-            // W = 2.8 * (500 / t_1000)^3
-            // (W / 2.8)^(1/3) = 500 / t_1000
-            // t_1000 = 500 / (W / 2.8)^(1/3)
             const t_1000 = 500 / Math.pow(watts / 2.8, 1/3);
-            // totalSeconds = t_1000 * 4 (per 4000m)
-            const numSegments = 4; // Assumiamo 4 segmenti (es. 4000m / 1000m)
+            const numSegments = 4;
             return t_1000 * numSegments;
         }
 
-
-        // Calcola la media su 1/4 della distanza (500m per 2k, 1000m per 4k)
         function calculateAverageSegmentTime(totalSeconds) {
              if (totalSeconds <= 0) return 0;
              return totalSeconds / 4;
@@ -360,67 +449,84 @@
             if (totalSeconds <= 0 || !isFinite(totalSeconds)) return "N/D";
             const minutes = Math.floor(totalSeconds / 60);
             const seconds = totalSeconds % 60;
-            // Formatta i secondi a una cifra decimale, es: "05.3"
             const formattedSeconds = seconds.toFixed(1).padStart(4, '0'); 
             return `${minutes}:${formattedSeconds}`;
+        }
+
+        // --- ELABORAZIONE DATI (Refactoring per riutilizzo) ---
+        function processRowergData(timeString) {
+            const recordRowergSeconds = convertTimeToSeconds(timeString);
+            
+            // Reset UI parziale
+            percentageRowergResultsContainer.classList.add('hidden');
+            percentageSelectRowerg.value = "";
+
+            if (recordRowergSeconds > 0) {
+                baseWattsRowerg = calculateWattsRowerg(recordRowergSeconds, 2000); 
+                const avg500mSeconds = calculateAverageSegmentTime(recordRowergSeconds); 
+
+                recordTimeRowergContainer.textContent = timeString;
+                recordMediaRowergContainer.textContent = formatSecondsToTime(avg500mSeconds);
+                recordWattRowergContainer.textContent = baseWattsRowerg.toFixed(2);
+
+                rowergRecordSummary.classList.remove('hidden');
+                recordRowergMissingMessage.classList.add('hidden');
+                percentageSelectRowerg.disabled = false;
+            } else {
+                recordRowergMissingMessage.classList.remove('hidden');
+                rowergRecordSummary.classList.add('hidden');
+                percentageSelectRowerg.disabled = true;
+                baseWattsRowerg = 0;
+            }
+        }
+
+        function processBikeergData(timeString) {
+            const recordBikeergSeconds = convertTimeToSeconds(timeString);
+            
+            // Reset UI parziale
+            percentageBikeergResultsContainer.classList.add('hidden');
+            percentageSelectBikeerg.value = "";
+
+            if (recordBikeergSeconds > 0) {
+                baseWattsBikeerg = calculateWattsBikeerg(recordBikeergSeconds, 4000);
+                const avg1000mSeconds = calculateAverageSegmentTime(recordBikeergSeconds); 
+
+                recordTimeBikeergContainer.textContent = timeString;
+                recordMediaBikeergContainer.textContent = formatSecondsToTime(avg1000mSeconds);
+                recordWattBikeergContainer.textContent = baseWattsBikeerg.toFixed(2);
+
+                bikeergRecordSummary.classList.remove('hidden');
+                recordBikeergMissingMessage.classList.add('hidden');
+                percentageSelectBikeerg.disabled = false;
+            } else {
+                recordBikeergMissingMessage.classList.remove('hidden');
+                bikeergRecordSummary.classList.add('hidden');
+                percentageSelectBikeerg.disabled = true;
+                baseWattsBikeerg = 0;
+            }
         }
 
         // --- FUNZIONE PER CARICARE I DATI DELL'ATLETA ---
         async function loadAthleteData(athleteId, athleteEmail) {
             try {
-                // Usa 'db' importato
+                currentAthleteId = athleteId; // Store globalmente
                 const docRef = doc(db, "atleti", athleteId);
                 const docSnap = await getDoc(docRef);
 
                 if (docSnap.exists()) {
                     const athleteData = docSnap.data();
 
-                    // Visualizza dati atleta
                     athleteCognomeEl.textContent = athleteData.cognome || 'N/D';
-                    recordRowergEl.textContent = athleteData.rowerg || 'N/D';
-                    recordBikeergEl.textContent = athleteData.bikeerg || 'N/D';
+                    
+                    const rRow = athleteData.rowerg || '';
+                    const rBike = athleteData.bikeerg || '';
+                    
+                    recordRowergEl.textContent = rRow || 'N/D';
+                    recordBikeergEl.textContent = rBike || 'N/D';
 
-                    // Processa Record RowErg (2000m)
-                    const recordRowergSeconds = convertTimeToSeconds(athleteData.rowerg);
-                    if (recordRowergSeconds > 0) {
-                        // Calcola Watt di base su 2000m
-                        baseWattsRowerg = calculateWattsRowerg(recordRowergSeconds, 2000); 
-                        // Calcola media su 500m (2000 / 4)
-                        const avg500mSeconds = calculateAverageSegmentTime(recordRowergSeconds); 
-
-                        recordTimeRowergContainer.textContent = athleteData.rowerg;
-                        recordMediaRowergContainer.textContent = formatSecondsToTime(avg500mSeconds);
-                        recordWattRowergContainer.textContent = baseWattsRowerg.toFixed(2);
-
-                        rowergRecordSummary.classList.remove('hidden');
-                        recordRowergMissingMessage.classList.add('hidden');
-                        percentageSelectRowerg.disabled = false;
-                    } else {
-                        recordRowergMissingMessage.classList.remove('hidden');
-                        rowergRecordSummary.classList.add('hidden');
-                        percentageSelectRowerg.disabled = true;
-                    }
-
-                    // Processa Record BikeErg (4000m)
-                    const recordBikeergSeconds = convertTimeToSeconds(athleteData.bikeerg);
-                    if (recordBikeergSeconds > 0) {
-                        // Calcola Watt di base su 4000m
-                        baseWattsBikeerg = calculateWattsBikeerg(recordBikeergSeconds, 4000);
-                        // Calcola media su 1000m (4000 / 4)
-                        const avg1000mSeconds = calculateAverageSegmentTime(recordBikeergSeconds); 
-
-                        recordTimeBikeergContainer.textContent = athleteData.bikeerg;
-                        recordMediaBikeergContainer.textContent = formatSecondsToTime(avg1000mSeconds);
-                        recordWattBikeergContainer.textContent = baseWattsBikeerg.toFixed(2);
-
-                        bikeergRecordSummary.classList.remove('hidden');
-                        recordBikeergMissingMessage.classList.add('hidden');
-                        percentageSelectBikeerg.disabled = false;
-                    } else {
-                        recordBikeergMissingMessage.classList.remove('hidden');
-                        bikeergRecordSummary.classList.add('hidden');
-                        percentageSelectBikeerg.disabled = true;
-                    }
+                    // Elabora i dati usando le funzioni helper
+                    processRowergData(rRow);
+                    processBikeergData(rBike);
 
                     mainContent.classList.remove('hidden');
                     errorLoadingMessage.classList.add('hidden');
@@ -431,7 +537,7 @@
             } catch (error) {
                 console.error("Errore nel caricamento dei dati atleta:", error);
                 mainContent.classList.add('hidden');
-                errorLoadingMessage.textContent = `Errore nel caricamento: ${error.message}. Riprova o contatta l'assistenza.`;
+                errorLoadingMessage.textContent = `Errore nel caricamento: ${error.message}`;
                 errorLoadingMessage.classList.remove('hidden');
             } finally {
                 loaderOverlay.classList.add('hidden');
@@ -439,31 +545,22 @@
         }
 
         // --- GESTIONE AUTH STATE ---
-        // Rimuovi onAuthStateChanged
-        
-        // Ascolta l'evento 'authStateReady'
         document.addEventListener('authStateReady', (e) => {
              const { athlete, error } = e.detail;
 
              if (athlete) {
-                 // Utente loggato e dati disponibili
                  loadAthleteData(athlete.id, athlete.email);
              } else if (error) {
-                 // Errore durante l'autenticazione
-                 console.error("Errore di autenticazione da auth-manager:", error);
+                 console.error("Errore di autenticazione:", error);
                  mainContent.classList.add('hidden');
                  errorLoadingMessage.textContent = "Impossibile verificare l'utente. Riprova il login.";
                  errorLoadingMessage.classList.remove('hidden');
                  loaderOverlay.classList.add('hidden');
              } else {
-                 // Utente non loggato, auth-manager dovrebbe aver reindirizzato
-                 // Mostriamo comunque un messaggio nel caso non lo faccia
                  mainContent.classList.add('hidden');
                  errorLoadingMessage.textContent = "Devi effettuare il login per accedere a questa pagina.";
                  errorLoadingMessage.classList.remove('hidden');
                  loaderOverlay.classList.add('hidden');
-                 // Potrebbe essere utile forzare il redirect qui se auth-manager fallisce
-                 // window.location.href = 'index.html';
              }
         });
 
@@ -478,7 +575,7 @@
 
             const percentage = parseFloat(selectedPercentageValue) / 100;
             const finalWatts = baseWattsRowerg * percentage;
-            const finalTimeInSeconds = calculateTimeFromWattsRowerg(finalWatts, 2000); // Distanza 2000
+            const finalTimeInSeconds = calculateTimeFromWattsRowerg(finalWatts, 2000); 
             const finalAvg500mSeconds = calculateAverageSegmentTime(finalTimeInSeconds);
 
             percentageWattRowergContainer.textContent = finalWatts.toFixed(2);
@@ -489,12 +586,7 @@
 
          window.calculatePercentageBikeerg = function() {
             const selectedPercentageValue = percentageSelectBikeerg.value;
-            
-            // --- MODIFICA ---
-            // Usa sempre e solo i watt di base della BikeErg
             const baseWattsToUse = baseWattsBikeerg; 
-            // Vecchia logica rimossa:
-            // const baseWattsToUse = baseWattsRowerg > 0 ? baseWattsRowerg : baseWattsBikeerg;
 
             if (!selectedPercentageValue || baseWattsToUse <= 0) {
                 percentageBikeergResultsContainer.classList.add('hidden');
@@ -502,11 +594,9 @@
             }
 
             const percentage = parseFloat(selectedPercentageValue) / 100;
-            const finalWatts = baseWattsToUse * percentage; // Usa i watt di base della BikeErg
+            const finalWatts = baseWattsToUse * percentage; 
             
-            // Usa 4000m per calcolare il tempo equivalente della BikeErg
             const finalTimeInSeconds = calculateTimeFromWattsBikeerg(finalWatts, 4000);
-            // Calcola media su 1000m
             const finalAvg1000mSeconds = calculateAverageSegmentTime(finalTimeInSeconds); 
 
             percentageWattBikeergContainer.textContent = finalWatts.toFixed(2);
