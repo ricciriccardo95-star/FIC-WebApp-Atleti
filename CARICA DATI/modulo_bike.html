@@ -158,8 +158,8 @@
                 </div>
             
             <div id="ep-warning" class="hidden mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-center">
-                <p class="font-bold text-lg text-red-300">ATTENZIONE: EP Superiore al 110%!</p>
-                <p class="text-red-400">Uno o più valori EP calcolati sembrano molto alti. Sei sicuro che i dati siano corretti?</p>
+                <p id="ep-warning-title" class="font-bold text-lg text-red-300">ATTENZIONE: EP Superiore al 110%!</p>
+                <p id="ep-warning-text" class="text-red-400">Uno o più valori EP calcolati sembrano molto alti. Sei sicuro che i dati siano corretti?</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -539,11 +539,26 @@
             
             summaryContent.innerHTML = summaryHTML;
 
-            // Gestione Avviso Rosso
+            // --- GESTIONE BLOCCO SE EP > 110% ---
+            const confirmBtn = document.getElementById('summaryConfermaBtn');
+            const modifyBtn = document.getElementById('summaryModificaBtn');
+            const epWarningTitle = document.getElementById('ep-warning-title');
+            const epWarningText = document.getElementById('ep-warning-text');
+
             if (epWarningTrigger) {
+                // MOSTRA ERRORE E BLOCCA SALVATAGGIO
                 epWarning.classList.remove('hidden');
+                
+            epWarningTitle.textContent = "ERRORE: EP > 110%";
+                epWarningText.textContent = "I dati inseriti generano una performance impossibile (superiore al Record del Mondo o al Record Personale + 10%). Il salvataggio è bloccato. Controlla di non aver inserito il passo invece del tempo totale o inserito un numero aggiuntivo ai metri percorsi.";
+                 
+                confirmBtn.classList.add('hidden'); // Nasconde il pulsante conferma
+                modifyBtn.classList.add('col-span-2'); // Espande il pulsante modifica
             } else {
+                // NESSUN ERRORE
                 epWarning.classList.add('hidden');
+                confirmBtn.classList.remove('hidden'); // Mostra conferma
+                modifyBtn.classList.remove('col-span-2'); // Pulsante modifica normale
             }
 
             showModal(summaryModal);
@@ -606,6 +621,12 @@
             const btn = document.getElementById('saveWorkoutBtn');
             btn.disabled = false;
             btn.textContent = 'Salva Allenamento';
+            
+            // Reset layout bottoni nel caso fosse stato modificato dall'errore
+            const confirmBtn = document.getElementById('summaryConfermaBtn');
+            const modifyBtn = document.getElementById('summaryModificaBtn');
+            confirmBtn.classList.remove('hidden');
+            modifyBtn.classList.remove('col-span-2');
         }
 
 
