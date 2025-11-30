@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>FIC</title>
+    <title>FIC - Home</title>
     <script src="tailwind.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -15,8 +15,7 @@
             color: #E2E8F0;
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
-            /* Aggiunge padding in basso per non coprire la barra di navigazione fissa */
-            padding-bottom: 70px; /* Altezza della barra + un po' di margine */
+            padding-bottom: 90px;
         }
         .background-gradient {
             position: fixed; top: 50%; left: 50%;
@@ -38,136 +37,99 @@
             100% { transform: scale(1.2) rotate(20deg); }
         }
         .nav-card {
-            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
-        .nav-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        a.nav-card:active {
+            transform: scale(0.98);
         }
-        /* Stili per la barra di navigazione inferiore */
+        
         .bottom-nav-bar {
-            position: fixed;
-            bottom: 0;
-            left: 0;
-            right: 0;
-            background-color: #1a202c; /* Colore di sfondo scuro */
+            position: fixed; bottom: 0; left: 0; right: 0;
+            background-color: #1a202c;
             padding: 10px 20px;
             box-shadow: 0 -5px 15px rgba(0, 0, 0, 0.3);
-            z-index: 40; /* Assicura che sia sopra gli altri contenuti */
-            display: flex;
-            justify-content: center; /* Centra i pulsanti */
-            gap: 20px; /* Spazio tra i pulsanti */
+            z-index: 40;
+            display: flex; justify-content: center; gap: 20px;
+            padding-bottom: env(safe-area-inset-bottom, 20px);
         }
         .bottom-nav-button {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 10px 20px;
-            font-weight: 600; /* CORREZIONE: Era 'font-semibold;' */
-            border-radius: 9999px; /* Rende il pulsante circolare */
-            transition-colors: 0.2s;
-            text-decoration: none; /* Rimuove sottolineatura dai link */
-            color: white; /* Testo bianco */
-            height: 48px; /* Altezza fissa per i pulsanti */
-            min-width: 48px; /* Larghezza minima per il pulsante "?" */
+            display: inline-flex; align-items: center; justify-content: center;
+            padding: 10px 20px; font-weight: 600; border-radius: 9999px;
+            transition-colors: 0.2s; text-decoration: none; color: white;
+            height: 48px; min-width: 48px;
         }
-        .bottom-nav-button.help {
-            background-color: #0EA5E9; /* sky-500 */
-            width: 48px; /* Fissa la larghezza per il cerchio */
-            height: 48px;
-            font-size: 1.5rem; /* Dimensione del "?" */
-            font-weight: bold;
-        }
-        .bottom-nav-button.help:hover {
-            background-color: #0284C7; /* sky-600 */
-        }
-        .bottom-nav-button.logout {
-            background-color: #EF4444; /* red-500 */
-        }
-        .bottom-nav-button.logout:hover {
-            background-color: #DC2626; /* red-600 */
-        }
-
+        .bottom-nav-button.help { background-color: #0EA5E9; font-size: 1.5rem; font-weight: bold; }
+        .bottom-nav-button.logout { background-color: #EF4444; }
     </style>
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FIC Canottaggio">
     <link rel="apple-touch-icon" href="logo-fic (1) copia.png">
     <link rel="manifest" href="manifest.json">
-    <!-- Carica l'auth-manager --><script type="module" src="auth-manager.js"></script>
+    <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased">
 
-    <!-- Sfondi animati --><div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
-     <!-- Loader Overlay --><div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+     <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600 border-t-sky-500"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
 
-
-    <!-- Vista Principale App (visibile solo se loggati) --><div id="app-view" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
+    <div id="app-view" class="hidden p-4 md:p-8 max-w-7xl mx-auto">
         
-        <!-- HEADER con Benvenuto e Logout -->
-        <!-- MODIFICA: 'items-center' per allineare verticalmente, rimossa div wrapper per 'welcome' e 'group-banner' -->
-        <div class="flex justify-between items-center mb-10">
-            <!-- Messaggio di benvenuto -->
-            <p id="welcome-message" class="text-xl md:text-2xl font-semibold text-sky-400">Caricamento...</p>
-            <!-- Gruppo di appartenenza -->
-            <div id="group-banner-container"></div>
-            <!-- I pulsanti Help e Logout sono stati spostati nella barra inferiore -->
-        </div>
-
-        <section id="home-page">
-            <div class="flex flex-col items-center justify-center min-h-[70vh]">
-                <!-- MODIFICA: Ridotta dimensione testo (text-5xl md:text-7xl) -->
-                <h1 class="text-5xl md:text-7xl font-black tracking-tight text-slate-100 text-center mb-4">FIC</h1>
-                <!-- MODIFICA: Ridotta dimensione testo (text-base md:text-lg) -->
-                <p class="text-base md:text-lg text-slate-400 text-center mb-12 md:mb-16">Portale per la gestione degli allenamenti e dei dati biometrici.</p>
+        <section id="home-page" class="mt-6 md:mt-10">
+            <div class="flex flex-col items-center justify-center min-h-[60vh]">
                 
-                <!-- Contenitore unico per tutti i pulsanti -->
-                <!-- MODIFICA: gap-4 md:gap-8 -->
+                <div class="flex items-center justify-center gap-4 md:gap-6 mb-4">
+                    <img src="logo.png" alt="Logo FIC" class="h-10 md:h-16 w-auto object-contain drop-shadow-lg">
+                    
+                    <h1 class="text-4xl md:text-6xl font-black tracking-tight text-slate-100 uppercase text-center">
+                        FIC - ATLETI
+                    </h1>
+                </div>
+                
+                <p class="text-base md:text-lg text-slate-400 text-center mb-8">Portale per la gestione degli allenamenti.</p>
+                
+                <div class="relative w-full max-w-4xl mx-auto bg-slate-800/40 border border-slate-700/50 rounded-2xl backdrop-blur-md p-5 mb-8">
+                    
+                    <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                        
+                        <div class="flex flex-row items-center gap-4 w-full md:w-auto text-left">
+                            <div class="w-14 h-14 rounded-full bg-slate-700 flex items-center justify-center border border-slate-600 shadow-lg shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="w-7 h-7 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
+                            
+                            <div class="flex flex-col justify-center overflow-hidden">
+                                <h3 id="profile-cognome" class="text-xl font-bold text-white tracking-tight leading-none mb-1 truncate">...</h3>
+                                <p id="profile-societa" class="text-slate-400 text-sm font-medium uppercase tracking-wide truncate">...</p>
+                            </div>
+                        </div>
+                
+                        <div class="w-full md:w-auto flex flex-col gap-3">
+                            <div id="profile-gruppo-badge" class="flex justify-center md:justify-end"></div>
+
+                            <div class="grid grid-cols-2 gap-3 w-full">
+                                <div class="bg-slate-900/60 rounded-lg border border-slate-700/50 p-2 px-3 text-center min-w-[100px]">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">PB RowErg</p>
+                                    <p id="profile-pb-row" class="text-lg font-black text-sky-400 font-mono leading-tight">--:--</p>
+                                </div>
+                                <div class="bg-slate-900/60 rounded-lg border border-slate-700/50 p-2 px-3 text-center min-w-[100px]">
+                                    <p class="text-[10px] text-slate-500 uppercase font-bold mb-0.5">PB BikeErg</p>
+                                    <p id="profile-pb-bike" class="text-lg font-black text-emerald-400 font-mono leading-tight">--:--</p>
+                                </div>
+                            </div>
+                        </div>
+                
+                    </div>
+                </div>
                 <div class="grid grid-cols-2 gap-4 md:gap-8 max-w-4xl mx-auto w-full">
                     
-                    <!-- Primi 4 pulsanti (2 colonne su mobile e desktop) -->
-                    <!-- MODIFICA: p-4 lg:p-8, h-16 lg:h-20, w-12 h-12 lg:w-16 lg:h-16, text-2xl lg:text-3xl -->
-                    <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Carica Dati</h2>
-                    </a>
-                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Risultati</h2>
-                    </a>
-                    <a href="storico_wo.html" id="storico-wo-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Storico WO</h2>
-                    </a>
-                    <a href="gym.html" id="gym-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
-                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="M18 22 12 16"/><path d="m6 8 6-6"/><path d="m2 6 6 6"/><path d="m16 6 6 6"/><path d="m22 18-6-6"/>
-                            </svg>
-                        </div>
-                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Gym</h2>
-                    </a>
-
-                    <!-- Calendario (col-span-2 su mobile, md:col-span-2) -->
-                    <!-- MODIFICA: Aggiunto col-span-2 per mobile, p-4 lg:p-8, h-16 lg:h-20, w-12 h-12 lg:w-16 lg:h-16, text-2xl lg:text-3xl -->
-                    <!-- MODIFICA: Rimosso col-span-2 per layout a scacchiera -->
                     <a href="CALENDARIO/calendario.html" id="calendario-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
                         <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-cyan-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -177,9 +139,42 @@
                         <h2 class="text-2xl lg:text-3xl font-bold text-white">Calendario</h2>
                     </a>
 
-                    <!-- Dispendi (col-span-2 su mobile, md:col-span-2) -->
-                    <!-- MODIFICA: Aggiunto col-span-2 per mobile, p-4 lg:p-8, h-16 lg:h-20, w-12 h-12 lg:w-16 lg:h-16, text-2xl lg:text-3xl -->
-                    <!-- MODIFICA: Rimosso col-span-2 per layout a scacchiera -->
+                    <a href="CARICA DATI/home_carica_dati.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Carica Dati</h2>
+                    </a>
+                    
+                    <a href="storico_wo.html" id="storico-wo-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-amber-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/><path d="M12 7v5l4 2"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Storico WO</h2>
+                    </a>
+                    
+                    <a href="gym.html" id="gym-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-red-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="m6.5 6.5 11 11"/><path d="m21 21-1-1"/><path d="m3 3 1 1"/><path d="M18 22 12 16"/><path d="m6 8 6-6"/><path d="m2 6 6 6"/><path d="m16 6 6 6"/><path d="m22 18-6-6"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Gym</h2>
+                    </a>
+
+                    <a href="RISULTATI/home_ranking.html" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
+                        <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-teal-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
+                            </svg>
+                        </div>
+                        <h2 class="text-2xl lg:text-3xl font-bold text-white">Risultati</h2>
+                    </a>
+
                     <a href="dispendi.html" id="dispendi-card" class="nav-card block bg-slate-900/70 border border-slate-700/50 rounded-2xl backdrop-blur-lg p-4 lg:p-8 text-center">
                         <div class="h-16 lg:h-20 flex items-center justify-center mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" class="w-12 h-12 lg:w-16 lg:h-16 text-purple-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
@@ -190,12 +185,12 @@
                     </a>
 
                 </div>
-                <!-- FINE contenitore unico --></div>
+            </div>
         </section>
         
     </div>
 
-    <!-- NUOVA BARRA DI NAVIGAZIONE INFERIORE --><div class="bottom-nav-bar">
+    <div class="bottom-nav-bar">
         <a href="https://forms.gle/Hm3tkt9D7f4JYn2m8"
            target="_blank"
            rel="noopener noreferrer"
@@ -213,34 +208,23 @@
     <script type="module">
         const appView = document.getElementById('app-view');
         const logoutBtn = document.getElementById('logout-btn');
-        const welcomeMessage = document.getElementById('welcome-message');
-        const groupBannerContainer = document.getElementById('group-banner-container');
-        const loaderOverlay = document.getElementById('loader-overlay'); // Aggiunto riferimento al loader
+        const loaderOverlay = document.getElementById('loader-overlay');
 
         // Ascolta l'evento 'authStateReady' inviato da auth-manager.js
         document.addEventListener('authStateReady', (e) => {
             const { athlete, error } = e.detail;
 
             if (athlete) {
-                // Utente loggato e dati atleta disponibili
                 appView.classList.remove('hidden');
-                displayAthleteInfo(athlete); // Usa i dati ricevuti
+                displayAthleteInfo(athlete);
             } else if (error) {
-                // Errore durante l'autenticazione/recupero dati
                 console.error("Errore di autenticazione da auth-manager:", error);
-                welcomeMessage.textContent = "Errore nel caricamento dei dati utente.";
-                appView.classList.remove('hidden'); // Mostra la vista app ma con messaggio di errore
+                appView.classList.remove('hidden'); 
             } else {
-                // Utente non loggato (auth-manager.js dovrebbe aver già reindirizzato)
-                // Se siamo ancora qui, forziamo il redirect per sicurezza
-                console.log("Utente non loggato rilevato in home.html, reindirizzamento...");
                 window.location.href = 'index.html';
             }
-            
-            // Nascondi il loader in ogni caso una volta gestito lo stato
             loaderOverlay.style.display = 'none';
         });
-
 
         function getGroupBadgeHTML(gruppo) {
             if (!gruppo) return '';
@@ -255,39 +239,38 @@
                 case 'ParaRowing': bgColor = 'bg-purple-500'; textColor = 'text-white'; break;
                 case 'Beach sprint': bgColor = 'bg-amber-500'; textColor = 'text-white'; break;
             }
-            
-            return `<span class="inline-block px-3 py-1 rounded-full font-semibold text-sm ${bgColor} ${textColor}">${gruppo}</span>`;
+            return `<span class="inline-block px-3 py-1 rounded-full font-semibold text-xs ${bgColor} ${textColor}">${gruppo}</span>`;
         }
 
-        // Funzione per visualizzare le info atleta ricevute dall'evento
         function displayAthleteInfo(athlete) {
-            if (athlete && athlete.cognome) {
-                welcomeMessage.textContent = `Benvenuto ${athlete.cognome}!`;
+            if (athlete) {
+                const fullName = `${athlete.cognome || ''} ${athlete.nome || ''}`;
+                document.getElementById('profile-cognome').textContent = fullName.trim() || 'Atleta';
+                document.getElementById('profile-societa').textContent = athlete.societa || 'Nessuna società';
 
+                const badgeContainer = document.getElementById('profile-gruppo-badge');
                 if (athlete.gruppo) {
-                    groupBannerContainer.innerHTML = getGroupBadgeHTML(athlete.gruppo);
+                    badgeContainer.innerHTML = getGroupBadgeHTML(athlete.gruppo);
                 } else {
-                    groupBannerContainer.innerHTML = '';
+                    badgeContainer.innerHTML = '';
                 }
-            } else {
-                // Caso in cui l'utente è loggato ma i dati non sono stati recuperati correttamente
-                welcomeMessage.textContent = 'Benvenuto!';
-                groupBannerContainer.innerHTML = '';
-                 console.warn("Dati atleta (cognome/gruppo) non disponibili dall'evento authStateReady.");
+
+                // Qui leggiamo i campi rowerg/bikeerg caricati da auth-manager
+                const valRow = athlete.rowerg || athlete.pb_2000 || '--:--';
+                const valBike = athlete.bikeerg || athlete.pb_6000 || '--:--';
+
+                document.getElementById('profile-pb-row').textContent = valRow;
+                document.getElementById('profile-pb-bike').textContent = valBike;
             }
         }
 
-        // Aggiorna il listener del logout per usare la funzione globale
         logoutBtn.addEventListener('click', () => {
-             // Chiama la funzione di logout globale definita in auth-manager.js
             if (window.appLogout) {
                 window.appLogout();
             } else {
-                console.error("Funzione appLogout() non trovata. Assicurati che auth-manager.js sia caricato.");
+                console.error("Funzione appLogout() non trovata.");
             }
         });
     </script>
 </body>
 </html>
-
-
