@@ -63,11 +63,9 @@
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
-    <!-- MODALE PRIVACY -->
     <div id="privacy-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/90 backdrop-blur-sm hidden">
         <div class="bg-slate-800 border border-slate-700 rounded-xl shadow-2xl max-w-2xl w-full max-h-[90vh] flex flex-col">
             
-            <!-- Header Modale con Logo e Titolo -->
             <div class="p-6 border-b border-slate-700 bg-slate-800/50 rounded-t-xl flex items-center gap-4">
                 <img src="logo.png" alt="FIC Logo" class="h-12 w-auto object-contain">
                 <div>
@@ -76,7 +74,6 @@
                 </div>
             </div>
 
-            <!-- Contenuto Scrollabile -->
             <div class="p-6 overflow-y-auto custom-scrollbar text-slate-300 text-sm leading-relaxed space-y-4">
                 <p>
                     Letta e compresa l’informativa resa ai sensi dell’art. 13 del Regolamento UE n. 2016/679 (GDPR) dalla 
@@ -86,7 +83,6 @@
                 <div class="bg-slate-700/30 p-4 rounded-lg border border-slate-600 space-y-4 mt-4">
                     <p class="font-semibold text-white mb-2">Dichiaro di:</p>
 
-                    <!-- Checkbox 14 anni -->
                     <label class="flex items-start gap-3 cursor-pointer group">
                         <input type="checkbox" id="check-14-years" class="custom-checkbox mt-1 bg-slate-700 border-slate-500 rounded focus:ring-sky-500">
                         <span class="group-hover:text-white transition-colors">
@@ -96,13 +92,11 @@
 
                     <hr class="border-slate-600/50 my-2">
 
-                    <!-- SEZIONE CONSENSO (Inizialmente disabilitata) -->
                     <div id="consent-section" class="space-y-3 transition-all duration-300 disabled-section">
                         <p class="text-slate-300">
                             Autorizzo al trattamento dei miei dati, nei limiti e per le finalità indicate da FIC all'art. III, punti nn. 1-11 dell'informativa, compresa la eventuale comunicazione dei miei dati a soggetti terzi indicati nella medesima informativa.
                         </p>
                         
-                        <!-- Link richiesto -->
                         <div class="mb-2">
                              <a href="https://www.canottaggio.org/wp-content/uploads/2024/05/informativa-tesserati-modulo-rev-TP.pdf" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:underline hover:text-sky-300 font-medium break-all flex items-center gap-1">
                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -135,7 +129,6 @@
                 </div>
             </div>
 
-            <!-- Footer con bottone -->
             <div class="p-6 border-t border-slate-700 bg-slate-800/50 rounded-b-xl flex justify-end">
                 <button id="btn-accept-privacy" disabled 
                     class="bg-sky-600 hover:bg-sky-500 text-white font-bold py-2 px-6 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-lg shadow-sky-900/20">
@@ -145,7 +138,6 @@
         </div>
     </div>
 
-    <!-- LOGIN VIEW (Standard) -->
     <div id="login-view" class="min-h-screen flex flex-col items-center justify-center p-4">
         <div class="w-full max-w-sm">
             <div id="logo-container" class="text-center transform translate-y-0">
@@ -191,17 +183,17 @@
         </div>
     </div>
 
-    <!-- Carico auth-manager come richiesto originariamente -->
     <script type="module" src="auth-manager.js"></script>
 
     <script type="module">
-        // 1. Importa l'istanza 'auth' GIA' creata da auth-manager.js (Ripristinato)
         import { auth } from './auth-manager.js';
-
-        // 2. Importa SOLO le funzioni che ti servono (come nel file originale)
+        
+        // Importo anche 'signOut' e 'onAuthStateChanged' per il controllo di sicurezza
         import { 
             signInWithEmailAndPassword,
-            sendPasswordResetEmail
+            sendPasswordResetEmail,
+            signOut,
+            onAuthStateChanged
         } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
         // --- ELEMENTI DOM LOGIN ---
@@ -221,46 +213,55 @@
         // --- GESTIONE PRIVACY E AVVIO ---
         const STORAGE_KEY_PRIVACY = 'fic_privacy_policy_accepted_v1';
 
-        document.addEventListener('DOMContentLoaded', () => {
-            const hasAccepted = localStorage.getItem(STORAGE_KEY_PRIVACY);
+        // --- CONTROLLO DI SICUREZZA INIZIALE ---
+        // Controlla se l'utente è loggato MA non ha accettato la privacy
+        onAuthStateChanged(auth, (user) => {
+            const hasAccepted = localStorage.getItem(STORAGE_KEY_PRIVACY) === 'true';
 
-            if (hasAccepted === 'true') {
-                // Se ha già accettato in passato, avvia subito la schermata di login
-                startLoginAnimation();
-            } else {
-                // Se NON ha accettato, mostra il modale
+            if (user && !hasAccepted) {
+                // CASO: Utente già loggato in cache, ma privacy non presente.
+                console.warn("Utente loggato senza consenso privacy locale. Eseguo Logout forzato.");
+                
+                // Logout immediato per mostrare il modale
+                signOut(auth).then(() => {
+                    privacyModal.classList.remove('hidden');
+                    // Reset visivo login
+                    document.getElementById('logo-container').style.transform = 'translateY(0)';
+                    document.getElementById('login-form-container').style.opacity = '0';
+                    document.getElementById('app-title').style.opacity = '0';
+                });
+            } else if (!hasAccepted) {
+                // CASO: Utente non loggato e privacy non accettata.
                 privacyModal.classList.remove('hidden');
+            } else {
+                // CASO: Privacy già accettata. Mostra animazione di login (o auth-manager farà redirect se loggato)
+                startLoginAnimation();
             }
         });
 
-        // 1. Gestione Checkbox 14 anni -> Sblocca/Blocca sezione Consenso
+        // 1. Gestione Checkbox 14 anni
         check14.addEventListener('change', () => {
             if (check14.checked) {
-                // Sblocca la sezione consenso
                 consentSection.classList.remove('disabled-section');
                 radiosConsent.forEach(r => r.disabled = false);
             } else {
-                // Blocca la sezione consenso
                 consentSection.classList.add('disabled-section');
                 radiosConsent.forEach(r => {
                     r.disabled = true;
-                    r.checked = false; // Reset selezione
+                    r.checked = false; 
                 });
-                // Disabilita anche il bottone finale perché abbiamo resettato il consenso
                 btnAcceptPrivacy.disabled = true;
                 consentError.classList.add('hidden');
             }
         });
 
-        // 2. Gestione Radio Consenso -> Sblocca/Blocca Bottone Finale
+        // 2. Gestione Radio Consenso
         function updateFinalButtonState() {
-            // Verifica quale radio è selezionato
             let consentValue = null;
             for (const radio of radiosConsent) {
                 if (radio.checked) consentValue = radio.value;
             }
 
-            // Il bottone si attiva SOLO se Acconsento è selezionato (check14 è implicito perché altrimenti i radio sono disabilitati)
             if (consentValue === 'yes') {
                 btnAcceptPrivacy.disabled = false;
                 consentError.classList.add('hidden');
@@ -276,16 +277,16 @@
 
         radiosConsent.forEach(r => r.addEventListener('change', updateFinalButtonState));
 
-
+        // 3. Click su "Conferma e Procedi"
         btnAcceptPrivacy.addEventListener('click', () => {
-            // Salva preferenza
+            // Salva preferenza nel LocalStorage (sopravvive agli update SW)
             localStorage.setItem(STORAGE_KEY_PRIVACY, 'true');
             
             // Chiudi modale
             privacyModal.classList.add('opacity-0', 'transition-opacity', 'duration-500');
             setTimeout(() => {
                 privacyModal.classList.add('hidden');
-                // Avvia animazione Login solo ora
+                // Avvia animazione Login
                 startLoginAnimation();
             }, 500);
         });
@@ -296,6 +297,9 @@
             const appTitle = document.getElementById('app-title');
             const loginFormContainer = document.getElementById('login-form-container');
             
+            // Controlla se l'animazione è già stata fatta per evitare scatti
+            if(logoContainer.style.transform === 'translateY(-80%)') return;
+
             setTimeout(() => {
                 logoContainer.style.transform = 'translateY(-80%)';
                 appTitle.style.opacity = '1';
@@ -305,7 +309,7 @@
             }, 300);
         }
 
-        // --- HELPERS E LOGICA LOGIN (Originale) ---
+        // --- LOGICA LOGIN (Originale) ---
         function showMessage(message, type = 'error') {
             errorMessage.textContent = message;
             errorMessage.classList.remove('hidden', 'text-red-500', 'text-green-400');
@@ -357,7 +361,7 @@
 
             signInWithEmailAndPassword(auth, email, password)
                 .then((userCredential) => {
-                    // Successo! auth-manager.js farà il redirect (o la tua logica successiva)
+                    // Successo! auth-manager.js gestirà il resto
                 })
                 .catch((error) => {
                     console.error("Login Error:", error.code, error.message);
