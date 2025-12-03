@@ -3,82 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym - I Tuoi Allenamenti</title>
+    <title>Gym - FIC Atleti</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #0F172A;
-            color: #E2E8F0;
-        }
-        .background-gradient {
-            position: fixed; top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            filter: blur(100px); z-index: -1;
-        }
-        .gradient-1 {
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%);
-            animation: pulse 10s infinite alternate;
-        }
-        .gradient-2 {
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
-            animation: pulse 12s infinite alternate-reverse;
-        }
-        @keyframes pulse {
-            0% { transform: scale(0.9) rotate(0deg); }
-            100% { transform: scale(1.2) rotate(20deg); }
-        }
-        /* Stili per l'accordion */
-        .plan-card summary {
-            cursor: pointer;
-            outline: none;
-        }
-        .plan-card[open] summary {
-            border-bottom: 1px solid #334155;
-        }
-        .plan-card summary::-webkit-details-marker {
-            display: none;
-        }
-        .plan-card summary .icon {
-            transition: transform 0.2s;
-        }
-        .plan-card[open] summary .icon {
-            transform: rotate(90deg);
-        }
-        /* Stile per il lightbox dell'immagine */
-        #image-lightbox {
-            transition: opacity 0.3s ease;
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; }
+        .background-gradient { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: blur(100px); z-index: -1; }
+        .gradient-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%); }
+        .gradient-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%); }
         
-        /* Stili per i Tab (Schede/Circuiti) */
-        .tab-btn {
-            padding: 0.5rem 1rem;
-            border-bottom: 2px solid transparent;
-            font-weight: 600;
-            color: #94a3b8; /* slate-400 */
-            transition: all 0.2s;
-            cursor: pointer;
-        }
-        .tab-btn:hover {
-            color: #e2e8f0; /* slate-200 */
-        }
-        .tab-btn.active {
-            color: #3b82f6; /* blue-500 */
-            border-bottom-color: #3b82f6;
-        }
-        .tab-content {
-            display: none;
-        }
-        .tab-content.active {
-            display: block;
-        }
+        /* Accordion */
+        .plan-card summary { cursor: pointer; list-style: none; outline: none; }
+        .plan-card summary::-webkit-details-marker { display: none; }
+        .plan-card[open] summary { border-bottom: 1px solid #334155; }
+        .plan-card summary .icon { transition: transform 0.2s; }
+        .plan-card[open] summary .icon { transform: rotate(90deg); }
+
+        /* Tabs */
+        .tab-btn { padding: 0.5rem 1rem; border-bottom: 2px solid transparent; color: #94a3b8; cursor: pointer; font-weight: 600; }
+        .tab-btn:hover { color: #e2e8f0; }
+        .tab-btn.active { color: #3b82f6; border-bottom-color: #3b82f6; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        
+        /* Utils */
+        .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+        .close-btn-hover:hover { transform: scale(1.1) rotate(90deg); }
     </style>
-     <!-- Carica l'auth-manager -->
      <script type="module" src="auth-manager.js"></script>
 </head>
 <body class="antialiased">
@@ -106,398 +58,368 @@
         </header>
 
         <main id="main-content" class="hidden">
-            <!-- Tabs -->
             <div class="mb-6 flex border-b border-slate-700">
-                <button id="tab-btn-schede" class="tab-btn active" data-tab="schede">Schede</button>
-                <button id="tab-btn-circuiti" class="tab-btn" data-tab="circuiti">Circuiti</button>
+                <button id="tab-btn-schede" class="tab-btn active">Schede</button>
+                <button id="tab-btn-circuiti" class="tab-btn">Circuiti</button>
             </div>
 
-            <!-- Contenuto Tab Schede (ATTIVO DI DEFAULT) -->
             <div id="schede-content" class="tab-content active">
-                <h2 class="text-2xl font-bold text-white mb-6">Le Tue Schede di Allenamento</h2>
-                <div id="plans-container" class="space-y-6">
-                    <!-- Le schede verranno inserite qui da JS -->
-                </div>
+                <h2 class="text-2xl font-bold text-white mb-6">Le Tue Schede</h2>
+                <div id="plans-container" class="space-y-6"></div>
                 <div id="no-schede-message" class="hidden text-center py-16 px-6 bg-slate-900/70 border border-slate-700/50 rounded-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-slate-500"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-                    <h3 class="text-xl font-bold text-white">Nessuna scheda trovata</h3>
-                    <p class="text-slate-400 mt-2">Non ci sono ancora schede di allenamento disponibili. Contatta il tuo allenatore.</p>
+                    <p class="text-slate-400">Nessuna scheda trovata.</p>
                 </div>
             </div>
 
-            <!-- Contenuto Tab Circuiti (NASCOSTO) -->
             <div id="circuiti-content" class="tab-content">
                 <h2 class="text-2xl font-bold text-white mb-6">I Tuoi Circuiti</h2>
-                <div id="circuits-container" class="space-y-6">
-                    <!-- I circuiti verranno inseriti qui da JS -->
-                </div>
+                <div id="circuits-container" class="space-y-6"></div>
                 <div id="no-circuits-message" class="hidden text-center py-16 px-6 bg-slate-900/70 border border-slate-700/50 rounded-xl">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" class="mx-auto mb-4 text-slate-500"><path d="M12 2.8c.9-.1 1.8.2 2.5.8 1.1 1 1.5 2.5 1 4L12 18 8.5 7.5c-.5-1.4 0-3 1-4 .8-.5 1.7-.8 2.5-.7z"/><path d="M12 18c-1.9 0-3.5-1-4.5-2.5s-1.5-3.5-1-5.5c.3-1.1.8-2.1 1.5-3M12 18c1.9 0 3.5-1 4.5-2.5s1.5-3.5 1-5.5c-.3-1.1-.8-2.1-1.5-3"/></svg>
-                    <h3 class="text-xl font-bold text-white">Nessun circuito trovato</h3>
-                    <p class="text-slate-400 mt-2">Non ci sono ancora circuiti disponibili. Contatta il tuo allenatore.</p>
+                    <p class="text-slate-400">Nessun circuito trovato.</p>
                 </div>
             </div>
         </main>
     </div>
 
-    <!-- Image Lightbox Modal -->
-    <div id="image-lightbox" class="fixed inset-0 bg-black/80 backdrop-blur-sm flex items-center justify-center hidden z-50 p-4 opacity-0">
-        <div class="relative max-w-3xl max-h-full">
-            <img id="lightbox-image" src="" alt="Esercizio ingrandito" class="block max-h-[90vh] max-w-[90vw] rounded-lg shadow-2xl">
-            <button id="close-lightbox" class="absolute -top-2 -right-2 bg-white text-slate-900 rounded-full h-8 w-8 flex items-center justify-center font-bold text-xl leading-none">&times;</button>
+    <div id="image-lightbox" class="fixed inset-0 bg-black/90 backdrop-blur-sm flex items-center justify-center hidden z-[100] p-4 opacity-0">
+        <div class="relative max-w-4xl max-h-full">
+            <img id="lightbox-image" src="" class="block max-h-[90vh] max-w-[95vw] rounded-lg shadow-2xl border border-slate-700">
+            <button id="close-lightbox" class="absolute -top-4 -right-4 bg-white text-slate-900 rounded-full h-10 w-10 flex items-center justify-center font-bold text-2xl shadow-lg cursor-pointer">&times;</button>
+        </div>
+    </div>
+
+    <div id="circuit-timer-overlay" class="fixed inset-0 bg-slate-900 z-[9000] hidden flex flex-col">
+        <button id="close-timer" class="fixed top-4 right-4 z-[10000] bg-red-600 hover:bg-red-500 text-white w-12 h-12 rounded-full flex items-center justify-center font-bold text-2xl shadow-xl border-2 border-white/20 transition-all close-btn-hover cursor-pointer">
+            &times;
+        </button>
+
+        <div class="flex-1 flex flex-col landscape:flex-row h-full overflow-hidden">
+            
+            <div id="timer-bg-panel" class="w-full h-1/2 landscape:w-1/2 landscape:h-full flex flex-col justify-center items-center bg-slate-900 transition-colors duration-500 relative border-b landscape:border-b-0 landscape:border-r border-slate-700 shadow-xl z-10 order-1">
+                <p id="timer-phase-text" class="text-2xl font-black tracking-[0.3em] uppercase mb-2 text-slate-400 opacity-80">PRONTO</p>
+                <div class="relative">
+                    <div class="text-[7rem] md:text-[9rem] landscape:text-[11rem] font-black text-white leading-none select-none tabular-nums drop-shadow-2xl" id="timer-countdown">00</div>
+                </div>
+                <div class="flex gap-6 mt-6">
+                    <button id="timer-toggle-btn" class="bg-emerald-500 hover:bg-emerald-400 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg shadow-emerald-900/50 transform active:scale-95 transition-all border-4 border-emerald-600/30">
+                        <span id="btn-icon-play" class="text-3xl">▶</span>
+                    </button>
+                    <button id="timer-skip-btn" class="bg-slate-700 hover:bg-slate-600 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg transform active:scale-95 transition-all border-4 border-slate-600">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m13 17 5-5-5-5"/><path d="m6 17 5-5-5-5"/></svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="w-full h-1/2 landscape:w-1/2 landscape:h-full flex flex-col bg-slate-800 relative p-4 pb-8 order-2">
+                <div class="shrink-0 mb-3 text-center">
+                    <h3 id="timer-exercise-name" class="text-2xl md:text-4xl font-black text-white leading-tight drop-shadow-lg uppercase truncate px-2">Caricamento...</h3>
+                    <p id="timer-exercise-note" class="text-sky-300 text-base md:text-lg font-medium italic mt-1 text-center truncate px-4"></p>
+                </div>
+                <div class="flex-1 relative w-full overflow-hidden rounded-xl bg-black/50 shadow-inner border border-slate-600/50 min-h-0">
+                    <img id="timer-exercise-img" src="" class="absolute inset-0 w-full h-full object-contain" alt="Esercizio">
+                </div>
+                <div class="shrink-0 pt-3 text-center">
+                    <p class="text-slate-500 text-[10px] uppercase font-bold tracking-widest">PROSSIMO ESERCIZIO</p>
+                    <p id="timer-next-name" class="text-slate-300 font-bold text-sm truncate">...</p>
+                </div>
+            </div>
+
         </div>
     </div>
 
     <script type="module">
-        // Importa db da auth-manager
         import { db } from './auth-manager.js';
-        // Importa solo le funzioni necessarie da firestore
         import { collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+        // DOM
         const loader = document.getElementById('loader-overlay');
         const mainContent = document.getElementById('main-content');
         const welcomeMessage = document.getElementById('welcome-message');
         const plansContainer = document.getElementById('plans-container');
-        const noSchedeMessage = document.getElementById('no-schede-message'); // ID Modificato
+        const circuitsContainer = document.getElementById('circuits-container');
+        
+        // Lightbox
         const imageLightbox = document.getElementById('image-lightbox');
         const lightboxImage = document.getElementById('lightbox-image');
         const closeLightboxBtn = document.getElementById('close-lightbox');
-        
-        // --- NUOVI ELEMENTI DOM PER TAB E CIRCUITI ---
-        const tabBtnSchede = document.getElementById('tab-btn-schede');
-        const tabBtnCircuiti = document.getElementById('tab-btn-circuiti');
-        const schedeContent = document.getElementById('schede-content');
-        const circuitiContent = document.getElementById('circuiti-content');
-        const circuitsContainer = document.getElementById('circuits-container');
-        const noCircuitsMessage = document.getElementById('no-circuits-message');
 
+        // Timer
+        const timerOverlay = document.getElementById('circuit-timer-overlay');
+        const closeTimerBtn = document.getElementById('close-timer');
+        const timerExerciseName = document.getElementById('timer-exercise-name');
+        const timerExerciseImg = document.getElementById('timer-exercise-img');
+        const timerExerciseNote = document.getElementById('timer-exercise-note');
+        const timerNextName = document.getElementById('timer-next-name');
+        const timerCountdown = document.getElementById('timer-countdown');
+        const timerPhaseText = document.getElementById('timer-phase-text');
+        const timerBgPanel = document.getElementById('timer-bg-panel');
+        const btnIconPlay = document.getElementById('btn-icon-play');
         
-        // Ascolta l'evento 'authStateReady'
+        // Vars
+        let currentCircuitData = null;
+        let currentExerciseIndex = 0;
+        let isWorkPhase = true;
+        let timeLeft = 0;
+        let timerInterval = null;
+        let isRunning = false;
+        let audioCtx = null;
+
+        // AUTH
         document.addEventListener('authStateReady', async (e) => {
             const { athlete, error } = e.detail;
-
             if (athlete) {
-                // Utente loggato e dati atleta disponibili
-                if (athlete.cognome) {
-                    welcomeMessage.textContent = `Benvenuto, ${athlete.cognome}`;
-                    sessionStorage.setItem('atletaCognome', athlete.cognome);
-                } else {
-                    welcomeMessage.textContent = 'Benvenuto';
-                    sessionStorage.removeItem('atletaCognome'); 
-                }
-                await loadClientData(athlete); // Passa l'oggetto athlete
+                welcomeMessage.textContent = athlete.cognome ? `Benvenuto, ${athlete.cognome}` : 'Benvenuto';
+                await loadClientData(athlete);
             } else if (error) {
-                 // Errore
-                console.error("Errore di autenticazione da auth-manager:", error);
+                console.error("Auth Error:", error);
                 welcomeMessage.textContent = "Errore";
-                plansContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile verificare l'utente. Riprova il login.</p>`;
                 loader.classList.add('hidden');
                 mainContent.classList.remove('hidden'); 
             } else {
-                // Utente non loggato
                 window.location.href = 'index.html';
             }
         });
-        
+
         async function loadClientData(athlete) {
             try {
-                // 1. Usa l'ID dell'atleta direttamente dall'oggetto athlete
                 const athleteId = athlete.id;
-
-                // 2. Carica i massimali dell'atleta
+                
+                // Fetch Data
                 const massimaliMap = new Map();
-                const massimaliQuery = query(collection(db, 'massimali_atleti'), where('atletaId', '==', athleteId));
-                const massimaliSnapshot = await getDocs(massimaliQuery);
-                massimaliSnapshot.forEach(doc => {
-                    const data = doc.data();
-                    if(data.esercizioId && data.massimale) {
-                        massimaliMap.set(data.esercizioId, data.massimale);
-                    }
-                });
+                const massimaliSnap = await getDocs(query(collection(db, 'massimali_atleti'), where('atletaId', '==', athleteId)));
+                massimaliSnap.forEach(doc => massimaliMap.set(doc.data().esercizioId, doc.data().massimale));
 
-                // 3. Carica la libreria di tutti gli esercizi
                 const eserciziMap = new Map();
-                const eserciziQuery = query(collection(db, "esercizi_pesistica"));
-                const eserciziSnapshot = await getDocs(eserciziQuery);
-                eserciziSnapshot.forEach(doc => {
-                    eserciziMap.set(doc.id, doc.data());
-                });
+                const eserciziSnap = await getDocs(query(collection(db, "esercizi_pesistica")));
+                eserciziSnap.forEach(doc => eserciziMap.set(doc.id, doc.data()));
 
-                // 4. Carica tutte le schede E I CIRCUITI (MODIFICATO)
-                const schedeQuery = query(collection(db, "schede_pesistica"));
-                const circuitiQuery = query(collection(db, "circuiti_pesistica")); // NUOVO
-
-                // Carica entrambi in parallelo
-                const [schedeSnapshot, circuitiSnapshot] = await Promise.all([
-                    getDocs(schedeQuery),
-                    getDocs(circuitiQuery)
+                const [schedeSnap, circuitiSnap] = await Promise.all([
+                    getDocs(query(collection(db, "schede_pesistica"))),
+                    getDocs(query(collection(db, "circuiti_pesistica")))
                 ]);
 
-                // 5. Processa le schede
-                if (schedeSnapshot.empty) {
-                    noSchedeMessage.classList.remove('hidden');
+                // Render Schede
+                if (schedeSnap.empty) {
+                    document.getElementById('no-schede-message').classList.remove('hidden');
                 } else {
                     plansContainer.innerHTML = '';
-                    const schede = schedeSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                    const schede = schedeSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     schede.sort((a, b) => a.nomeScheda.localeCompare(b.nomeScheda));
-                    
                     schede.forEach(scheda => {
-                        const planElement = createPlanElement(scheda, massimaliMap, eserciziMap);
-                        plansContainer.appendChild(planElement);
+                        plansContainer.appendChild(createPlanElement(scheda, massimaliMap, eserciziMap));
                     });
-                    noSchedeMessage.classList.add('hidden');
+                    document.getElementById('no-schede-message').classList.add('hidden');
                 }
 
-                // 6. Processa i circuiti (NUOVO BLOCCO)
-                if (circuitiSnapshot.empty) {
-                    noCircuitsMessage.classList.remove('hidden');
+                // Render Circuiti
+                if (circuitiSnap.empty) {
+                    document.getElementById('no-circuits-message').classList.remove('hidden');
                 } else {
                     circuitsContainer.innerHTML = '';
-                    const circuiti = circuitiSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
-                    // Ordina per nome circuito
+                    const circuiti = circuitiSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
                     circuiti.sort((a, b) => a.nomeCircuito.localeCompare(b.nomeCircuito));
-                    
                     circuiti.forEach(circuito => {
-                        const circuitElement = createCircuitElement(circuito, eserciziMap); // Nuova funzione
-                        circuitsContainer.appendChild(circuitElement);
+                        circuitsContainer.appendChild(createCircuitElement(circuito, eserciziMap));
                     });
-                    noCircuitsMessage.classList.add('hidden');
+                    document.getElementById('no-circuits-message').classList.add('hidden');
                 }
 
             } catch (error) {
-                console.error("Errore nel caricamento dei dati: ", error);
-                plansContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-                circuitsContainer.innerHTML = `<p class="text-red-400 text-center">Impossibile caricare i dati. Riprova più tardi.</p>`;
-                noSchedeMessage.classList.add('hidden');
-                noCircuitsMessage.classList.add('hidden');
+                console.error("Errore dati: ", error);
             } finally {
                 loader.classList.add('hidden');
                 mainContent.classList.remove('hidden');
             }
         }
 
+        // --- SCHEDE ELEMENT ---
         function createPlanElement(scheda, massimaliMap, eserciziMap) {
             const details = document.createElement('details');
             details.className = 'plan-card bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg overflow-hidden';
-
             const summary = document.createElement('summary');
             summary.className = 'flex justify-between items-center p-4 md:p-6';
-            summary.innerHTML = `
-                <h3 class="text-xl font-bold text-white">${scheda.nomeScheda}</h3>
-                <div class="icon text-sky-400">
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </div>
-            `;
-
+            summary.innerHTML = `<h3 class="text-xl font-bold text-white">${scheda.nomeScheda}</h3><div class="icon text-sky-400"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg></div>`;
             const content = document.createElement('div');
-            content.className = 'p-4 md:p-6 border-t border-slate-700/50';
-            const exerciseList = document.createElement('div');
-            exerciseList.className = 'space-y-4';
+            content.className = 'p-4 md:p-6 border-t border-slate-700/50 space-y-6';
 
             if (scheda.esercizi && scheda.esercizi.length > 0) {
-                 // Ordina per 'ordine'
                 const orderedExercises = (scheda.esercizi || []).sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
-
                 orderedExercises.forEach(esercizio => {
-                    // Controllo di base
-                    if (!esercizio.esercizioId) {
-                        console.warn("Esercizio scheda senza ID:", scheda.nomeScheda, esercizio);
-                        return; // Salta questo esercizio
-                    }
+                    if (!esercizio.esercizioId) return;
+                    const full = eserciziMap.get(esercizio.esercizioId);
+                    const imageUrl = full?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
+                    const nome = esercizio.nome || full?.nome || 'Esercizio';
+                    const noteGen = full?.note || '';
+                    const tipo = esercizio.tipo || 'fisse';
 
-                    const fullEsercizio = eserciziMap.get(esercizio.esercizioId);
-                    const imageUrl = fullEsercizio?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
-                    const nomeEsercizio = esercizio.nome || fullEsercizio?.nome || 'Esercizio Sconosciuto';
-                    
-                    // --- GESTIONE LOGICA ---
-                    const notaGeneraleEsercizio = fullEsercizio?.note || '';
-                    const tipoSerie = esercizio.tipo || 'fisse';
-                    
-                    const infoHtml = `
-                        <p class="font-bold text-lg text-slate-100">${nomeEsercizio}</p>
-                        ${notaGeneraleEsercizio ? `<p class="text-sm text-slate-400 italic mt-1">${notaGeneraleEsercizio}</p>` : ''}
-                        <p class="text-sm font-medium text-indigo-300 mt-2">Tipo: <span class="font-normal capitalize text-slate-300">${tipoSerie}</span></p>
-                    `;
-
-                    // Costruisci l'HTML per ogni SET
-                    let setsHtml = '<div class="space-y-3 mt-3">';
+                    let setsHtml = '<div class="space-y-2 mt-3">';
                     if (esercizio.sets && esercizio.sets.length > 0) {
                         esercizio.sets.forEach(set => {
-                            const massimale = massimaliMap.get(esercizio.esercizioId) || 0;
-                            const percentuale = parseFloat(set.percentuale) || 0;
-                            const pesoCalcolato = massimale > 0 && percentuale > 0 ? (massimale * percentuale / 100).toFixed(1) : '-';
-                            const setNoteHtml = set.note ? `<p class="text-xs text-amber-300/80 mt-1 italic pl-2">Nota: ${set.note}</p>` : '';
-
-                            setsHtml += `
-                                <div class="bg-slate-700/50 p-3 rounded-lg">
-                                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
-                                        <p class="text-slate-300 font-mono text-sm">
-                                            <span class="font-bold text-white">${set.serie || '-'}</span> x <span class="font-bold text-white">${set.ripetizioni || '-'}</span> @ <span class="font-bold text-white">${set.percentuale || '-'}%</span>
-                                        </p>
-                                        <div class="flex items-center gap-2 bg-slate-800 p-2 rounded-lg flex-shrink-0">
-                                            <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>
-                                            <p class="text-lg font-bold text-white">${pesoCalcolato} kg</p>
-                                        </div>
-                                    </div>
-                                    ${setNoteHtml}
-                                </div>
-                            `;
+                            const max = massimaliMap.get(esercizio.esercizioId) || 0;
+                            const perc = parseFloat(set.percentuale) || 0;
+                            const kg = max > 0 && perc > 0 ? (max * perc / 100).toFixed(1) : '-';
+                            const noteSet = set.note ? `<div class="text-xs text-amber-300/80 mt-1 italic">Note: ${set.note}</div>` : '';
+                            setsHtml += `<div class="bg-slate-700/50 p-3 rounded-lg flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2"><div class="text-slate-300 font-mono text-sm"><span class="font-bold text-white text-base">${set.serie}</span> x <span class="font-bold text-white text-base">${set.ripetizioni}</span> ${set.percentuale ? `@ ${set.percentuale}%` : ''}</div><div class="bg-slate-800 px-3 py-1 rounded text-sky-400 font-bold">${kg} kg</div>${noteSet}</div>`;
                         });
-                    } else {
-                        setsHtml += `<p class="text-slate-400">Dettagli serie non disponibili.</p>`;
                     }
                     setsHtml += '</div>';
 
-                    // Assembla l'elemento esercizio
-                    exerciseList.innerHTML += `
-                        <div class="flex flex-col sm:flex-row items-start gap-4 p-4 bg-slate-800 rounded-lg">
-                            <img src="${imageUrl}" alt="${nomeEsercizio}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image sm:mt-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
-                            <div class="flex-grow w-full">
-                                ${infoHtml}
-                                ${setsHtml}
-                            </div>
-                        </div>
-                    `;
+                    content.innerHTML += `<div class="flex flex-col sm:flex-row items-start gap-4 p-4 bg-slate-800 rounded-xl border border-slate-700/50"><img src="${imageUrl}" class="w-20 h-20 rounded-lg object-cover flex-shrink-0 cursor-pointer enlargeable-image border border-slate-600" onerror="this.src='https://placehold.co/100?text=Err'"><div class="flex-grow w-full"><p class="font-bold text-lg text-slate-100">${nome}</p>${noteGen ? `<p class="text-sm text-slate-400 italic mt-1">${noteGen}</p>` : ''}<p class="text-sm font-medium text-indigo-300 mt-2">Tipo: <span class="font-normal capitalize text-slate-300">${tipo}</span></p>${setsHtml}</div></div>`;
                 });
-            } else {
-                exerciseList.innerHTML = `<p class="text-slate-400">Nessun esercizio in questa scheda.</p>`;
-            }
-
-            content.appendChild(exerciseList);
-            details.appendChild(summary);
-            details.appendChild(content);
+            } else { content.innerHTML = `<p class="text-slate-400 text-center">Nessun esercizio.</p>`; }
+            details.appendChild(summary); details.appendChild(content);
             return details;
         }
-        
-        // --- NUOVA FUNZIONE: CREA ELEMENTO CIRCUITO ---
+
+        // --- CIRCUITI ELEMENT (Con Commenti Ripristinati) ---
         function createCircuitElement(circuito, eserciziMap) {
             const details = document.createElement('details');
             details.className = 'plan-card bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg overflow-hidden';
-
             const summary = document.createElement('summary');
-            summary.className = 'flex justify-between items-center p-4 md:p-6';
-            summary.innerHTML = `
-                <h3 class="text-xl font-bold text-white">${circuito.nomeCircuito}</h3>
-                <div class="icon text-purple-400"> <!-- Colore diverso -->
-                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>
-                </div>
-            `;
+            summary.className = 'flex justify-between items-center p-4 md:p-6 bg-slate-800/50';
+            summary.innerHTML = `<h3 class="text-xl font-bold text-white">${circuito.nomeCircuito}</h3><span class="text-purple-400 text-2xl">⏱</span>`;
 
             const content = document.createElement('div');
             content.className = 'p-4 md:p-6 border-t border-slate-700/50';
+            content.innerHTML = `
+                <div class="flex gap-4 mb-6">
+                    <div class="bg-slate-800 p-3 rounded-lg flex-1 text-center border border-slate-700"><span class="text-xs text-slate-400 font-bold block mb-1">LAVORO</span><span class="text-xl font-bold text-white">${circuito.tempoLavoro || '?'}</span></div>
+                    <div class="bg-slate-800 p-3 rounded-lg flex-1 text-center border border-slate-700"><span class="text-xs text-slate-400 font-bold block mb-1">RECUPERO</span><span class="text-xl font-bold text-white">${circuito.tempoRecupero || '?'}</span></div>
+                </div>`;
 
-            // Aggiungi info Lavoro/Recupero
-            const timingInfo = document.createElement('div');
-            timingInfo.className = 'flex gap-4 mb-4 p-3 bg-slate-800 rounded-lg';
-            timingInfo.innerHTML = `
-                <div class="flex-1 text-center">
-                    <p class="text-sm font-medium text-slate-400">LAVORO</p>
-                    <p class="text-xl font-bold text-white">${circuito.tempoLavoro || 'N/A'}</p>
-                </div>
-                <div class="flex-1 text-center border-l border-slate-600">
-                    <p class="text-sm font-medium text-slate-400">RECUPERO</p>
-                    <p class="text-xl font-bold text-white">${circuito.tempoRecupero || 'N/A'}</p>
-                </div>
-            `;
-            content.appendChild(timingInfo);
+            const btn = document.createElement('button');
+            btn.className = "w-full bg-purple-600 hover:bg-purple-500 text-white font-bold py-4 rounded-xl shadow-lg mb-6 flex items-center justify-center gap-3 transition-transform active:scale-95";
+            btn.innerHTML = `<span class="text-2xl">▶</span> <span class="text-lg">AVVIA TIMER</span>`;
+            
+            btn.onclick = function(e) {
+                e.preventDefault(); e.stopPropagation();
+                if (!circuito.esercizi || circuito.esercizi.length === 0) return alert("ERRORE: Circuito senza esercizi!");
+                try { openTimer(circuito, eserciziMap); } catch (err) { alert("Errore Timer: " + err.message); }
+            };
+            content.appendChild(btn);
 
-            const exerciseList = document.createElement('div');
-            exerciseList.className = 'space-y-4';
+            if (circuito.esercizi) {
+                circuito.esercizi.sort((a,b) => (a.ordine||0) - (b.ordine||0)).forEach(ex => {
+                    const full = eserciziMap.get(ex.esercizioId);
+                    const div = document.createElement('div');
+                    // Layout Lista con Commenti
+                    div.className = "flex items-start gap-4 bg-slate-800/40 p-3 rounded-lg mb-2 border border-slate-700/30";
+                    
+                    const generalNote = full?.note ? `<p class="text-xs text-slate-500 italic mt-0.5">${full.note}</p>` : '';
+                    const specificNote = ex.note ? `<p class="text-xs text-amber-400/90 italic mt-1 font-medium">📝 ${ex.note}</p>` : '';
+                    const weightInfo = ex.peso ? `<span class="inline-block bg-slate-700/50 px-2 py-0.5 rounded text-xs text-purple-300 font-semibold mt-1 border border-purple-500/20">Kg: ${ex.peso}</span>` : '';
 
-            if (circuito.esercizi && circuito.esercizi.length > 0) {
-                // Ordina per 'ordine'
-                const orderedExercises = (circuito.esercizi || []).sort((a, b) => (a.ordine || 0) - (b.ordine || 0));
-
-                orderedExercises.forEach(esercizio => {
-                    if (!esercizio.esercizioId) {
-                        console.warn("Esercizio circuito senza ID:", circuito.nomeCircuito, esercizio);
-                        return;
-                    }
-
-                    const fullEsercizio = eserciziMap.get(esercizio.esercizioId);
-                    const imageUrl = fullEsercizio?.imageUrl || 'https://placehold.co/100x100/334155/e2e8f0?text=IMG';
-                    const nomeEsercizio = esercizio.nome || fullEsercizio?.nome || 'Esercizio Sconosciuto';
-                    const notaGeneraleEsercizio = fullEsercizio?.note || '';
-
-                    // Dati specifici del circuito
-                    const pesoHtml = `Peso: <span class="font-bold text-white">${esercizio.peso || 'N/A'}</span>`;
-                    const noteHtml = esercizio.note ? `<p class="text-sm text-amber-300/80 mt-1 italic">Nota: ${esercizio.note}</p>` : '';
-                    const notaGeneraleHtml = notaGeneraleEsercizio ? `<p class="text-sm text-slate-400 italic mt-1">${notaGeneraleEsercizio}</p>` : '';
-
-                    exerciseList.innerHTML += `
-                        <div class="flex flex-col sm:flex-row items-start gap-4 p-4 bg-slate-800 rounded-lg">
-                            <img src="${imageUrl}" alt="${nomeEsercizio}" class="w-16 h-16 rounded-md object-cover flex-shrink-0 cursor-pointer enlargeable-image sm:mt-1" onerror="this.onerror=null;this.src='https://placehold.co/100x100/ef4444/ffffff?text=Error';">
-                            <div class="flex-grow w-full">
-                                <p class="font-bold text-lg text-purple-300">${nomeEsercizio}</p>
-                                ${notaGeneraleHtml}
-                                <div class="mt-3 bg-slate-700/50 p-3 rounded-lg">
-                                    <p class="text-slate-300 font-mono text-sm">${pesoHtml}</p>
-                                    ${noteHtml}
-                                </div>
+                    div.innerHTML = `
+                        <img src="${full?.imageUrl || ''}" class="w-14 h-14 object-cover rounded-md bg-slate-700 flex-shrink-0" onerror="this.src='https://placehold.co/50'">
+                        <div class="flex-1 min-w-0">
+                            <p class="font-bold text-slate-200 text-sm md:text-base">${full?.nome || ex.nome || '?'}</p>
+                            ${generalNote}
+                            <div class="flex flex-wrap gap-2 items-center">
+                                ${weightInfo}
                             </div>
-                        </div>
-                    `;
+                            ${specificNote}
+                        </div>`;
+                    content.appendChild(div);
                 });
-            } else {
-                exerciseList.innerHTML = `<p class="text-slate-400">Nessun esercizio in questo circuito.</p>`;
             }
-
-            content.appendChild(exerciseList);
-            details.appendChild(summary);
-            details.appendChild(content);
+            details.appendChild(summary); details.appendChild(content);
             return details;
         }
 
-
-        // --- GESTIONE LIGHTBOX IMMAGINE ---
-
-        function openImageLightbox(src) {
-            lightboxImage.src = src;
-            imageLightbox.classList.remove('hidden');
-            setTimeout(() => imageLightbox.classList.remove('opacity-0'), 10); // Fade in
-        }
-        
-        function closeImageLightbox() {
-            imageLightbox.classList.add('opacity-0');
-            setTimeout(() => {
-                imageLightbox.classList.add('hidden');
-                lightboxImage.src = ''; // Pulisce l'immagine per evitare flash
-            }, 300);
+        // --- TIMER LOGIC ---
+        function parseTime(val) {
+            if (!val) return 0;
+            let s = String(val).replace(/[^0-9:]/g, ''); 
+            if (s.includes(':')) {
+                const parts = s.split(':');
+                return (parseInt(parts[0])*60) + parseInt(parts[1]);
+            }
+            return parseInt(s) || 0;
         }
 
-        // Usa event delegation sul container principale
-        mainContent.addEventListener('click', (e) => {
-            if (e.target.classList.contains('enlargeable-image')) {
-                openImageLightbox(e.target.src);
-            }
-        });
+        function openTimer(circuito, eserciziMap) {
+            const workSec = parseTime(circuito.tempoLavoro);
+            const restSec = parseTime(circuito.tempoRecupero);
+            const exercises = (circuito.esercizi || []).sort((a,b)=>a.ordine-b.ordine).map(ex => {
+                const info = eserciziMap.get(ex.esercizioId);
+                return {
+                    name: info?.nome || ex.nome || "Esercizio",
+                    img: info?.imageUrl || "https://placehold.co/600x400?text=No+Img",
+                    note: ex.peso ? `Peso: ${ex.peso}` : (ex.note || info?.note || ""),
+                    work: workSec || 30, rest: restSec || 10
+                };
+            });
+            currentCircuitData = exercises; currentExerciseIndex = 0; isWorkPhase = true; timeLeft = exercises[0].work; isRunning = false;
+            updateUI();
+            
+            timerOverlay.style.display = ''; 
+            timerOverlay.classList.remove('hidden'); 
+            if ('wakeLock' in navigator) navigator.wakeLock.request('screen').catch(e=>console.log(e));
+        }
 
-        closeLightboxBtn.addEventListener('click', closeImageLightbox);
-        imageLightbox.addEventListener('click', (e) => {
-            // Chiude solo se si clicca sullo sfondo e non sull'immagine o sul bottone
-            if (e.target === imageLightbox) { 
-                closeImageLightbox();
+        function updateUI() {
+            const ex = currentCircuitData[currentExerciseIndex];
+            const next = currentCircuitData[(currentExerciseIndex+1) % currentCircuitData.length];
+            timerExerciseName.textContent = ex.name; timerExerciseImg.src = ex.img; timerExerciseNote.textContent = ex.note; timerNextName.textContent = next.name;
+
+            if (isWorkPhase) {
+                timerBgPanel.classList.remove('bg-amber-900'); timerBgPanel.classList.add('bg-emerald-900');
+                timerPhaseText.textContent = "LAVORO"; timerPhaseText.classList.replace("text-amber-400", "text-emerald-400");
+                const btn = document.getElementById('timer-toggle-btn');
+                btn.className = "bg-emerald-500 hover:bg-emerald-400 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg shadow-emerald-900/50 transform active:scale-95 transition-all border-4 border-emerald-600/30";
+            } else {
+                timerBgPanel.classList.remove('bg-emerald-900'); timerBgPanel.classList.add('bg-amber-900');
+                timerPhaseText.textContent = "RECUPERO"; timerPhaseText.classList.replace("text-emerald-400", "text-amber-400");
+                const btn = document.getElementById('timer-toggle-btn');
+                btn.className = "bg-amber-600 hover:bg-amber-500 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg transform active:scale-95 transition-all border-4 border-amber-600/30";
             }
-        });
-        
-        // --- NUOVA GESTIONE TAB ---
-        function switchTab(tab) {
-            if (tab === 'schede') {
-                schedeContent.classList.add('active');
-                circuitiContent.classList.remove('active');
-                tabBtnSchede.classList.add('active');
-                tabBtnCircuiti.classList.remove('active');
-            } else if (tab === 'circuiti') {
-                schedeContent.classList.remove('active');
-                circuitiContent.classList.add('active');
-                tabBtnSchede.classList.remove('active');
-                tabBtnCircuiti.classList.add('active');
+            timerCountdown.textContent = timeLeft < 10 ? `0${timeLeft}` : timeLeft;
+            btnIconPlay.innerHTML = isRunning ? 
+                `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>` : 
+                `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
+        }
+
+        function tick() {
+            const currentTotalTime = isWorkPhase ? currentCircuitData[currentExerciseIndex].work : currentCircuitData[currentExerciseIndex].rest;
+            if (currentTotalTime > 10 && timeLeft === Math.floor(currentTotalTime / 2)) playWarning();
+            if (currentTotalTime > 20 && timeLeft === 15) playWarning();
+            if (timeLeft > 0 && timeLeft <= 3) playTick();
+            
+            timeLeft--;
+            if (timeLeft < 0) {
+                clearInterval(timerInterval); playBell();
+                if (isWorkPhase) { isWorkPhase = false; timeLeft = currentCircuitData[currentExerciseIndex].rest; } 
+                else { isWorkPhase = true; currentExerciseIndex = (currentExerciseIndex + 1) % currentCircuitData.length; timeLeft = currentCircuitData[currentExerciseIndex].work; if(currentExerciseIndex===0) alert("Giro completato!"); }
+                updateUI(); timerInterval = setInterval(tick, 1000);
+            } else {
+                timerCountdown.textContent = timeLeft < 10 ? `0${timeLeft}` : timeLeft;
             }
         }
 
-        tabBtnSchede.addEventListener('click', () => switchTab('schede'));
-        tabBtnCircuiti.addEventListener('click', () => switchTab('circuiti'));
+        function toggleTimer() {
+            if (isRunning) { clearInterval(timerInterval); isRunning = false; } 
+            else { if(!audioCtx) playTick(); timerInterval = setInterval(tick, 1000); isRunning = true; }
+            updateUI();
+        }
 
+        // Audio
+        function playBell() { try{ if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g),g.connect(audioCtx.destination),o.frequency.setValueAtTime(523.25,t),g.gain.setValueAtTime(.3,t),g.gain.exponentialRampToValueAtTime(.001,t+1.5),o.start(t),o.stop(t+1.5);const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();o2.connect(g2),g2.connect(audioCtx.destination),o2.frequency.setValueAtTime(1046.5,t),g2.gain.setValueAtTime(.1,t),g2.gain.exponentialRampToValueAtTime(.001,t+1),o2.start(t),o2.stop(t+1)}catch(e){} }
+        function playTick() { try{ if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g),g.connect(audioCtx.destination),o.type="square",o.frequency.setValueAtTime(800,t),g.gain.setValueAtTime(.05,t),g.gain.exponentialRampToValueAtTime(.001,t+.05),o.start(t),o.stop(t+.1)}catch(e){} }
+        function playWarning() { try{ if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g),g.connect(audioCtx.destination),o.type="sine",o.frequency.setValueAtTime(1200,t),g.gain.setValueAtTime(.1,t),g.gain.exponentialRampToValueAtTime(.001,t+.1),o.start(t),o.stop(t+.1);const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();o2.connect(g2),g2.connect(audioCtx.destination),o2.type="sine",o2.frequency.setValueAtTime(1200,t+.15),g2.gain.setValueAtTime(.1,t+.15),g2.gain.exponentialRampToValueAtTime(.001,t+.25),o2.start(t+.15),o2.stop(t+.25)}catch(e){} }
+
+        // Eventi
+        document.getElementById('timer-toggle-btn').onclick = toggleTimer;
+        document.getElementById('timer-skip-btn').onclick = () => { timeLeft=0; tick(); };
+        closeTimerBtn.onclick = () => { clearInterval(timerInterval); isRunning = false; timerOverlay.classList.add('hidden'); timerOverlay.style.display = 'none'; };
+
+        // Tabs
+        const t1=document.getElementById('tab-btn-schede'), t2=document.getElementById('tab-btn-circuiti'), c1=document.getElementById('schede-content'), c2=document.getElementById('circuiti-content');
+        t1.onclick=()=>{t1.classList.add('active');t2.classList.remove('active');c1.classList.add('active');c2.classList.remove('active')};
+        t2.onclick=()=>{t2.classList.add('active');t1.classList.remove('active');c2.classList.add('active');c1.classList.remove('active')};
+
+        // Lightbox
+        mainContent.addEventListener('click', e => { if(e.target.classList.contains('enlargeable-image')){ lightboxImage.src=e.target.src; imageLightbox.classList.remove('hidden'); setTimeout(()=>imageLightbox.classList.remove('opacity-0'),10) } });
+        closeLightboxBtn.addEventListener('click', () => { imageLightbox.classList.add('opacity-0'); setTimeout(()=>{imageLightbox.classList.add('hidden');lightboxImage.src=''},300) });
     </script>
 </body>
 </html>
