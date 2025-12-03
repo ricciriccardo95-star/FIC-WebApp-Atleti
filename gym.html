@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gym - Final Version</title>
+    <title>Gym - Athlete View & Timer VOICE PRO</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
@@ -30,6 +30,10 @@
         .no-scrollbar::-webkit-scrollbar { display: none; }
         .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         .close-btn-hover:hover { transform: scale(1.1) rotate(90deg); }
+
+        /* Animazione pulsazione timer finale */
+        .pulsing-text { animation: textPulse 0.5s infinite alternate; color: #ef4444 !important; text-shadow: 0 0 20px rgba(239, 68, 68, 0.5); }
+        @keyframes textPulse { from { transform: scale(1); } to { transform: scale(1.05); } }
     </style>
      <script type="module" src="auth-manager.js"></script>
 </head>
@@ -154,6 +158,8 @@
         const timerPhaseText = document.getElementById('timer-phase-text');
         const timerBgPanel = document.getElementById('timer-bg-panel');
         const btnIconPlay = document.getElementById('btn-icon-play');
+        const timerToggleBtn = document.getElementById('timer-toggle-btn');
+        const timerSkipBtn = document.getElementById('timer-skip-btn');
         
         // Vars
         let currentCircuitData = null;
@@ -271,7 +277,7 @@
             return details;
         }
 
-        // --- CIRCUITI ELEMENT (Con Commenti Ripristinati) ---
+        // --- CIRCUITI ELEMENT ---
         function createCircuitElement(circuito, eserciziMap) {
             const details = document.createElement('details');
             details.className = 'plan-card bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg overflow-hidden';
@@ -326,7 +332,7 @@
             return details;
         }
 
-        // --- TIMER LOGIC ---
+        // --- TIMER LOGIC (VOICE + AUDIO) ---
         function parseTime(val) {
             if (!val) return 0;
             let s = String(val).replace(/[^0-9:]/g, ''); 
@@ -365,52 +371,131 @@
             if (isWorkPhase) {
                 timerBgPanel.classList.remove('bg-amber-900'); timerBgPanel.classList.add('bg-emerald-900');
                 timerPhaseText.textContent = "LAVORO"; timerPhaseText.classList.replace("text-amber-400", "text-emerald-400");
-                const btn = document.getElementById('timer-toggle-btn');
-                btn.className = "bg-emerald-500 hover:bg-emerald-400 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg shadow-emerald-900/50 transform active:scale-95 transition-all border-4 border-emerald-600/30";
+                timerToggleBtn.className = "bg-emerald-500 hover:bg-emerald-400 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg shadow-emerald-900/50 transform active:scale-95 transition-all border-4 border-emerald-600/30";
             } else {
                 timerBgPanel.classList.remove('bg-emerald-900'); timerBgPanel.classList.add('bg-amber-900');
                 timerPhaseText.textContent = "RECUPERO"; timerPhaseText.classList.replace("text-emerald-400", "text-amber-400");
-                const btn = document.getElementById('timer-toggle-btn');
-                btn.className = "bg-amber-600 hover:bg-amber-500 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg transform active:scale-95 transition-all border-4 border-amber-600/30";
+                timerToggleBtn.className = "bg-amber-600 hover:bg-amber-500 text-white rounded-full h-20 w-20 flex items-center justify-center shadow-lg transform active:scale-95 transition-all border-4 border-amber-600/30";
             }
             timerCountdown.textContent = timeLeft < 10 ? `0${timeLeft}` : timeLeft;
+
+            // Rimuovi pulsazione se non siamo alla fine
+            if (timeLeft > 3) timerCountdown.classList.remove('pulsing-text');
+
             btnIconPlay.innerHTML = isRunning ? 
                 `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>` : 
                 `<svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>`;
         }
 
+        // --- CORE TIMER TICK FUNCTION ---
         function tick() {
             const currentTotalTime = isWorkPhase ? currentCircuitData[currentExerciseIndex].work : currentCircuitData[currentExerciseIndex].rest;
-            if (currentTotalTime > 10 && timeLeft === Math.floor(currentTotalTime / 2)) playWarning();
-            if (currentTotalTime > 20 && timeLeft === 15) playWarning();
-            if (timeLeft > 0 && timeLeft <= 3) playTick();
-            
+            const halfTime = Math.floor(currentTotalTime / 2);
+
+            // LOGICA VOCALE RICHIESTA
+            // 1. Metà Tempo (se > 5 secondi totali)
+            if (currentTotalTime > 5 && timeLeft === halfTime && timeLeft > 4) {
+                speak("Metà tempo");
+            }
+            // 2. Venti Secondi
+            else if (timeLeft === 20) {
+                speak("Venti");
+            }
+            // 3. Dieci Secondi
+            else if (timeLeft === 10) {
+                speak("Dieci");
+            }
+            // 4. Countdown Finale (3, 2, 1) CON PRIORITA'
+            else if (timeLeft <= 3 && timeLeft > 0) {
+                timerCountdown.classList.add('pulsing-text'); // Effetto visivo
+                speak(String(timeLeft), true); // true = interrompi altre frasi
+            }
+
             timeLeft--;
+
             if (timeLeft < 0) {
-                clearInterval(timerInterval); playBell();
-                if (isWorkPhase) { isWorkPhase = false; timeLeft = currentCircuitData[currentExerciseIndex].rest; } 
-                else { isWorkPhase = true; currentExerciseIndex = (currentExerciseIndex + 1) % currentCircuitData.length; timeLeft = currentCircuitData[currentExerciseIndex].work; if(currentExerciseIndex===0) alert("Giro completato!"); }
-                updateUI(); timerInterval = setInterval(tick, 1000);
+                clearInterval(timerInterval);
+                
+                // AZIONE FINE FASE
+                playLoudBeep(); // Suono forte
+                timerCountdown.classList.remove('pulsing-text');
+
+                if (isWorkPhase) { 
+                    isWorkPhase = false; 
+                    speak("Stop! Recupero.", true); // Voce
+                    timeLeft = currentCircuitData[currentExerciseIndex].rest; 
+                } else { 
+                    isWorkPhase = true; 
+                    currentExerciseIndex = (currentExerciseIndex + 1) % currentCircuitData.length; 
+                    timeLeft = currentCircuitData[currentExerciseIndex].work; 
+                    speak("Cambio! Via!", true); // Voce per inizio lavoro
+                    if(currentExerciseIndex===0) speak("Giro completato!"); 
+                }
+                
+                updateUI(); 
+                timerInterval = setInterval(tick, 1000);
             } else {
                 timerCountdown.textContent = timeLeft < 10 ? `0${timeLeft}` : timeLeft;
             }
         }
 
         function toggleTimer() {
-            if (isRunning) { clearInterval(timerInterval); isRunning = false; } 
-            else { if(!audioCtx) playTick(); timerInterval = setInterval(tick, 1000); isRunning = true; }
+            if (isRunning) { clearInterval(timerInterval); isRunning = false; speak("Pausa"); } 
+            else { 
+                if(!audioCtx) initAudio(); 
+                timerInterval = setInterval(tick, 1000); 
+                isRunning = true; 
+                speak("Pronti? Via!");
+            }
             updateUI();
         }
 
-        // Audio
-        function playBell() { try{ if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g),g.connect(audioCtx.destination),o.frequency.setValueAtTime(523.25,t),g.gain.setValueAtTime(.3,t),g.gain.exponentialRampToValueAtTime(.001,t+1.5),o.start(t),o.stop(t+1.5);const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();o2.connect(g2),g2.connect(audioCtx.destination),o2.frequency.setValueAtTime(1046.5,t),g2.gain.setValueAtTime(.1,t),g2.gain.exponentialRampToValueAtTime(.001,t+1),o2.start(t),o2.stop(t+1)}catch(e){} }
-        function playTick() { try{ if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g),g.connect(audioCtx.destination),o.type="square",o.frequency.setValueAtTime(800,t),g.gain.setValueAtTime(.05,t),g.gain.exponentialRampToValueAtTime(.001,t+.05),o.start(t),o.stop(t+.1)}catch(e){} }
-        function playWarning() { try{ if(!audioCtx)audioCtx=new(window.AudioContext||window.webkitAudioContext)();const t=audioCtx.currentTime,o=audioCtx.createOscillator(),g=audioCtx.createGain();o.connect(g),g.connect(audioCtx.destination),o.type="sine",o.frequency.setValueAtTime(1200,t),g.gain.setValueAtTime(.1,t),g.gain.exponentialRampToValueAtTime(.001,t+.1),o.start(t),o.stop(t+.1);const o2=audioCtx.createOscillator(),g2=audioCtx.createGain();o2.connect(g2),g2.connect(audioCtx.destination),o2.type="sine",o2.frequency.setValueAtTime(1200,t+.15),g2.gain.setValueAtTime(.1,t+.15),g2.gain.exponentialRampToValueAtTime(.001,t+.25),o2.start(t+.15),o2.stop(t+.25)}catch(e){} }
+        // --- AUDIO & VOICE ENGINE ---
+        
+        // 1. Sintesi Vocale
+        function speak(text, priority = false) {
+            if (!('speechSynthesis' in window)) return;
+            
+            // Se priorità alta (countdown/stop), cancella coda precedente
+            if (priority) window.speechSynthesis.cancel(); 
+
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'it-IT'; 
+            utterance.rate = 1.2; // Ritmo incalzante
+            utterance.pitch = 1.0; 
+            utterance.volume = 1.0;
+            window.speechSynthesis.speak(utterance);
+        }
+
+        // 2. Oscillatore (Beep) per impatto forte
+        function initAudio() {
+             try { audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
+        }
+
+        function playLoudBeep() { 
+            try {
+                if(!audioCtx) initAudio();
+                const t = audioCtx.currentTime;
+                // Onda a dente di sega (aggressiva)
+                const osc = audioCtx.createOscillator(); osc.type = 'sawtooth';
+                const gain = audioCtx.createGain();
+                osc.connect(gain); gain.connect(audioCtx.destination);
+                
+                // Sirena discendente rapida
+                osc.frequency.setValueAtTime(800, t);
+                osc.frequency.exponentialRampToValueAtTime(100, t + 0.6);
+                
+                gain.gain.setValueAtTime(0.8, t); 
+                gain.gain.exponentialRampToValueAtTime(0.001, t + 0.6);
+                
+                osc.start(t); osc.stop(t + 0.6);
+            } catch(e) {} 
+        }
 
         // Eventi
-        document.getElementById('timer-toggle-btn').onclick = toggleTimer;
-        document.getElementById('timer-skip-btn').onclick = () => { timeLeft=0; tick(); };
-        closeTimerBtn.onclick = () => { clearInterval(timerInterval); isRunning = false; timerOverlay.classList.add('hidden'); timerOverlay.style.display = 'none'; };
+        timerToggleBtn.onclick = toggleTimer;
+        timerSkipBtn.onclick = () => { timeLeft=0; tick(); };
+        closeTimerBtn.onclick = () => { clearInterval(timerInterval); isRunning = false; timerOverlay.classList.add('hidden'); timerOverlay.style.display = 'none'; window.speechSynthesis.cancel(); };
 
         // Tabs
         const t1=document.getElementById('tab-btn-schede'), t2=document.getElementById('tab-btn-circuiti'), c1=document.getElementById('schede-content'), c2=document.getElementById('circuiti-content');
