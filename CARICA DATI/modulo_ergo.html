@@ -2,128 +2,157 @@
 <html lang="it" class="h-full">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Carica Allenamento RowErg - FIC Canottaggio</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Carica Allenamento RowErg</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
-        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
-        .background-gradient { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: blur(100px); z-index: -1; }
-        .gradient-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%); animation: pulse 10s infinite alternate; }
-        .gradient-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%); animation: pulse 12s infinite alternate-reverse; }
-        @keyframes pulse { 0% { transform: scale(0.9) rotate(0deg); } 100% { transform: scale(1.2) rotate(20deg); } }
-        @keyframes spin { to { transform: rotate(360deg); } }
-        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
-        .form-input, .form-select { width: 100%; background-color: #1E293B; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; }
-        .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
-        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; }
-        .dynamic-field { display: none; }
-         /* Stile Select (per icona freccia)*/
-         .form-select {
-             -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
-            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 1.25em;
-            padding-right: 2.5rem; /* Spazio per la freccia */
-        }
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-tap-highlight-color: transparent; }
         
-        /* Stili per il modale di riepilogo */
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #334155;
+        .form-input, .form-select { 
+            width: 100%; background-color: #1E293B; border: 1px solid #334155; 
+            border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; 
+            appearance: none; -webkit-appearance: none;
         }
+        .form-input:focus, .form-select:focus { 
+            outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(7, 98, 245, 0.3); 
+        }
+        .form-select {
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
+            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25em; padding-right: 2.5rem;
+        }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; font-size: 0.9rem; }
+        
+        /* Stili Modali */
+        .summary-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #334155; }
         .summary-item:last-child { border-bottom: none; }
         .summary-label { font-weight: 500; color: #94A3B8; }
         .summary-value { font-weight: 600; color: #E2E8F0; text-align: right; }
 
-        /* Icona calendario bianca per input date */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            cursor: pointer;
-        }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
     <script type="module" src="../auth-manager.js"></script>
 </head>
-<body class="antialiased">
-    <div class="background-gradient gradient-1"></div>
-    <div class="background-gradient gradient-2"></div>
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
-        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
-        <p class="mt-4 text-slate-300">Caricamento...</p>
+<body class="antialiased pb-20">
+    
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/95 flex flex-col justify-center items-center z-[100] hidden backdrop-blur-sm">
+        <div class="animate-spin rounded-full h-16 w-16 border-4 border-slate-700 border-t-indigo-500"></div>
+        <p id="loader-text" class="mt-6 text-slate-300 font-medium animate-pulse">Analisi intelligente in corso...</p>
     </div>
+
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
-        <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Allenamento RowErg</h1>
-        <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
+        
+        <div class="flex items-center justify-between mb-8">
+            <h1 class="text-3xl font-bold text-white tracking-tight">Allenamento RowErg</h1>
+            <a href="home_carica_dati.html" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M19 12H5"/><path d="M12 19l-7-7 7-7"/></svg>
+            </a>
+        </div>
+
+        <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl p-6 md:p-8 space-y-6 shadow-xl backdrop-blur-sm">
             
             <div id="athlete-info-container">
-                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
+                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente...</p>
             </div>
             
             <div id="form-content" class="hidden space-y-6">
                 
-                <div>
-                    <label for="workoutDate" class="form-label">Data Allenamento</label>
-                    <input type="date" id="workoutDate" class="form-input">
-                </div>
-
-                <div>
-                    <label for="workoutMode" class="form-label">Modalità Allenamento</label>
-                    <select id="workoutMode" class="form-select">
-                        <option value="">-- Seleziona modalità --</option>
-                        <option value="distanza">Distanza</option>
-                        <option value="tempo">Tempo</option>
-                    </select>
-                </div>
-
-                <div id="tipo-lavoro-fields" class="dynamic-field space-y-6">
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
-                        <label for="tipoLavoroSelect" class="form-label">Tipo di Lavoro (Distanza)</label>
+                        <label class="form-label">Data Allenamento</label>
+                        <input type="date" id="workoutDate" class="form-input">
+                    </div>
+                    <div>
+                        <label class="form-label">Tipo di Lavoro</label>
                         <select id="tipoLavoroSelect" class="form-select">
-                            <option value="">-- Seleziona tipo di lavoro --</option>
+                            <option value="">-- Seleziona --</option>
                             <option value="polarizzato">Lavoro Polarizzato</option>
                             <option value="steady_state">Lavoro Steady State</option>
                         </select>
                     </div>
                 </div>
 
-                <div id="distanza-fields" class="dynamic-field space-y-6">
+                <div class="bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-4 space-y-3">
+                    <h3 class="text-indigo-300 font-semibold text-sm flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        Autocompilazione da Foto (BETA)
+                    </h3>
+                    <div class="grid grid-cols-2 gap-3">
+                        <button id="snapPhotoBtn" class="bg-indigo-600 active:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                            Scatta Foto
+                        </button>
+                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden">
+
+                        <button id="uploadFileBtn" class="bg-slate-700 active:bg-slate-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 text-sm">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                            Galleria
+                        </button>
+                        <input type="file" id="galleryInput" accept="image/*" class="hidden">
+                    </div>
+                    
+                    <div id="ai-info-panel" class="hidden bg-slate-800/80 p-3 rounded-lg border border-indigo-500/30 flex flex-col gap-2 text-xs animate-fade-in mt-3">
+                        <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-1">
+                            <span class="text-slate-400">Modalità Rilevata:</span>
+                            <strong id="detected-mode-text" class="text-indigo-300">---</strong>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-400">Allenamento:</span>
+                            <strong id="auto-selected-workout" class="text-emerald-400 text-right">---</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="workoutMode" class="form-label">Modalità Allenamento</label>
+                    <select id="workoutMode" class="form-select">
+                        <option value="">-- Seleziona --</option>
+                        <option value="distanza">Distanza (Inserisci Tempi)</option>
+                        <option value="tempo">Tempo (Inserisci Metri)</option>
+                    </select>
+                </div>
+
+                <div id="distanza-fields" class="hidden space-y-6">
                     <div>
                         <label for="distanzaSelect" class="form-label">Distanza Specifica</label>
                         <select id="distanzaSelect" class="form-select">
-                            <option value="">-- Seleziona prima il tipo di lavoro --</option>
+                            <option value="">-- Seleziona --</option>
                         </select>
                     </div>
                 </div>
 
-                <div id="tempo-fields" class="dynamic-field space-y-6">
+                <div id="tempo-fields" class="hidden space-y-6">
                     <div>
                         <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
                         <select id="tempoSelect" class="form-select">
-                            <option value="">-- Seleziona tempo --</option>
+                            <option value="">-- Seleziona --</option>
                             <option value="30">30 minuti</option>
                             <option value="45">45 minuti</option>
+                            <option value="60">60 minuti</option>
                         </select>
                     </div>
                 </div>
 
-                <div id="intervalli-common" class="dynamic-field space-y-6">
+                <div id="intervalli-common" class="hidden space-y-6">
                      <div>
-                        <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="intervalliNumero" class="form-label mb-0">Numero di Intervalli</label>
+                            <button id="resetIntervalliBtn" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
+                                <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"></path></svg>
+                                Reset
+                            </button>
+                        </div>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
                             </select>
                     </div>
-                    <div id="intervalli-inputs-container" class="space-y-4"></div>
+                    <div id="intervalli-inputs-container" class="space-y-3"></div>
                 </div>
+
                 <div class="pt-4">
-                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
+                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">
+                        Salva Allenamento
+                    </button>
                 </div>
             </div>
         </div>
@@ -135,532 +164,483 @@
                 <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se il lavoro supera l'ora, scrivere 60 + minuti (es. 1h 02m &rarr; <strong class="text-slate-300">62</strong>).</li>
             </ol>
         </div>
-        <div class="text-center mt-8">
-            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
-                ← Torna alla Selezione
-            </a>
-        </div>
     </div>
     
-    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
-    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
-        <p id="messageText" class="mb-6 text-lg"></p>
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/80 hidden z-[200]"></div>
+    
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-slate-800 border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-[210]">
+        <div id="msgIcon" class="mb-4 text-indigo-400 flex justify-center"></div>
+        <p id="messageText" class="mb-6 text-lg text-white"></p>
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
 
-    <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-lg hidden z-50">
+    <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-slate-800 border border-slate-700 rounded-lg shadow-lg hidden z-[210]">
         <div class="p-6">
             <h3 class="text-2xl font-bold text-white mb-4">Riepilogo Dati</h3>
-            <div id="summary-content" class="mb-6 max-h-[60vh] overflow-y-auto pr-2">
-                </div>
+            <div id="summary-content" class="mb-6 max-h-[60vh] overflow-y-auto pr-2"></div>
             
             <div id="ep-warning" class="hidden mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-center">
-                <p id="ep-warning-title" class="font-bold text-lg text-red-300">ATTENZIONE: EP Superiore al 110%!</p>
-                <p id="ep-warning-text" class="text-red-400">Uno o più valori EP calcolati sembrano molto alti.</p>
+                <p id="ep-warning-title" class="font-bold text-lg text-red-300 flex items-center justify-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
+                    ATTENZIONE: EP ANOMALO!
+                </p>
+                <p id="ep-warning-text" class="text-red-400 text-sm mt-1">Valori impossibili (>110% o &lt;50%). Controlla di non aver scambiato tempi e metri.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
-                <button id="summaryModificaBtn" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Modifica</button>
-                <button id="summaryConfermaBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Conferma e Salva</button>
+                <button id="summaryModificaBtn" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-4 rounded-lg">Modifica</button>
+                <button id="summaryConfermaBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg">Conferma</button>
             </div>
         </div>
     </div>
 
     <script type="module">
-        // Importa db da auth-manager
         import { db } from '../auth-manager.js';
-        // Importa solo le funzioni necessarie da firestore
         import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // *** NUOVE COSTANTI PER RECORD MONDIALI ***
+        // *** CONFIGURAZIONE ***
         const RECORD_MONDO_M_2000M = '05:35.8';
         const RECORD_MONDO_F_2000M = '06:21.1';
         
-        const loaderOverlay = document.getElementById('loader-overlay');
-        const athleteInfo = document.getElementById('athlete-info');
-        const formContent = document.getElementById('form-content');
-        const workoutType = 'ergo'; 
+        const GEMINI_API_KEY = "AIzaSyDbRVluCH2igsFwDOZ93RhIRVCwbK9Ay88"; 
+        const MODEL_NAME = "gemini-1.5-flash"; 
+        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
 
-        // Modali
-        const messageBox = document.getElementById('messageBox');
-        const summaryModal = document.getElementById('summaryModal');
-        const epWarning = document.getElementById('ep-warning');
-
-        let currentAthleteId = null;
-        let currentAthleteCognome = null;
-        let pendingWorkoutData = null; // Variabile per dati in attesa di conferma
-
-        // --- DEFINIZIONE DISTANZE ---
+        // Liste Distanze
         const distanzePolarizzate = [
-            { value: '500', text: '500 pol (50%)' },
-            { value: '750', text: '750 pol (33,3%)' },
-            { value: '1000', text: '1000 pol (25%)' },
-            { value: '1500', text: '1500 pol (16,6%)' },
-            { value: '2000', text: '2000 pol (12%)' },
-            { value: '3000', text: '3000 pol (8,33%)' },
-            { value: '4000', text: '4000 pol (6,25%)' },
-            { value: '5000', text: '5000 pol (5%)' },
-            { value: '6000', text: '6000 pol (4,16%)' },
-            { value: '8000', text: '8000 pol' },
+            { value: '500', text: '500 pol (50%)' }, { value: '750', text: '750 pol (33,3%)' },
+            { value: '1000', text: '1000 pol (25%)' }, { value: '1500', text: '1500 pol (16,6%)' },
+            { value: '2000', text: '2000 pol (12%)' }, { value: '3000', text: '3000 pol (8,33%)' },
+            { value: '4000', text: '4000 pol (6,25%)' }, { value: '5000', text: '5000 pol (5%)' },
+            { value: '6000', text: '6000 pol (4,16%)' }, { value: '8000', text: '8000 pol' },
             { value: '10000', text: '10000 pol (2,5%)' }
         ];
-
-        const distanzeSteadyState = [
-            { value: '2000', text: '2000' },
-            { value: '3000', text: '3000' },
-            { value: '4000', text: '4000' },
-            { value: '5000', text: '5000' },
-            { value: '6000', text: '6000' },
-            { value: '8000', text: '8000' },
-            { value: '10000', text: '10000' },
-            { value: '16000', text: '16000' },
-            { value: '20000', text: '20000' }
+        const distanzeSteady = [
+            { value: '2000', text: '2000' }, { value: '4000', text: '4000' }, { value: '5000', text: '5000' },
+            { value: '6000', text: '6000' }, { value: '8000', text: '8000' }, { value: '10000', text: '10000' },
+            { value: '16000', text: '16000' }, { value: '20000', text: '20000' }
         ];
+        const VALID_TIMES = ['20','30','45','60','90']; 
 
-        // --- FUNZIONI DI UTILITÀ MODALI ---
-        function showModal(modal) { 
-            document.getElementById('modal-backdrop').classList.remove('hidden'); 
-            modal.classList.remove('hidden'); 
-        }
-        function hideModal(modal) { 
-            document.getElementById('modal-backdrop').classList.add('hidden'); 
-            modal.classList.add('hidden'); 
-        }
-        function showMessageBox(message) {
-            document.getElementById('messageText').textContent = message;
-            showModal(messageBox);
-        }
+        // Variabili Globali
+        let currentAthleteId = null;
+        let currentAthleteCognome = null;
+        let pendingWorkoutData = null;
+        
+        // Accumulatore dati intervalli (per multi-foto)
+        let accumulatedIntervals = []; 
 
-        // --- FUNZIONI DI CALCOLO EP ---
-        function timeToSeconds(timeStr) {
-            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
-            const parts = timeStr.split(':');
-            const minutes = parseInt(parts[0], 10);
-            const seconds = parseFloat(parts[1].replace(',', '.')); 
-            if (isNaN(minutes) || isNaN(seconds)) return 0;
-            return (minutes * 60) + seconds;
-        }
-
-        async function fetchAthleteRecord(athleteId) {
-            try {
-                // Usa 'db' importato
-                const docRef = doc(db, 'atleti', athleteId);
-                const docSnap = await getDoc(docRef);
-                if (docSnap.exists()) {
-                    return docSnap.data();
-                }
-            } catch (error) {
-                console.error("Error fetching athlete record:", error);
-            }
-            return null;
-        }
-
-        function calculateErgoEP(workoutData, athleteData) {
-            // Valori di default
-            let ep1 = null; // Nuovo EP basato sul record del mondo
-            let ep2 = null; // Vecchio EP (ora EP2) basato sul record personale
-
-            if (!athleteData) {
-                return { ep1, ep2 }; 
-            }
-            if (!Array.isArray(workoutData.intervalli) || workoutData.intervalli.length === 0) {
-                return { ep1, ep2 };
-            }
-
-            // 1. Calcola i Watt dell'allenamento
-            let wattAllenamento = 0;
-            const intervals = workoutData.intervalli.map(i => timeToSeconds(i) || parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n) && n > 0);
-            if (intervals.length === 0) return { ep1, ep2 };
-
-            const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-
-            if (workoutData.modalita === 'tempo') {
-                const mediaMetri = mediaIntervalli; 
-                const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60;
-                if (tempoSelezionatoSec > 0) wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
-            } else if (workoutData.modalita === 'distanza') {
-                const mediaTempoSec = mediaIntervalli; 
-                const distanzaSelezionata = parseInt(workoutData.distanza, 10); 
-                if (mediaTempoSec > 0) wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
-            }
-
-            if (wattAllenamento <= 0) return { ep1, ep2 };
-
-            // 2. Calcola EP2 (Record Personale - RowErg 2k)
-            if (athleteData.rowerg) {
-                const recordErgoSeconds = timeToSeconds(athleteData.rowerg);
-                if (recordErgoSeconds > 0) {
-                    const wattRecordPersonale = 2.8 * Math.pow(2000 / recordErgoSeconds, 3);
-                    if (wattRecordPersonale > 0) {
-                        ep2 = (wattAllenamento / wattRecordPersonale) * 100;
-                    }
-                }
-            }
-
-            // 3. Calcola EP1 (Record Mondiale - 2000m)
-            const gender = athleteData.genere; 
-            let worldRecordSeconds = 0;
-
-            if (gender === 'M') worldRecordSeconds = timeToSeconds(RECORD_MONDO_M_2000M);
-            else if (gender === 'F') worldRecordSeconds = timeToSeconds(RECORD_MONDO_F_2000M);
+        // DOM
+        const aiInputCam = document.getElementById('cameraInput');
+        const aiInputGal = document.getElementById('galleryInput');
+        const snapBtn = document.getElementById('snapPhotoBtn');
+        const uploadBtn = document.getElementById('uploadFileBtn');
+        const resetIntervalliBtn = document.getElementById('resetIntervalliBtn');
+        const workoutModeSelect = document.getElementById('workoutMode');
+        const distanzaSelect = document.getElementById('distanzaSelect');
+        const tempoSelect = document.getElementById('tempoSelect');
+        const tipoLavoroSelect = document.getElementById('tipoLavoroSelect');
+        
+        // --- INIT ---
+        document.addEventListener('DOMContentLoaded', () => {
+            setupPage();
+            // Listeners
+            snapBtn.addEventListener('click', () => {
+                if(checkTipoLavoro()) aiInputCam.click();
+            });
+            uploadBtn.addEventListener('click', () => {
+                if(checkTipoLavoro()) aiInputGal.click();
+            });
             
-            if (worldRecordSeconds > 0) {
-                 const wattRecordMondiale = 2.8 * Math.pow(2000 / worldRecordSeconds, 3);
-                 if (wattRecordMondiale > 0) {
-                    ep1 = (wattAllenamento / wattRecordMondiale) * 100;
-                 }
-            }
+            aiInputCam.addEventListener('change', handleImageUpload);
+            aiInputGal.addEventListener('change', handleImageUpload);
+            
+            workoutModeSelect.addEventListener('change', updateFormVisibility);
+            tipoLavoroSelect.addEventListener('change', updateDistanceOptions);
+            
+            document.getElementById('intervalliNumero').addEventListener('change', () => {
+                // Se cambio manuale, resetto accumulo
+                accumulatedIntervals = []; 
+                generateIntervalliInputs();
+            });
+            
+            resetIntervalliBtn.addEventListener('click', () => {
+                accumulatedIntervals = [];
+                document.getElementById('intervalliNumero').value = "";
+                generateIntervalliInputs();
+                document.getElementById('ai-info-panel').classList.add('hidden');
+            });
 
-            // Restituisci l'oggetto con entrambi i valori
-            return { ep1, ep2 };
-        }
+            document.getElementById('saveWorkoutBtn').addEventListener('click', initiateSaveProcess);
+            document.getElementById('summaryModificaBtn').addEventListener('click', () => hideModal(document.getElementById('summaryModal')));
+            document.getElementById('summaryConfermaBtn').addEventListener('click', proceedWithSave);
+            document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
+        });
 
-        // --- LOGICA DI SETUP PAGINA ---
+        // --- SETUP ---
         function setupPage() {
             const intervalliSelect = document.getElementById('intervalliNumero');
-            let intervalliHTML = '';
-            for (let i = 1; i <= 20; i++) {
-                intervalliHTML += `<option value="${i}">${i}</option>`;
-            }
-            intervalliSelect.innerHTML += intervalliHTML;
-
-            // Imposta data di default (Oggi)
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('workoutDate').value = today;
+            let html = '<option value="">-- Seleziona numero --</option>';
+            for (let i = 1; i <= 40; i++) html += `<option value="${i}">${i}</option>`;
+            intervalliSelect.innerHTML = html;
+            
+            document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
         }
 
-        // --- GESTIONE DINAMICA FORM ---
+        function checkTipoLavoro() {
+            if (!document.getElementById('tipoLavoroSelect').value) {
+                showMessageBox("Seleziona prima il TIPO DI LAVORO.", true);
+                return false;
+            }
+            return true;
+        }
+
+        // --- FORM LOGIC (Vecchio Stile - Caselle) ---
         function updateFormVisibility() {
             const mode = document.getElementById('workoutMode').value;
-            
-            document.getElementById('tempo-fields').style.display = 'none';
-            document.getElementById('tipo-lavoro-fields').style.display = 'none';
-            document.getElementById('distanza-fields').style.display = 'none';
-            document.getElementById('intervalli-common').style.display = 'none';
-            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona prima il tipo di lavoro --</option>'; 
+            document.getElementById('tempo-fields').classList.add('hidden');
+            document.getElementById('distanza-fields').classList.add('hidden');
+            document.getElementById('intervalli-common').classList.add('hidden');
+            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona --</option>'; 
 
             if (mode === 'distanza') {
-                document.getElementById('tipo-lavoro-fields').style.display = 'block';
+                updateDistanceOptions(); // Ripopola e mostra
             } else if (mode === 'tempo') {
-                document.getElementById('tempo-fields').style.display = 'block';
-                document.getElementById('intervalli-common').style.display = 'block';
+                document.getElementById('tempo-fields').classList.remove('hidden');
+                document.getElementById('intervalli-common').classList.remove('hidden');
             }
             generateIntervalliInputs();
         }
 
         function updateDistanceOptions() {
-            const tipoLavoro = document.getElementById('tipoLavoroSelect').value;
-            const distanzaSelect = document.getElementById('distanzaSelect');
+            const tipo = document.getElementById('tipoLavoroSelect').value;
+            const sel = document.getElementById('distanzaSelect');
+            sel.innerHTML = '<option value="">-- Seleziona distanza --</option>';
             
-            distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
-            
-            let optionsArray = [];
-            if (tipoLavoro === 'polarizzato') {
-                optionsArray = distanzePolarizzate;
-            } else if (tipoLavoro === 'steady_state') {
-                optionsArray = distanzeSteadyState;
+            // Popola solo se è modalità distanza
+            if(document.getElementById('workoutMode').value === 'distanza') {
+                let opts = (tipo === 'polarizzato') ? distanzePolarizzate : (tipo === 'steady_state') ? distanzeSteady : [];
+                opts.forEach(o => sel.innerHTML += `<option value="${o.value}">${o.text}</option>`);
+                document.getElementById('distanza-fields').classList.remove('hidden');
+                document.getElementById('intervalli-common').classList.remove('hidden');
             }
-
-            optionsArray.forEach(opt => {
-                distanzaSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
-            });
-
-            document.getElementById('distanza-fields').style.display = 'block';
-            document.getElementById('intervalli-common').style.display = 'block';
         }
 
         function generateIntervalliInputs() {
             const container = document.getElementById('intervalli-inputs-container');
-            const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
-            const mode = document.getElementById('workoutMode').value; 
+            // Logica Ibrida: Se accumulo > 0, usa quello. Altrimenti usa select manuale.
+            const count = accumulatedIntervals.length > 0 
+                          ? accumulatedIntervals.length 
+                          : (parseInt(document.getElementById('intervalliNumero').value) || 0);
+            
+            const mode = document.getElementById('workoutMode').value;
             container.innerHTML = '';
 
-            if (numero > 0 && numero <= 20) {
-                for (let i = 1; i <= numero; i++) {
-                    const isDistanceMode = mode === 'distanza';
-                    const inputType = isDistanceMode ? 'text' : 'number'; 
-                    const placeholder = isDistanceMode ? 'mm:ss.d' : 'Inserisci distanza (es. 12500)';
-                    const labelText = isDistanceMode ? 'Tempo' : 'Distanza';
+            if (accumulatedIntervals.length > 0) {
+                // Sincronizza la select (o la forza se supera il max)
+                let sel = document.getElementById('intervalliNumero');
+                if(![...sel.options].some(o=>o.value==count)) {
+                    let opt = document.createElement('option'); opt.value = count; opt.text = count; sel.add(opt);
+                }
+                sel.value = count;
+            }
+
+            if (count > 0 && mode) {
+                for (let i = 1; i <= count; i++) {
+                    const isDist = mode === 'distanza';
+                    const ph = isDist ? 'mm:ss.d' : 'Metri (es. 1250)';
+                    const lbl = isDist ? 'Tempo' : 'Distanza';
                     
-                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} (${labelText})</label>`;
-                    const inputMode = isDistanceMode ? 'inputmode="numeric"' : 'inputmode="decimal"'; 
-                    const inputAttributes = isDistanceMode 
-                        ? 'oninput="formatTimeInput(event)" maxlength="7"' 
-                        : 'step="any"'; 
-                    
-                    const input = `<input type="${inputType}" ${inputMode} id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${inputAttributes}>`;
-                    
-                    container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
+                    const val = accumulatedIntervals[i-1] || "";
+
+                    const html = `
+                        <div class="animate-fade-in">
+                            <label class="form-label text-xs text-slate-400">Intervallo ${i} (${lbl})</label>
+                            <input type="${isDist ? 'text' : 'number'}" 
+                                   class="form-input intervallo-input" 
+                                   value="${val}"
+                                   placeholder="${ph}"
+                                   ${isDist ? 'oninput="formatTimeInput(event)" inputmode="decimal"' : 'inputmode="numeric"'}>
+                        </div>`;
+                    container.insertAdjacentHTML('beforeend', html);
                 }
             }
         }
-        
-        window.formatTimeInput = function(event) {
-            const input = event.target;
-            let value = input.value.replace(/[^\d]/g, ''); 
-            if (value.length > 5) value = value.substring(0, 5); 
-            let formattedValue = value;
-            if (value.length > 2) formattedValue = `${value.substring(0, 2)}:${value.substring(2)}`;
-            if (value.length > 4) formattedValue = `${value.substring(0, 2)}:${value.substring(2, 4)}.${value.substring(4)}`;
-            input.value = formattedValue;
+
+        window.formatTimeInput = function(e) {
+            let v = e.target.value.replace(/[^\d]/g, '');
+            if (v.length > 5) v = v.substring(0, 5);
+            if (v.length > 4) e.target.value = `${v.substring(0, 2)}:${v.substring(2, 4)}.${v.substring(4)}`;
+            else if (v.length > 2) e.target.value = `${v.substring(0, 2)}:${v.substring(2)}`;
+            else e.target.value = v;
         }
-        
-        // --- FASE 1: VALIDAZIONE E RIEPILOGO ---
+
+        // --- AI LOGIC ---
+        async function handleImageUpload(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            e.target.value = '';
+            
+            document.getElementById('loader-overlay').classList.remove('hidden');
+
+            try {
+                const base64 = await fileToBase64(file);
+                const cleanBase64 = base64.split(',')[1];
+
+                const payload = {
+                    contents: [{
+                        parts: [
+                            { text: `
+                                Analizza la foto del monitor Concept2.
+                                1. HEADER: Leggi l'intestazione in alto a sinistra (es. "8x500m", "10000m", "30:00").
+                                2. TABLE: Estrai i dati delle righe.
+                                
+                                JSON: { "header": "string", "rows": [ { "time": "...", "meters": "..." } ] }
+                            `},
+                            { inline_data: { mime_type: file.type, data: cleanBase64 } }
+                        ]
+                    }]
+                };
+
+                const response = await fetch(GEMINI_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
+                const json = await response.json();
+                
+                if (json.error) throw new Error(json.error.message);
+                if (!json.candidates?.[0]) throw new Error("Nessun dato.");
+
+                const txt = json.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
+                const result = JSON.parse(txt);
+
+                if (result.rows && Array.isArray(result.rows)) {
+                    // Logic Filtro Intestazione (Singolo vs Intervalli)
+                    const header = (result.header || "").toLowerCase();
+                    const isInterval = header.includes('x') || header.includes('/');
+                    
+                    let newRows = [];
+                    if (isInterval && result.rows.length > 1) newRows = result.rows.slice(1);
+                    else if (!isInterval && result.rows.length > 0) newRows = [result.rows[0]]; 
+                    else newRows = result.rows; 
+
+                    // Auto-Detect Mode e Parametri (Solo se primo caricamento)
+                    if (accumulatedIntervals.length === 0) {
+                        detectAndSetMode(header, newRows);
+                    }
+
+                    // ACCUMULO DATI (Concatena nuovi intervalli)
+                    const mode = document.getElementById('workoutMode').value;
+                    const newValues = newRows.map(r => mode === 'distanza' ? r.time : r.meters);
+                    
+                    // Deduplica (se l'utente ricarica la stessa foto o sovrappone)
+                    // Semplice controllo: se gli ultimi X valori sono identici ai nuovi X valori, ignora
+                    // Per ora appendiamo tutto, l'utente può fare reset se sbaglia.
+                    accumulatedIntervals = [...accumulatedIntervals, ...newValues];
+                    
+                    // Renderizza le caselle
+                    generateIntervalliInputs(); 
+                }
+
+            } catch (err) {
+                console.error(err);
+                showMessageBox("Errore AI: " + err.message, true);
+            } finally {
+                document.getElementById('loader-overlay').classList.add('hidden');
+            }
+        }
+
+        function detectAndSetMode(header, rows) {
+            let mode = 'distanza';
+            let param = '';
+
+            if (header.includes('m') && !header.includes(':')) {
+                mode = 'distanza';
+                param = header.match(/(\d+)m/)?.[1] || header.replace('m','').trim();
+            } else if (header.includes(':') && !header.includes('m')) {
+                mode = 'tempo';
+                param = (parseInt(header.split(':')[0])).toString();
+            } else {
+                // Fallback
+                const uM = new Set(rows.map(r => r.meters)).size;
+                const uT = new Set(rows.map(r => r.time)).size;
+                if (uT <= uM && uT === 1) mode = 'tempo';
+            }
+
+            document.getElementById('workoutMode').value = mode;
+            updateFormVisibility(); // Questo scatena updateDistanceOptions che mostra i campi
+
+            // Auto-selezione Distanza/Tempo specifico
+            let targetSelect = (mode === 'distanza') ? document.getElementById('distanzaSelect') : document.getElementById('tempoSelect');
+            let detectedText = "";
+            let autoSelected = false;
+
+            // Cerchiamo valore esatto
+            for(let opt of targetSelect.options) {
+                if(opt.value == param) {
+                    targetSelect.value = param;
+                    detectedText = opt.text;
+                    autoSelected = true;
+                    break;
+                }
+            }
+            if(!autoSelected) detectedText = param + " (Non in lista)";
+
+            // Update Info Panel
+            const p = document.getElementById('ai-info-panel');
+            p.classList.remove('hidden');
+            document.getElementById('detected-mode-text').textContent = mode.toUpperCase();
+            
+            const pt = document.getElementById('auto-selected-workout');
+            pt.textContent = detectedText;
+            pt.className = autoSelected ? 'text-emerald-400 text-right font-bold' : 'text-red-400 text-right';
+        }
+
+        // --- SALVATAGGIO ---
         async function initiateSaveProcess() {
+            if (!currentAthleteId) { showMessageBox("Login richiesto.", true); return; }
+            
             const btn = document.getElementById('saveWorkoutBtn');
-            btn.disabled = true;
-            btn.textContent = 'Verifica dati...';
-            
-            if (!currentAthleteId) {
-                showMessageBox("Impossibile identificare l'atleta. Effettua nuovamente il login.");
-                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-            }
+            btn.disabled = true; btn.textContent = 'Verifica...';
 
-            const dateInput = document.getElementById('workoutDate');
-            const selectedDate = dateInput.value;
-            if (!selectedDate) {
-                showMessageBox("Seleziona una data per l'allenamento.");
-                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-            }
-
-            const mode = document.getElementById('workoutMode').value;
-            
-            // Struttura dati
-            const workoutData = {
-                tipo: workoutType.toUpperCase(),
+            const wData = {
+                tipo: 'ERGO',
                 atletaId: currentAthleteId,
                 cognomeAtleta: currentAthleteCognome,
-                modalita: mode,
-                data: selectedDate, // USA LA DATA SELEZIONATA
+                data: document.getElementById('workoutDate').value,
+                modalita: document.getElementById('workoutMode').value,
                 timestamp: serverTimestamp(),
                 intervalli: [],
-                ep1: null, // Mondiale
-                ep2: null, // Personale
-                tipoLavoro: null 
+                ep1: null, ep2: null
             };
 
-            // Validazioni base
-            if (!mode) {
-                showMessageBox("Seleziona una modalità di allenamento.");
-                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-            }
-
-            let summaryDetails = [];
-            
-            // Aggiungi Data al riepilogo
-            const dateObj = new Date(selectedDate);
-            const formattedDate = dateObj.toLocaleDateString('it-IT');
-            summaryDetails.push({ label: 'Data', value: formattedDate });
-
-            summaryDetails.push({ label: 'Modalità', value: mode.charAt(0).toUpperCase() + mode.slice(1) });
-
-            if (mode === 'distanza') {
-                const tipoLavoroSelect = document.getElementById('tipoLavoroSelect');
-                const distanzaSelect = document.getElementById('distanzaSelect');
-                
-                workoutData.tipoLavoro = tipoLavoroSelect.value;
-                workoutData.distanza = distanzaSelect.value;
-
-                if (!workoutData.tipoLavoro) { showMessageBox("Seleziona un tipo di lavoro."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-                if (!workoutData.distanza) { showMessageBox("Seleziona una distanza specifica."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-                
-                summaryDetails.push({ label: 'Tipo Lavoro', value: tipoLavoroSelect.options[tipoLavoroSelect.selectedIndex].text });
-                summaryDetails.push({ label: 'Distanza', value: distanzaSelect.options[distanzaSelect.selectedIndex].text });
-
-            } else { 
-                const tempoSelect = document.getElementById('tempoSelect');
-                workoutData.tempo = tempoSelect.value;
-                if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-                summaryDetails.push({ label: 'Tempo', value: tempoSelect.options[tempoSelect.selectedIndex].text });
-            }
-
-            const intervalliInputs = document.querySelectorAll('.intervallo-input');
-            let allIntervalsValid = true;
-
-            if (intervalliInputs.length === 0) {
-                 showMessageBox("Seleziona un numero di intervalli e compilali.");
-                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-            }
-
-            intervalliInputs.forEach(input => {
-                const value = input.value.trim();
-                if (value) {
-                    if (mode === 'distanza' && !/^\d{1,2}:\d{2}(\.\d{1})?$/.test(value)) {
-                        if (/^\d{1,2}:\d{2}$/.test(value)) { // Auto-fix
-                           input.value = value + ".0";
-                        } else {
-                           allIntervalsValid = false;
-                        }
-                    } else if (mode === 'tempo' && (isNaN(parseFloat(value)) || parseFloat(value) <= 0)) {
-                        allIntervalsValid = false;
-                    }
-                    if(allIntervalsValid) workoutData.intervalli.push(input.value);
-                } else {
-                    allIntervalsValid = false;
-                }
-            });
-
-            if (!allIntervalsValid) {
-                showMessageBox("Compila tutti i campi intervallo nel formato corretto.");
-                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-            }
-            
-            // Calcolo EP per anteprima e validazione soglia
-            const athleteData = await fetchAthleteRecord(currentAthleteId);
-            let epWarningTrigger = false;
-
-            if (athleteData) {
-                const epValues = calculateErgoEP(workoutData, athleteData);
-                
-                // Salva e controlla EP1
-                if (epValues.ep1 !== null && epValues.ep1 > 0 && isFinite(epValues.ep1)) {
-                    workoutData.ep1 = parseFloat(epValues.ep1.toFixed(2));
-                    if (workoutData.ep1 > 110) epWarningTrigger = true;
-                }
-
-                // Salva e controlla EP2
-                if (epValues.ep2 !== null && epValues.ep2 > 0 && isFinite(epValues.ep2)) {
-                    workoutData.ep2 = parseFloat(epValues.ep2.toFixed(2));
-                    if (workoutData.ep2 > 110) epWarningTrigger = true;
-                }
-            }
-
-            // Prepara dati per salvataggio finale
-            pendingWorkoutData = workoutData;
-
-            // Costruzione HTML Riepilogo
-            const summaryContent = document.getElementById('summary-content');
-            let summaryHTML = ``;
-            summaryDetails.forEach(item => {
-                summaryHTML += `<div class="summary-item"><span class="summary-label">${item.label}</span><span class="summary-value">${item.value}</span></div>`;
-            });
-            summaryHTML += `<div class="summary-item"><span class="summary-label">N. Intervalli</span><span class="summary-value">${workoutData.intervalli.length}</span></div>`;
-            summaryHTML += `<div class="summary-item"><span class="summary-label">Valori</span><span class="summary-value text-xs">${workoutData.intervalli.join(', ')}</span></div>`;
-            
-            summaryContent.innerHTML = summaryHTML;
-
-            // --- GESTIONE BLOCCO SE EP > 110% ---
-            const confirmBtn = document.getElementById('summaryConfermaBtn');
-            const modifyBtn = document.getElementById('summaryModificaBtn');
-            const epWarningTitle = document.getElementById('ep-warning-title');
-            const epWarningText = document.getElementById('ep-warning-text');
-
-            if (epWarningTrigger) {
-                // MOSTRA ERRORE E BLOCCA SALVATAGGIO
-                epWarning.classList.remove('hidden');
-                
-                epWarningTitle.textContent = "ERRORE: EP > 110%";
-                epWarningText.textContent = "I dati inseriti generano una performance impossibile (superiore al Record del Mondo o al Record Personale + 10%). Il salvataggio è bloccato. Controlla di non aver inserito il passo invece del tempo totale o inserito un numero aggiuntivo ai metri percorsi.";
-                
-                confirmBtn.classList.add('hidden'); // Nasconde il pulsante conferma
-                modifyBtn.classList.add('col-span-2'); // Espande il pulsante modifica
-                modifyBtn.classList.remove('w-full'); // Reset larghezza (opzionale, ma mantiene stile pulito)
+            // Validazione Parametri
+            if (wData.modalita === 'distanza') {
+                wData.tipoLavoro = document.getElementById('tipoLavoroSelect').value;
+                wData.distanza = document.getElementById('distanzaSelect').value;
+                if (!wData.tipoLavoro || !wData.distanza) { showMessageBox("Seleziona tipo e distanza.", true); btn.disabled=false; return; }
             } else {
-                // NESSUN ERRORE
-                epWarning.classList.add('hidden');
-                confirmBtn.classList.remove('hidden'); // Mostra conferma
-                modifyBtn.classList.remove('col-span-2'); // Pulsante modifica normale
+                wData.tempo = document.getElementById('tempoSelect').value;
+                if (!wData.tempo) { showMessageBox("Seleziona tempo.", true); btn.disabled=false; return; }
             }
 
-            showModal(summaryModal);
-        }
+            // Raccolta Inputs
+            const inputs = document.querySelectorAll('.intervallo-input');
+            inputs.forEach(inp => { if(inp.value) wData.intervalli.push(inp.value); });
 
-        // --- FASE 2: CONFERMA E SALVATAGGIO ---
-        async function proceedWithSave() {
-            const confirmBtn = document.getElementById('summaryConfermaBtn');
-            const modifyBtn = document.getElementById('summaryModificaBtn');
-            confirmBtn.disabled = true;
-            modifyBtn.disabled = true;
-            confirmBtn.textContent = 'Salvataggio...';
+            if (wData.intervalli.length === 0) { showMessageBox("Nessun intervallo inserito.", true); btn.disabled=false; return; }
 
-            if (!pendingWorkoutData) {
-                showMessageBox("Errore dati. Riprova.");
-                hideModal(summaryModal);
-                cancelSaveProcess();
+            // Calcolo EP
+            const ath = await fetchAthleteRecord(currentAthleteId);
+            let blockSave = false;
+            
+            if (ath) {
+                const ep = calculateErgoEP(wData, ath);
+                if (ep.ep1) wData.ep1 = parseFloat(ep.ep1.toFixed(2));
+                if (ep.ep2) wData.ep2 = parseFloat(ep.ep2.toFixed(2));
+                
+                if ((wData.ep1 > 110 || wData.ep1 < 50) || (wData.ep2 > 110 || wData.ep2 < 50)) blockSave = true;
+            }
+
+            if (blockSave) {
+                showMessageBox("⛔ ERRORE EP: Valori anomali (>110% o <50%). Salvataggio bloccato.", true);
+                btn.disabled=false; btn.textContent = 'Salva Allenamento';
                 return;
             }
 
+            pendingWorkoutData = wData;
+            
+            // Riepilogo Modale
+            const sumCont = document.getElementById('summary-content');
+            sumCont.innerHTML = `
+                <div class="summary-item"><span class="summary-label">Modalità</span><span class="summary-value">${wData.modalita}</span></div>
+                <div class="summary-item"><span class="summary-label">Intervalli</span><span class="summary-value">${wData.intervalli.length}</span></div>
+                <div class="summary-item"><span class="summary-label">Dati</span><span class="summary-value text-xs">${wData.intervalli.join(', ')}</span></div>
+            `;
+            
+            document.getElementById('ep-warning').classList.add('hidden');
+            document.getElementById('summaryConfermaBtn').classList.remove('hidden');
+            
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('summaryModal').classList.remove('hidden');
+        }
+
+        async function proceedWithSave() {
+            const btn = document.getElementById('summaryConfermaBtn');
+            btn.textContent = 'Salvataggio...'; btn.disabled = true;
+            
             try {
-                pendingWorkoutData.timestamp = serverTimestamp(); // Aggiorna timestamp
                 await addDoc(collection(db, 'allenamenti'), pendingWorkoutData);
+                document.getElementById('summaryModal').classList.add('hidden');
+                document.getElementById('modal-backdrop').classList.add('hidden');
+                showMessageBox("Salvataggio riuscito!", false);
                 
-                hideModal(summaryModal);
-                showMessageBox("Allenamento salvato con successo!");
-                
-                // Reset form
-                document.getElementById('workoutMode').value = "";
-                document.getElementById('tipoLavoroSelect').value = "";
-                document.getElementById('distanzaSelect').value = "";
-                document.getElementById('tempoSelect').value = "";
+                // Reset
+                accumulatedIntervals = [];
                 document.getElementById('intervalliNumero').value = "";
-                document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
-                updateFormVisibility(); 
-
-            } catch (error) {
-                console.error("Errore salvataggio: ", error);
-                hideModal(summaryModal);
-                showMessageBox("Si è verificato un errore during il salvataggio.");
+                generateIntervalliInputs();
+                document.getElementById('ai-info-panel').classList.add('hidden');
+                
+            } catch(e) {
+                console.error(e);
+                showMessageBox("Errore database.", true);
             } finally {
-                confirmBtn.disabled = false;
-                modifyBtn.disabled = false;
-                confirmBtn.textContent = 'Conferma e Salva';
-                
-                // Reset bottone principale
-                const mainBtn = document.getElementById('saveWorkoutBtn');
-                mainBtn.disabled = false;
-                mainBtn.textContent = 'Salva Allenamento';
-                
-                pendingWorkoutData = null;
+                btn.textContent = 'Conferma'; btn.disabled = false;
+                document.getElementById('saveWorkoutBtn').disabled = false; 
+                document.getElementById('saveWorkoutBtn').textContent = 'Salva Allenamento';
             }
         }
 
-        function cancelSaveProcess() {
-            hideModal(summaryModal);
-            pendingWorkoutData = null;
-            const btn = document.getElementById('saveWorkoutBtn');
-            btn.disabled = false;
-            btn.textContent = 'Salva Allenamento';
-            
-            // Reset layout bottoni nel caso fosse stato modificato dall'errore
-            const confirmBtn = document.getElementById('summaryConfermaBtn');
-            const modifyBtn = document.getElementById('summaryModificaBtn');
-            confirmBtn.classList.remove('hidden');
-            modifyBtn.classList.remove('col-span-2');
+        // --- HELPERS ---
+        function showMessageBox(msg, isError) { 
+            const box = document.getElementById('messageBox');
+            const txt = document.getElementById('messageText');
+            const icon = document.getElementById('msgIcon');
+            txt.textContent = msg;
+            txt.className = isError ? "mb-6 text-lg text-red-300 font-medium" : "mb-6 text-lg text-slate-200 font-medium";
+            icon.innerHTML = isError 
+                ? `<svg class="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
+                : `<svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
+            document.getElementById('modal-backdrop').classList.remove('hidden'); 
+            box.classList.remove('hidden'); 
         }
-
-        // --- GESTIONE AUTENTICAZIONE E AVVIO ---
-        document.addEventListener('authStateReady', (e) => {
-            const { athlete, error } = e.detail;
-
-            if (athlete) {
-                currentAthleteId = athlete.id;
-                currentAthleteCognome = athlete.cognome;
-                athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
-                formContent.classList.remove('hidden');
-            } else if (error) {
-                console.error("Errore auth:", error);
-                athleteInfo.textContent = "Errore caricamento. Riprova.";
-                formContent.classList.add('hidden');
-            } else {
-                athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire i dati.';
-                formContent.classList.add('hidden');
-            }
-            
-            loaderOverlay.style.display = 'none';
-        });
+        function hideModal(m) { document.getElementById('modal-backdrop').classList.add('hidden'); m.classList.add('hidden'); }
+        function fileToBase64(file) { return new Promise((r, j) => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.onerror = j; reader.readAsDataURL(file); }); }
         
-        // --- EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', () => {
-            setupPage();
-            document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
-            document.getElementById('tipoLavoroSelect').addEventListener('change', updateDistanceOptions);
-            document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
-            
-            document.getElementById('saveWorkoutBtn').addEventListener('click', initiateSaveProcess);
-            document.getElementById('summaryModificaBtn').addEventListener('click', cancelSaveProcess);
-            document.getElementById('summaryConfermaBtn').addEventListener('click', proceedWithSave);
-            
-            document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(messageBox));
+        async function fetchAthleteRecord(id) { try { return (await getDoc(doc(db, 'atleti', id))).data(); } catch { return null; } }
+        
+        function timeToSeconds(t) { if(!t || !t.includes(':')) return 0; const p=t.split(':'); return (parseInt(p[0])*60)+parseFloat(p[1]); }
+        
+        function calculateErgoEP(wData, aData) {
+            let ep1 = null, ep2 = null;
+            const ints = wData.intervalli.map(i => timeToSeconds(i) || parseFloat(i)).filter(n=>n>0);
+            if(!ints.length) return {ep1,ep2};
+            const avg = ints.reduce((a,b)=>a+b,0)/ints.length;
+            let watts = 0;
+            if(wData.modalita === 'tempo') {
+                const sec = parseInt(wData.tempo)*60;
+                if(sec>0) watts = 2.8 * Math.pow(avg/sec, 3);
+            } else {
+                const dist = parseInt(wData.distanza);
+                if(avg>0) watts = 2.8 * Math.pow(dist/avg, 3);
+            }
+            if(watts<=0) return {ep1,ep2};
+            if(aData.rowerg) {
+                const r = timeToSeconds(aData.rowerg);
+                if(r>0) ep2 = (watts / (2.8*Math.pow(2000/r,3)))*100;
+            }
+            const wr = timeToSeconds(aData.genere==='M'?RECORD_MONDO_M_2000M:RECORD_MONDO_F_2000M);
+            if(wr>0) ep1 = (watts / (2.8*Math.pow(2000/wr,3)))*100;
+            return {ep1,ep2};
+        }
+
+        document.addEventListener('authStateReady', (e) => {
+            if (e.detail.athlete) {
+                currentAthleteId = e.detail.athlete.id;
+                currentAthleteCognome = e.detail.athlete.cognome;
+                document.getElementById('athlete-info').innerHTML = `Stai inserendo un allenamento per: <strong class="text-indigo-400">${e.detail.athlete.cognome}</strong>`;
+                document.getElementById('form-content').classList.remove('hidden');
+                document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
+            } else {
+                document.getElementById('form-content').classList.add('hidden');
+            }
         });
     </script>
 </body>
