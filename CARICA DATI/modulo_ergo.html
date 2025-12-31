@@ -536,7 +536,7 @@
                 if (ep.ep1) wData.ep1 = parseFloat(ep.ep1.toFixed(2));
                 if (ep.ep2) wData.ep2 = parseFloat(ep.ep2.toFixed(2));
                 
-                if ((wData.ep1 > 110 || wData.ep1 < 50) || (wData.ep2 > 110 || wData.ep2 < 50)) blockSave = true;
+                if ((wData.ep1 > 110 || wData.ep1 < 10) || (wData.ep2 > 110 || wData.ep2 < 10)) blockSave = true;
             }
 
             if (blockSave) {
