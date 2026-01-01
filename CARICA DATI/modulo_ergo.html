@@ -8,27 +8,14 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-tap-highlight-color: transparent; }
-        
-        .form-input, .form-select { 
-            width: 100%; background-color: #1E293B; border: 1px solid #334155; 
-            border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; 
-            appearance: none; -webkit-appearance: none;
-        }
-        .form-input:focus, .form-select:focus { 
-            outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(7, 98, 245, 0.3); 
-        }
-        .form-select {
-            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
-            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25em; padding-right: 2.5rem;
-        }
+        .form-input, .form-select { width: 100%; background-color: #1E293B; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; appearance: none; -webkit-appearance: none; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        .form-select { background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25em; padding-right: 2.5rem; }
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; font-size: 0.9rem; }
-        
-        /* Stili Modali */
         .summary-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #334155; }
         .summary-item:last-child { border-bottom: none; }
         .summary-label { font-weight: 500; color: #94A3B8; }
         .summary-value { font-weight: 600; color: #E2E8F0; text-align: right; }
-
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
     <script type="module" src="../auth-manager.js"></script>
@@ -41,7 +28,6 @@
     </div>
 
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
-        
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-3xl font-bold text-white tracking-tight">Allenamento RowErg</h1>
             <a href="home_carica_dati.html" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
@@ -50,13 +36,11 @@
         </div>
 
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl p-6 md:p-8 space-y-6 shadow-xl backdrop-blur-sm">
-            
             <div id="athlete-info-container">
                 <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente...</p>
             </div>
             
             <div id="form-content" class="hidden space-y-6">
-                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">Data Allenamento</label>
@@ -75,7 +59,7 @@
                 <div class="bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-4 space-y-3">
                     <h3 class="text-indigo-300 font-semibold text-sm flex items-center gap-2">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        Autocompilazione da Foto (BETA)
+                        Autocompilazione da Foto
                     </h3>
                     <div class="grid grid-cols-2 gap-3">
                         <button id="snapPhotoBtn" class="bg-indigo-600 active:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 text-sm">
@@ -144,15 +128,13 @@
                         </div>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
-                            </select>
+                        </select>
                     </div>
                     <div id="intervalli-inputs-container" class="space-y-3"></div>
                 </div>
 
                 <div class="pt-4">
-                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">
-                        Salva Allenamento
-                    </button>
+                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
                 </div>
             </div>
         </div>
@@ -160,8 +142,8 @@
         <div class="mt-6 text-sm text-slate-400 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
             <h4 class="font-bold text-slate-200 mb-2">N.B. (Note Importanti):</h4>
             <ol class="list-decimal list-inside space-y-1">
-                <li>Non inserire la <strong class="text-slate-300">media</strong> dei lavori, ma il valore <strong class="text-slate-300">totale</strong> per ogni intervallo (es. tempo totale o distanza totale).</li>
-                <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se il lavoro supera l'ora, scrivere 60 + minuti (es. 1h 02m &rarr; <strong class="text-slate-300">62</strong>).</li>
+                <li>Non inserire la <strong class="text-slate-300">media</strong>, ma il valore <strong class="text-slate-300">totale</strong> per ogni intervallo.</li>
+                <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se > 1 ora, scrivi i minuti totali (es. 1h 02m &rarr; <strong class="text-slate-300">62</strong>).</li>
             </ol>
         </div>
     </div>
@@ -184,7 +166,7 @@
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     ATTENZIONE: EP ANOMALO!
                 </p>
-                <p id="ep-warning-text" class="text-red-400 text-sm mt-1">Valori impossibili (>110% o &lt;50%). Controlla di non aver scambiato tempi e metri.</p>
+                <p id="ep-warning-text" class="text-red-400 text-sm mt-1">Valori impossibili (>110% o &lt;50%). Controlla i dati.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -197,15 +179,12 @@
     <script type="module">
         import { db } from '../auth-manager.js';
         import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        // IMPORTANTE: Importiamo le funzioni per chiamare il backend (nuovo metodo sicuro)
+        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
-        // *** CONFIGURAZIONE ***
         const RECORD_MONDO_M_2000M = '05:35.8';
         const RECORD_MONDO_F_2000M = '06:21.1';
         
-        const GEMINI_API_KEY = "AIzaSyDbRVluCH2igsFwDOZ93RhIRVCwbK9Ay88"; 
-        const MODEL_NAME = "gemini-2.5-flash"; 
-        const GEMINI_URL = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_NAME}:generateContent?key=${GEMINI_API_KEY}`;
-
         // Liste Distanze
         const distanzePolarizzate = [
             { value: '500', text: '500 pol (50%)' }, { value: '750', text: '750 pol (33,3%)' },
@@ -226,8 +205,6 @@
         let currentAthleteId = null;
         let currentAthleteCognome = null;
         let pendingWorkoutData = null;
-        
-        // Accumulatore dati intervalli (per multi-foto)
         let accumulatedIntervals = []; 
 
         // DOM
@@ -241,16 +218,16 @@
         const tempoSelect = document.getElementById('tempoSelect');
         const tipoLavoroSelect = document.getElementById('tipoLavoroSelect');
         
+        // Setup Functions
+        const functions = getFunctions(); // Inizializza Functions
+        const analizzaMonitor = httpsCallable(functions, 'analizzaMonitor'); // Riferimento alla Cloud Function
+
         // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             setupPage();
             // Listeners
-            snapBtn.addEventListener('click', () => {
-                if(checkTipoLavoro()) aiInputCam.click();
-            });
-            uploadBtn.addEventListener('click', () => {
-                if(checkTipoLavoro()) aiInputGal.click();
-            });
+            snapBtn.addEventListener('click', () => { if(checkTipoLavoro()) aiInputCam.click(); });
+            uploadBtn.addEventListener('click', () => { if(checkTipoLavoro()) aiInputGal.click(); });
             
             aiInputCam.addEventListener('change', handleImageUpload);
             aiInputGal.addEventListener('change', handleImageUpload);
@@ -259,7 +236,6 @@
             tipoLavoroSelect.addEventListener('change', updateDistanceOptions);
             
             document.getElementById('intervalliNumero').addEventListener('change', () => {
-                // Se cambio manuale, resetto accumulo
                 accumulatedIntervals = []; 
                 generateIntervalliInputs();
             });
@@ -283,7 +259,6 @@
             let html = '<option value="">-- Seleziona numero --</option>';
             for (let i = 1; i <= 40; i++) html += `<option value="${i}">${i}</option>`;
             intervalliSelect.innerHTML = html;
-            
             document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
         }
 
@@ -295,7 +270,7 @@
             return true;
         }
 
-        // --- FORM LOGIC (Vecchio Stile - Caselle) ---
+        // --- FORM LOGIC ---
         function updateFormVisibility() {
             const mode = document.getElementById('workoutMode').value;
             document.getElementById('tempo-fields').classList.add('hidden');
@@ -304,7 +279,7 @@
             document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona --</option>'; 
 
             if (mode === 'distanza') {
-                updateDistanceOptions(); // Ripopola e mostra
+                updateDistanceOptions();
             } else if (mode === 'tempo') {
                 document.getElementById('tempo-fields').classList.remove('hidden');
                 document.getElementById('intervalli-common').classList.remove('hidden');
@@ -317,7 +292,6 @@
             const sel = document.getElementById('distanzaSelect');
             sel.innerHTML = '<option value="">-- Seleziona distanza --</option>';
             
-            // Popola solo se è modalità distanza
             if(document.getElementById('workoutMode').value === 'distanza') {
                 let opts = (tipo === 'polarizzato') ? distanzePolarizzate : (tipo === 'steady_state') ? distanzeSteady : [];
                 opts.forEach(o => sel.innerHTML += `<option value="${o.value}">${o.text}</option>`);
@@ -328,7 +302,6 @@
 
         function generateIntervalliInputs() {
             const container = document.getElementById('intervalli-inputs-container');
-            // Logica Ibrida: Se accumulo > 0, usa quello. Altrimenti usa select manuale.
             const count = accumulatedIntervals.length > 0 
                           ? accumulatedIntervals.length 
                           : (parseInt(document.getElementById('intervalliNumero').value) || 0);
@@ -337,7 +310,6 @@
             container.innerHTML = '';
 
             if (accumulatedIntervals.length > 0) {
-                // Sincronizza la select (o la forza se supera il max)
                 let sel = document.getElementById('intervalliNumero');
                 if(![...sel.options].some(o=>o.value==count)) {
                     let opt = document.createElement('option'); opt.value = count; opt.text = count; sel.add(opt);
@@ -350,7 +322,6 @@
                     const isDist = mode === 'distanza';
                     const ph = isDist ? 'mm:ss.d' : 'Metri (es. 1250)';
                     const lbl = isDist ? 'Tempo' : 'Distanza';
-                    
                     const val = accumulatedIntervals[i-1] || "";
 
                     const html = `
@@ -375,7 +346,7 @@
             else e.target.value = v;
         }
 
-        // --- AI LOGIC ---
+        // --- AI LOGIC (CLOUD FUNCTION) ---
         async function handleImageUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -387,33 +358,12 @@
                 const base64 = await fileToBase64(file);
                 const cleanBase64 = base64.split(',')[1];
 
-                const payload = {
-                    contents: [{
-                        parts: [
-                            { text: `
-                                Analizza la foto del monitor Concept2.
-                                1. HEADER: Leggi l'intestazione in alto a sinistra (es. "8x500m", "10000m", "30:00").
-                                2. TABLE: Estrai i dati delle righe.
-                                
-                                JSON: { "header": "string", "rows": [ { "time": "...", "meters": "..." } ] }
-                            `},
-                            { inline_data: { mime_type: file.type, data: cleanBase64 } }
-                        ]
-                    }]
-                };
-
-                const response = await fetch(GEMINI_URL, { method: 'POST', headers: {'Content-Type': 'application/json'}, body: JSON.stringify(payload) });
-                const json = await response.json();
-                
-                if (json.error) throw new Error(json.error.message);
-                if (!json.candidates?.[0]) throw new Error("Nessun dato.");
-
-                const txt = json.candidates[0].content.parts[0].text.replace(/```json/g, '').replace(/```/g, '').trim();
-                const result = JSON.parse(txt);
+                // CHIAMATA ALLA CLOUD FUNCTION (SECURE)
+                const response = await analizzaMonitor({ image: cleanBase64 });
+                const result = response.data; // La function restituisce già il JSON parsato
 
                 if (result.rows && Array.isArray(result.rows)) {
-                    // Logic Filtro Intestazione (Singolo vs Intervalli)
-                    const header = (result.header || "").toLowerCase();
+                    const header = (result.header_text || "").toLowerCase().replace(/,/g, '').trim(); 
                     const isInterval = header.includes('x') || header.includes('/');
                     
                     let newRows = [];
@@ -421,21 +371,14 @@
                     else if (!isInterval && result.rows.length > 0) newRows = [result.rows[0]]; 
                     else newRows = result.rows; 
 
-                    // Auto-Detect Mode e Parametri (Solo se primo caricamento)
                     if (accumulatedIntervals.length === 0) {
                         detectAndSetMode(header, newRows);
                     }
 
-                    // ACCUMULO DATI (Concatena nuovi intervalli)
                     const mode = document.getElementById('workoutMode').value;
                     const newValues = newRows.map(r => mode === 'distanza' ? r.time : r.meters);
                     
-                    // Deduplica (se l'utente ricarica la stessa foto o sovrappone)
-                    // Semplice controllo: se gli ultimi X valori sono identici ai nuovi X valori, ignora
-                    // Per ora appendiamo tutto, l'utente può fare reset se sbaglia.
                     accumulatedIntervals = [...accumulatedIntervals, ...newValues];
-                    
-                    // Renderizza le caselle
                     generateIntervalliInputs(); 
                 }
 
@@ -458,21 +401,18 @@
                 mode = 'tempo';
                 param = (parseInt(header.split(':')[0])).toString();
             } else {
-                // Fallback
                 const uM = new Set(rows.map(r => r.meters)).size;
                 const uT = new Set(rows.map(r => r.time)).size;
                 if (uT <= uM && uT === 1) mode = 'tempo';
             }
 
             document.getElementById('workoutMode').value = mode;
-            updateFormVisibility(); // Questo scatena updateDistanceOptions che mostra i campi
+            updateFormVisibility(); 
 
-            // Auto-selezione Distanza/Tempo specifico
             let targetSelect = (mode === 'distanza') ? document.getElementById('distanzaSelect') : document.getElementById('tempoSelect');
             let detectedText = "";
             let autoSelected = false;
 
-            // Cerchiamo valore esatto
             for(let opt of targetSelect.options) {
                 if(opt.value == param) {
                     targetSelect.value = param;
@@ -483,7 +423,6 @@
             }
             if(!autoSelected) detectedText = param + " (Non in lista)";
 
-            // Update Info Panel
             const p = document.getElementById('ai-info-panel');
             p.classList.remove('hidden');
             document.getElementById('detected-mode-text').textContent = mode.toUpperCase();
@@ -511,7 +450,6 @@
                 ep1: null, ep2: null
             };
 
-            // Validazione Parametri
             if (wData.modalita === 'distanza') {
                 wData.tipoLavoro = document.getElementById('tipoLavoroSelect').value;
                 wData.distanza = document.getElementById('distanzaSelect').value;
@@ -521,13 +459,11 @@
                 if (!wData.tempo) { showMessageBox("Seleziona tempo.", true); btn.disabled=false; return; }
             }
 
-            // Raccolta Inputs
             const inputs = document.querySelectorAll('.intervallo-input');
             inputs.forEach(inp => { if(inp.value) wData.intervalli.push(inp.value); });
 
             if (wData.intervalli.length === 0) { showMessageBox("Nessun intervallo inserito.", true); btn.disabled=false; return; }
 
-            // Calcolo EP
             const ath = await fetchAthleteRecord(currentAthleteId);
             let blockSave = false;
             
@@ -535,8 +471,7 @@
                 const ep = calculateErgoEP(wData, ath);
                 if (ep.ep1) wData.ep1 = parseFloat(ep.ep1.toFixed(2));
                 if (ep.ep2) wData.ep2 = parseFloat(ep.ep2.toFixed(2));
-                
-                if ((wData.ep1 > 110 || wData.ep1 < 10) || (wData.ep2 > 110 || wData.ep2 < 10)) blockSave = true;
+                if ((wData.ep1 > 110 || wData.ep1 < 50) || (wData.ep2 > 110 || wData.ep2 < 50)) blockSave = true;
             }
 
             if (blockSave) {
@@ -547,7 +482,6 @@
 
             pendingWorkoutData = wData;
             
-            // Riepilogo Modale
             const sumCont = document.getElementById('summary-content');
             sumCont.innerHTML = `
                 <div class="summary-item"><span class="summary-label">Modalità</span><span class="summary-value">${wData.modalita}</span></div>
@@ -557,7 +491,6 @@
             
             document.getElementById('ep-warning').classList.add('hidden');
             document.getElementById('summaryConfermaBtn').classList.remove('hidden');
-            
             document.getElementById('modal-backdrop').classList.remove('hidden');
             document.getElementById('summaryModal').classList.remove('hidden');
         }
@@ -572,7 +505,6 @@
                 document.getElementById('modal-backdrop').classList.add('hidden');
                 showMessageBox("Salvataggio riuscito!", false);
                 
-                // Reset
                 accumulatedIntervals = [];
                 document.getElementById('intervalliNumero').value = "";
                 generateIntervalliInputs();
@@ -603,11 +535,8 @@
         }
         function hideModal(m) { document.getElementById('modal-backdrop').classList.add('hidden'); m.classList.add('hidden'); }
         function fileToBase64(file) { return new Promise((r, j) => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.onerror = j; reader.readAsDataURL(file); }); }
-        
         async function fetchAthleteRecord(id) { try { return (await getDoc(doc(db, 'atleti', id))).data(); } catch { return null; } }
-        
         function timeToSeconds(t) { if(!t || !t.includes(':')) return 0; const p=t.split(':'); return (parseInt(p[0])*60)+parseFloat(p[1]); }
-        
         function calculateErgoEP(wData, aData) {
             let ep1 = null, ep2 = null;
             const ints = wData.intervalli.map(i => timeToSeconds(i) || parseFloat(i)).filter(n=>n>0);
