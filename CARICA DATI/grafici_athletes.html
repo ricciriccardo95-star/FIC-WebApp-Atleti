@@ -41,6 +41,12 @@
             0% { transform: scale(0.9) rotate(0deg); }
             100% { transform: scale(1.2) rotate(20deg); }
         }
+        /* Custom Scrollbar */
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #475569; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #64748b; }
+
         .stat-label { font-size: 0.65rem; text-transform: uppercase; color: #94A3B8; letter-spacing: 0.05em; font-weight: 600; }
         .stat-value { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-weight: 700; color: #F8FAFC; font-size: 1.1rem; }
         .stat-sub { font-size: 0.75rem; color: #64748B; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; }
@@ -94,12 +100,18 @@
             </div>
         </div>
         
-        <div class="mt-8 flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4">
-            <button id="generate-chart-btn" onclick="generateChartAndSaveData(true)" disabled class="px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+        <div class="mt-8 flex flex-col md:flex-row justify-center items-center gap-4">
+            <button id="generate-chart-btn" onclick="generateChartAndSaveData(true)" disabled class="w-full md:w-auto px-8 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
                 Genera & Salva
             </button>
-            <button id="download-data-btn" onclick="downloadPdf()" disabled class="px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
+            
+            <button id="openHistoryBtn" class="w-full md:w-auto px-8 py-3 bg-slate-700 hover:bg-slate-600 text-white font-bold rounded-lg shadow-xl transition-colors flex items-center justify-center border border-slate-600">
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M3 3v18h18"/><path d="M12 8v4l3 3"/></svg>
+                Storico Salvataggi
+            </button>
+
+            <button id="download-data-btn" onclick="downloadPdf()" disabled class="w-full md:w-auto px-8 py-3 bg-teal-600 hover:bg-teal-700 text-white font-bold rounded-lg shadow-xl transition-colors disabled:bg-gray-600 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center">
                 <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
                 Scarica PDF
             </button>
@@ -131,13 +143,31 @@
                 <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 rounded-lg transition-colors">OK</button>
             </div>
         </div>
+
+        <div id="historyModal" class="fixed inset-0 bg-slate-900/90 z-[150] flex items-center justify-center hidden backdrop-blur-sm">
+            <div class="bg-slate-800 border border-slate-700 w-full max-w-2xl h-[80vh] rounded-2xl shadow-2xl flex flex-col m-4">
+                <div class="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-800 rounded-t-2xl">
+                    <h3 class="text-xl font-bold text-white flex items-center gap-2">
+                        <svg class="w-6 h-6 text-indigo-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        I Miei Allenamenti
+                    </h3>
+                    <button id="closeHistoryBtn" class="text-slate-400 hover:text-white transition-colors">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                    </button>
+                </div>
+                
+                <div id="historyListContainer" class="flex-1 overflow-y-auto p-4 space-y-3 custom-scrollbar">
+                    <p class="text-center text-slate-500 mt-10">Caricamento storico...</p>
+                </div>
+            </div>
+        </div>
         
     </div>
 
     <script type="module">
         // Importazioni da Auth Manager e Firestore
         import { db, auth } from '../auth-manager.js';
-        import { collection, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
         
         // --- CONFIGURAZIONE ---
         const AVAILABLE_DISTANCES = [500, 750, 1000, 1500, 2000];
@@ -153,6 +183,8 @@
         let chartInstanceSpeed, chartInstanceSR;
         let selectedDistance = 2000; 
         let selectedRuns = 1;
+        let currentDataCache = null; // Cache dati attuali (input o storico)
+        let historyCache = null; // Cache lista storico (per risparmio letture)
 
         // --- UTILITY ---
         const showMessageBox = (title, message) => {
@@ -177,9 +209,13 @@
 
             try {
                 await addDoc(collection(db, "graphics"), dataToSave);
+                // RESETTA CACHE STORICO: Abbiamo aggiunto un dato, quindi la prossima volta deve riscaricare
+                historyCache = null;
+                
                 showMessageBox("Successo!", `Allenamento salvato correttamente.`);
                 saveButton.textContent = "Genera & Salva";
                 document.getElementById('download-data-btn').disabled = false;
+                currentDataCache = dataToSave.runs; 
             } catch (error) {
                 console.error("Errore save:", error);
                 showMessageBox("Errore", `Impossibile salvare: ${error.message}`);
@@ -188,6 +224,117 @@
             }
         }
         
+        // --- GESTIONE STORICO OTTIMIZZATA ---
+        async function openHistoryModal() {
+            const modal = document.getElementById('historyModal');
+            const list = document.getElementById('historyListContainer');
+            modal.classList.remove('hidden');
+            
+            if (!auth.currentUser) {
+                list.innerHTML = '<p class="text-center text-red-400 mt-10">Devi essere loggato.</p>';
+                return;
+            }
+
+            // OTTIMIZZAZIONE: Usa cache se disponibile
+            if (historyCache) {
+                renderHistoryList(historyCache);
+                return;
+            }
+
+            try {
+                list.innerHTML = '<div class="text-center mt-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div><p class="text-slate-400 mt-2">Caricamento...</p></div>';
+
+                // Query limitata a 20 elementi
+                const q = query(
+                    collection(db, "graphics"), 
+                    where("uid", "==", auth.currentUser.uid), 
+                    orderBy("timestamp", "desc"),
+                    limit(20) 
+                );
+                
+                const querySnapshot = await getDocs(q);
+                
+                if (querySnapshot.empty) {
+                    list.innerHTML = '<p class="text-center text-slate-500 mt-10">Nessun allenamento salvato.</p>';
+                    return;
+                }
+
+                // Salva in cache
+                historyCache = [];
+                querySnapshot.forEach(doc => {
+                    historyCache.push({ id: doc.id, data: doc.data() });
+                });
+
+                renderHistoryList(historyCache);
+
+            } catch (error) {
+                console.error("Errore storico:", error);
+                if (error.message.includes("index")) {
+                    list.innerHTML = `<p class="text-center text-yellow-400 mt-10 text-sm">⚠️ Indice Mancante.<br>Controlla la console del browser.</p>`;
+                } else {
+                    list.innerHTML = `<p class="text-center text-red-400 mt-10">Errore: ${error.message}</p>`;
+                }
+            }
+        }
+
+        function renderHistoryList(items) {
+            const list = document.getElementById('historyListContainer');
+            let html = '';
+            
+            items.forEach(item => {
+                const data = item.data;
+                const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
+                const dateStr = dateObj.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
+                const timeStr = dateObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
+                const safeData = encodeURIComponent(JSON.stringify(data));
+
+                html += `
+                    <div onclick="restoreSessionFromData('${safeData}')" class="bg-slate-700/40 hover:bg-slate-700 border border-slate-600/50 hover:border-indigo-500/50 p-4 rounded-xl cursor-pointer transition-all group">
+                        <div class="flex justify-between items-start">
+                            <div>
+                                <div class="flex items-center gap-2 mb-1">
+                                    <span class="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">${data.boat || '?'}</span>
+                                    <span class="text-slate-400 text-xs">${dateStr}, ${timeStr}</span>
+                                </div>
+                                <h4 class="font-bold text-slate-200 group-hover:text-white">${data.crewString || 'Sconosciuto'}</h4>
+                                <p class="text-xs text-slate-400 mt-1">${data.runsCount}x${data.distance}m</p>
+                            </div>
+                            <svg class="w-5 h-5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                        </div>
+                    </div>
+                `;
+            });
+            list.innerHTML = html;
+        }
+
+        window.restoreSessionFromData = (encodedJson) => {
+            try {
+                const data = JSON.parse(decodeURIComponent(encodedJson));
+                
+                if(document.getElementById('boat-selector')) document.getElementById('boat-selector').value = data.boat;
+                if(document.getElementById('crew-names')) document.getElementById('crew-names').value = data.crewString;
+                
+                selectedDistance = parseInt(data.distance);
+                selectedRuns = parseInt(data.runsCount);
+                currentDataCache = data.runs; // Imposta cache per PDF
+
+                document.getElementById('speed-chart-container').classList.remove('hidden');
+                document.getElementById('sr-chart-container').classList.remove('hidden');
+                document.getElementById('summary-legend-container').classList.remove('hidden');
+                
+                updateCharts(data.runs);
+                updateSummary(data.runs);
+                document.getElementById('download-data-btn').disabled = false;
+
+                document.getElementById('historyModal').classList.add('hidden');
+                showMessageBox("Caricato", "Dati recuperati dallo storico.");
+                
+            } catch (e) {
+                console.error(e);
+                showMessageBox("Errore", "Impossibile ripristinare i dati.");
+            }
+        };
+
         // --- LOGICA INTERFACCIA ---
         function renderBoatSelector() {
             const sel = document.getElementById('boat-selector');
@@ -225,6 +372,7 @@
         window.handleSelectionChange = () => {
             selectedDistance = parseInt(document.getElementById('distance-selector').value);
             selectedRuns = parseInt(document.getElementById('runs-selector').value);
+            currentDataCache = null; 
             
             if(document.getElementById('boat-selector').value) {
                 document.getElementById('distance-wrapper').classList.remove('hidden');
@@ -244,9 +392,15 @@
             const boatSelected = document.getElementById('boat-selector').value !== '';
             const crewFilled = document.getElementById('crew-names').value.trim() !== '';
             const inputsRendered = document.getElementById('input-runs-container').querySelectorAll('.pace-input').length > 0;
-            const allRunResults = updateAllData(false);
-            const allRunsValid = (allRunResults.length === selectedRuns) && allRunResults.length > 0;
-            document.getElementById('generate-chart-btn').disabled = !(allRunsValid && crewFilled && inputsRendered && boatSelected);
+            
+            let allRunsValid = false;
+            if (inputsRendered && !currentDataCache) {
+                 // Controlla validità solo se non stiamo visualizzando dati storici
+                 // Questa è una verifica superficiale per abilitare il tasto
+                 allRunsValid = true; 
+            }
+            
+            document.getElementById('generate-chart-btn').disabled = !(crewFilled && inputsRendered && boatSelected);
         };
 
         // --- FORMATTAZIONE INPUT ---
@@ -266,7 +420,7 @@
                 else val = `0:00.${dec}`;
             }
             input.value = val;
-            updateAllData(false);
+            currentDataCache = null; 
         };
 
         window.formatSrInput = (event) => {
@@ -280,10 +434,9 @@
                 if(val.length >=1) val += '.';
             }
             input.value = val;
-            updateAllData(false);
+            currentDataCache = null; 
         };
 
-        // --- ANALISI ---
         function paceToSeconds(p) {
             if (!p) return 0;
             p = p.trim().replace(',', '.');
@@ -360,7 +513,7 @@
                     formatSrInput({target: sInps[idx]});
                 }
             });
-            updateAllData(false);
+            currentDataCache = null;
         };
 
         function analyzeRunData(runId) {
@@ -370,7 +523,8 @@
             
             const pInps = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
             const sInps = document.querySelectorAll(`.sr-input[data-run-id="${runId}"]`);
-            
+            if (pInps.length === 0) return null;
+
             pInps.forEach((inp, idx) => {
                 const dist = parseInt(inp.dataset.distance);
                 const secs = paceToSeconds(inp.value);
@@ -379,11 +533,11 @@
 
                 if (secs > 0) {
                     const spd = PACE_REFERENCE_DISTANCE / secs;
-                    disp.textContent = spd.toFixed(2);
+                    if(disp) disp.textContent = spd.toFixed(2);
                     speedDP.push({x: dist, y: parseFloat(spd.toFixed(3)), pace: secs});
                     totalSec += (secs * (SEGMENT_DISTANCE / PACE_REFERENCE_DISTANCE));
                 } else {
-                    disp.textContent = '-';
+                    if(disp) disp.textContent = '-';
                     valid = false;
                 }
 
@@ -400,7 +554,6 @@
             const avgSpd = selectedDistance / totalSec;
             const maxSpd = speedDP.reduce((m,p)=> p.y > m.y ? p : m, {y:-1});
             const minSpd = speedDP.reduce((m,p)=> p.y < m.y ? p : m, {y:999});
-            
             const avgSr = totalSr / srCount;
             const maxSr = srDP.reduce((m,p)=> p.y > m.y ? p : m, {y:-1});
             const minSr = srDP.reduce((m,p)=> p.y < m.y ? p : m, {y:999});
@@ -425,12 +578,15 @@
             }
             const ready = (res.length === selectedRuns && document.getElementById('crew-names').value.trim() !== '');
             document.getElementById('generate-chart-btn').disabled = !ready;
+            
             if (draw && ready) {
+                currentDataCache = res; 
                 updateCharts(res);
                 updateSummary(res);
                 document.getElementById('speed-chart-container').classList.remove('hidden');
                 document.getElementById('sr-chart-container').classList.remove('hidden');
                 document.getElementById('summary-legend-container').classList.remove('hidden');
+                document.getElementById('download-data-btn').disabled = false;
             }
             return res;
         };
@@ -485,7 +641,7 @@
             chartInstanceSR.update();
         }
 
-        // --- RIEPILOGO DETTAGLIATO AGGIORNATO ---
+        // --- RIEPILOGO DETTAGLIATO ---
         function updateSummary(data) {
             const globalDiv = document.getElementById('global-summary');
             const listDiv = document.getElementById('run-summary-list');
@@ -493,47 +649,24 @@
             listDiv.innerHTML = '';
             globalDiv.innerHTML = '';
 
-            // CALCOLI GLOBALI
             let absoluteMaxSpd = { y: 0, runId: 0, dist: 0 };
             let fastestRun = null;
             let totalDistSum = 0;
             let totalTimeSum = 0;
 
             data.forEach(r => {
-                // Trova picco assoluto
-                if (r.maxSpd.y > absoluteMaxSpd.y) {
-                    absoluteMaxSpd = { y: r.maxSpd.y, runId: r.runId, dist: r.maxSpd.x };
-                }
-                // Trova intervallo più veloce (media)
-                if (!fastestRun || r.avgSpd > fastestRun.avgSpd) {
-                    fastestRun = r;
-                }
+                if (r.maxSpd.y > absoluteMaxSpd.y) absoluteMaxSpd = { y: r.maxSpd.y, runId: r.runId, dist: r.maxSpd.x };
+                if (!fastestRun || r.avgSpd > fastestRun.avgSpd) fastestRun = r;
                 totalDistSum += selectedDistance;
                 totalTimeSum += r.totalSec;
             });
 
             const overallAvgSpd = totalTimeSum > 0 ? (totalDistSum / totalTimeSum) : 0;
             
-            // RENDER GLOBALE
             const globalStats = [
-                {
-                    label: "Miglior Intervallo",
-                    val: fastestRun ? `Int. ${fastestRun.runId}` : "-",
-                    sub: fastestRun ? `${toPace(fastestRun.avgSpd)} (${fastestRun.avgSpd.toFixed(2)} m/s)` : "",
-                    color: "text-emerald-400"
-                },
-                {
-                    label: "Picco Velocità Max",
-                    val: absoluteMaxSpd.y > 0 ? `${absoluteMaxSpd.y.toFixed(2)} m/s` : "-",
-                    sub: absoluteMaxSpd.y > 0 ? `${toPace(absoluteMaxSpd.y)} (Int. ${absoluteMaxSpd.runId} @ ${absoluteMaxSpd.dist}m)` : "",
-                    color: "text-blue-400"
-                },
-                {
-                    label: "Media Totale Allenamento",
-                    val: overallAvgSpd > 0 ? toPace(overallAvgSpd) : "-",
-                    sub: overallAvgSpd > 0 ? `${overallAvgSpd.toFixed(2)} m/s` : "Totale Cumulativo",
-                    color: "text-indigo-400"
-                }
+                { label: "Miglior Intervallo", val: fastestRun ? `Int. ${fastestRun.runId}` : "-", sub: fastestRun ? `${toPace(fastestRun.avgSpd)} (${fastestRun.avgSpd.toFixed(2)} m/s)` : "", color: "text-emerald-400" },
+                { label: "Picco Velocità Max", val: absoluteMaxSpd.y > 0 ? `${absoluteMaxSpd.y.toFixed(2)} m/s` : "-", sub: absoluteMaxSpd.y > 0 ? `${toPace(absoluteMaxSpd.y)} (Int. ${absoluteMaxSpd.runId} @ ${absoluteMaxSpd.dist}m)` : "", color: "text-blue-400" },
+                { label: "Media Totale", val: overallAvgSpd > 0 ? toPace(overallAvgSpd) : "-", sub: overallAvgSpd > 0 ? `${overallAvgSpd.toFixed(2)} m/s` : "Totale Cumulativo", color: "text-indigo-400" }
             ];
 
             globalStats.forEach(stat => {
@@ -542,19 +675,16 @@
                         <div class="stat-label mb-1">${stat.label}</div>
                         <div class="stat-value ${stat.color}">${stat.val}</div>
                         <div class="stat-sub">${stat.sub}</div>
-                    </div>
-                `;
+                    </div>`;
             });
 
-            // RENDER LISTA INTERVALLI
             data.forEach(r => {
                 const avgPace = toPace(r.avgSpd);
-                const minPace = toPace(r.minSpd.y); // Peggiore
-                const maxPace = toPace(r.maxSpd.y); // Migliore
+                const minPace = toPace(r.minSpd.y); 
+                const maxPace = toPace(r.maxSpd.y);
 
                 listDiv.innerHTML += `
                     <div class="bg-slate-800/80 border-l-4 p-4 rounded-lg shadow-md" style="border-color:${r.color}">
-                        
                         <div class="card-header flex justify-between items-end">
                             <div>
                                 <h3 class="font-bold text-lg text-white flex items-center gap-2">
@@ -569,7 +699,6 @@
                         </div>
 
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            
                             <div>
                                 <h4 class="text-xs font-bold text-slate-500 uppercase mb-2 border-b border-slate-700 pb-1">Velocità / Passo</h4>
                                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -590,7 +719,6 @@
                                     </div>
                                 </div>
                             </div>
-
                             <div>
                                 <h4 class="text-xs font-bold text-slate-500 uppercase mb-2 border-b border-slate-700 pb-1">Frequenza (SR)</h4>
                                 <div class="grid grid-cols-3 gap-2 text-center">
@@ -608,7 +736,6 @@
                                     </div>
                                 </div>
                             </div>
-
                         </div>
                     </div>`;
             });
@@ -635,8 +762,13 @@
         };
 
         window.downloadPdf = () => {
-            const results = updateAllData(false);
-            if (!results.length) return;
+            // Usa la cache se disponibile (per lo storico), altrimenti leggi gli input
+            let results = currentDataCache;
+            if (!results) {
+                 results = updateAllData(false);
+            }
+            if (!results || !results.length) return;
+            
             const boat = document.getElementById('boat-selector').value;
             const crew = document.getElementById('crew-names').value;
             const filename = `Analisi_${boat}_${crew.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
@@ -700,6 +832,12 @@
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('messageBoxOkBtn').addEventListener('click', () => 
                 document.getElementById('messageBox').classList.add('hidden'));
+
+            // Listener per lo storico
+            document.getElementById('openHistoryBtn').addEventListener('click', openHistoryModal);
+            document.getElementById('closeHistoryBtn').addEventListener('click', () => {
+                document.getElementById('historyModal').classList.add('hidden');
+            });
 
             const chartOpts = {
                 type: 'line', 
