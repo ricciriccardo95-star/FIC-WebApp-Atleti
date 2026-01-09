@@ -8,19 +8,46 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-tap-highlight-color: transparent; }
-        .form-input, .form-select { width: 100%; background-color: #1E293B; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; appearance: none; -webkit-appearance: none; }
-        .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
-        .form-select { background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>'); background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25em; padding-right: 2.5rem; }
+        
+        .form-input, .form-select { 
+            width: 100%; background-color: #1E293B; border: 1px solid #334155; 
+            border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; 
+            appearance: none; -webkit-appearance: none;
+        }
+        .form-input:focus, .form-select:focus { 
+            outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); 
+        }
+        .form-select {
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
+            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25em; padding-right: 2.5rem;
+        }
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; font-size: 0.9rem; }
+        
+        /* Stili Modali */
         .summary-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #334155; }
         .summary-item:last-child { border-bottom: none; }
         .summary-label { font-weight: 500; color: #94A3B8; }
         .summary-value { font-weight: 600; color: #E2E8F0; text-align: right; }
+
+        /* Checkbox Custom per Selezione */
+        .custom-checkbox {
+            appearance: none; background-color: #1E293B; margin: 0;
+            font: inherit; color: currentColor; width: 1.25em; height: 1.25em;
+            border: 1px solid #475569; border-radius: 0.25em; display: grid; place-content: center;
+        }
+        .custom-checkbox::before {
+            content: ""; width: 0.65em; height: 0.65em; transform: scale(0);
+            transition: 120ms transform ease-in-out; box-shadow: inset 1em 1em white;
+            transform-origin: center; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
+        }
+        .custom-checkbox:checked { background-color: #3B82F6; border-color: #3B82F6; }
+        .custom-checkbox:checked::before { transform: scale(1); }
+
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
     <script type="module" src="../auth-manager.js"></script>
 </head>
-<body class="antialiased pb-20">
+<body class="antialiased pb-24">
     
     <div id="loader-overlay" class="fixed inset-0 bg-slate-900/95 flex flex-col justify-center items-center z-[100] hidden backdrop-blur-sm">
         <div class="animate-spin rounded-full h-16 w-16 border-4 border-slate-700 border-t-indigo-500"></div>
@@ -28,6 +55,7 @@
     </div>
 
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
+        
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-3xl font-bold text-white tracking-tight">Allenamento RowErg</h1>
             <a href="home_carica_dati.html" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
@@ -36,11 +64,13 @@
         </div>
 
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl p-6 md:p-8 space-y-6 shadow-xl backdrop-blur-sm">
+            
             <div id="athlete-info-container">
                 <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente...</p>
             </div>
             
             <div id="form-content" class="hidden space-y-6">
+                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">Data Allenamento</label>
@@ -156,6 +186,23 @@
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
 
+    <div id="selectionModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-md bg-slate-900 border border-slate-700 rounded-xl p-0 shadow-2xl hidden z-[220] overflow-hidden flex flex-col max-h-[85vh]">
+        <div class="p-4 border-b border-slate-800 bg-slate-900 sticky top-0 z-10 flex justify-between items-center">
+            <h3 class="text-lg font-bold text-white">Conferma Dati</h3>
+            <button onclick="hideModal(document.getElementById('selectionModal'))" class="text-slate-400 hover:text-white">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
+            </button>
+        </div>
+        <div class="p-4 overflow-y-auto flex-1 bg-slate-900">
+            <p class="text-sm text-slate-400 mb-3">Seleziona le righe da importare (deseleziona i duplicati se presenti):</p>
+            <div id="selectionList" class="space-y-2">
+                </div>
+        </div>
+        <div class="p-4 border-t border-slate-800 bg-slate-900 sticky bottom-0 z-10">
+            <button id="confirmSelectionBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Importa Selezionati</button>
+        </div>
+    </div>
+
     <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-slate-800 border border-slate-700 rounded-lg shadow-lg hidden z-[210]">
         <div class="p-6">
             <h3 class="text-2xl font-bold text-white mb-4">Riepilogo Dati</h3>
@@ -179,7 +226,6 @@
     <script type="module">
         import { db } from '../auth-manager.js';
         import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        // IMPORTANTE: Importiamo le funzioni per chiamare il backend (nuovo metodo sicuro)
         import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
         const RECORD_MONDO_M_2000M = '05:35.8';
@@ -201,11 +247,11 @@
         ];
         const VALID_TIMES = ['20','30','45','60','90']; 
 
-        // Variabili Globali
         let currentAthleteId = null;
         let currentAthleteCognome = null;
         let pendingWorkoutData = null;
-        let accumulatedIntervals = []; 
+        let accumulatedIntervals = []; // Array di oggetti {time:..., meters:...}
+        let pendingAIResults = null; // Per il modale di selezione
 
         // DOM
         const aiInputCam = document.getElementById('cameraInput');
@@ -217,15 +263,15 @@
         const distanzaSelect = document.getElementById('distanzaSelect');
         const tempoSelect = document.getElementById('tempoSelect');
         const tipoLavoroSelect = document.getElementById('tipoLavoroSelect');
+        const selectionModal = document.getElementById('selectionModal');
+        const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
         
-        // Setup Functions
-        const functions = getFunctions(); // Inizializza Functions
-        const analizzaMonitor = httpsCallable(functions, 'analizzaMonitor'); // Riferimento alla Cloud Function
+        // Functions
+        const functions = getFunctions();
+        const analizzaMonitor = httpsCallable(functions, 'analizzaMonitor');
 
-        // --- INIT ---
         document.addEventListener('DOMContentLoaded', () => {
             setupPage();
-            // Listeners
             snapBtn.addEventListener('click', () => { if(checkTipoLavoro()) aiInputCam.click(); });
             uploadBtn.addEventListener('click', () => { if(checkTipoLavoro()) aiInputGal.click(); });
             
@@ -247,13 +293,14 @@
                 document.getElementById('ai-info-panel').classList.add('hidden');
             });
 
+            confirmSelectionBtn.addEventListener('click', processSelectedRows);
+
             document.getElementById('saveWorkoutBtn').addEventListener('click', initiateSaveProcess);
             document.getElementById('summaryModificaBtn').addEventListener('click', () => hideModal(document.getElementById('summaryModal')));
             document.getElementById('summaryConfermaBtn').addEventListener('click', proceedWithSave);
             document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
         });
 
-        // --- SETUP ---
         function setupPage() {
             const intervalliSelect = document.getElementById('intervalliNumero');
             let html = '<option value="">-- Seleziona numero --</option>';
@@ -270,7 +317,19 @@
             return true;
         }
 
-        // --- FORM LOGIC ---
+        function setupHiddenSelects() {
+            const allDists = [...distanzePolarizzate, ...distanzeSteady];
+            allDists.forEach(d => {
+                if(![...distanzaSelect.options].some(o => o.value === d.value))
+                    distanzaSelect.innerHTML += `<option value="${d.value}">${d.text}</option>`;
+            });
+            VALID_TIMES.forEach(t => {
+                if(![...tempoSelect.options].some(o => o.value === t))
+                    tempoSelect.innerHTML += `<option value="${t}">${t} min</option>`;
+            });
+        }
+        setupHiddenSelects();
+
         function updateFormVisibility() {
             const mode = document.getElementById('workoutMode').value;
             document.getElementById('tempo-fields').classList.add('hidden');
@@ -278,9 +337,8 @@
             document.getElementById('intervalli-common').classList.add('hidden');
             document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona --</option>'; 
 
-            if (mode === 'distanza') {
-                updateDistanceOptions();
-            } else if (mode === 'tempo') {
+            if (mode === 'distanza') updateDistanceOptions();
+            else if (mode === 'tempo') {
                 document.getElementById('tempo-fields').classList.remove('hidden');
                 document.getElementById('intervalli-common').classList.remove('hidden');
             }
@@ -322,7 +380,12 @@
                     const isDist = mode === 'distanza';
                     const ph = isDist ? 'mm:ss.d' : 'Metri (es. 1250)';
                     const lbl = isDist ? 'Tempo' : 'Distanza';
-                    const val = accumulatedIntervals[i-1] || "";
+                    
+                    // Se abbiamo dati accumulati, prendiamo il valore giusto in base alla modalità
+                    let val = "";
+                    if (accumulatedIntervals[i-1]) {
+                        val = isDist ? accumulatedIntervals[i-1].time : accumulatedIntervals[i-1].meters;
+                    }
 
                     const html = `
                         <div class="animate-fade-in">
@@ -346,7 +409,7 @@
             else e.target.value = v;
         }
 
-        // --- AI LOGIC (CLOUD FUNCTION) ---
+        // --- AI LOGIC ---
         async function handleImageUpload(e) {
             const file = e.target.files[0];
             if (!file) return;
@@ -358,11 +421,11 @@
                 const base64 = await fileToBase64(file);
                 const cleanBase64 = base64.split(',')[1];
 
-                // CHIAMATA ALLA CLOUD FUNCTION (SECURE)
                 const response = await analizzaMonitor({ image: cleanBase64 });
-                const result = response.data; // La function restituisce già il JSON parsato
+                const result = response.data;
 
                 if (result.rows && Array.isArray(result.rows)) {
+                    // Logic Filtro Header
                     const header = (result.header_text || "").toLowerCase().replace(/,/g, '').trim(); 
                     const isInterval = header.includes('x') || header.includes('/');
                     
@@ -371,15 +434,12 @@
                     else if (!isInterval && result.rows.length > 0) newRows = [result.rows[0]]; 
                     else newRows = result.rows; 
 
-                    if (accumulatedIntervals.length === 0) {
-                        detectAndSetMode(header, newRows);
-                    }
+                    // Filtra righe di recupero (iniziano con r)
+                    newRows = newRows.filter(r => !r.time.toLowerCase().startsWith('r'));
 
-                    const mode = document.getElementById('workoutMode').value;
-                    const newValues = newRows.map(r => mode === 'distanza' ? r.time : r.meters);
-                    
-                    accumulatedIntervals = [...accumulatedIntervals, ...newValues];
-                    generateIntervalliInputs(); 
+                    // Setup per il modale di selezione
+                    pendingAIResults = { header, rows: newRows };
+                    showSelectionModal(newRows);
                 }
 
             } catch (err) {
@@ -388,6 +448,43 @@
             } finally {
                 document.getElementById('loader-overlay').classList.add('hidden');
             }
+        }
+
+        function showSelectionModal(rows) {
+            const list = document.getElementById('selectionList');
+            list.innerHTML = '';
+            
+            rows.forEach((row, idx) => {
+                const div = document.createElement('div');
+                div.className = "flex items-center gap-3 p-3 bg-slate-800 rounded border border-slate-700";
+                div.innerHTML = `
+                    <input type="checkbox" class="custom-checkbox row-selector" checked data-index="${idx}">
+                    <div class="flex-1 grid grid-cols-2 gap-2 text-sm">
+                        <span class="text-sky-300 font-mono">${row.time}</span>
+                        <span class="text-emerald-300 font-mono text-right">${row.meters}m</span>
+                    </div>
+                `;
+                list.appendChild(div);
+            });
+            
+            showModal(selectionModal);
+        }
+
+        function processSelectedRows() {
+            if (!pendingAIResults) return;
+            
+            const checkboxes = document.querySelectorAll('.row-selector:checked');
+            const selectedRows = Array.from(checkboxes).map(cb => pendingAIResults.rows[cb.dataset.index]);
+            
+            if (accumulatedIntervals.length === 0 && selectedRows.length > 0) {
+                detectAndSetMode(pendingAIResults.header, selectedRows);
+            }
+
+            accumulatedIntervals = [...accumulatedIntervals, ...selectedRows];
+            
+            generateIntervalliInputs();
+            hideModal(selectionModal);
+            pendingAIResults = null;
         }
 
         function detectAndSetMode(header, rows) {
@@ -491,8 +588,8 @@
             
             document.getElementById('ep-warning').classList.add('hidden');
             document.getElementById('summaryConfermaBtn').classList.remove('hidden');
-            document.getElementById('modal-backdrop').classList.remove('hidden');
-            document.getElementById('summaryModal').classList.remove('hidden');
+            
+            showModal(document.getElementById('summaryModal'));
         }
 
         async function proceedWithSave() {
@@ -501,8 +598,7 @@
             
             try {
                 await addDoc(collection(db, 'allenamenti'), pendingWorkoutData);
-                document.getElementById('summaryModal').classList.add('hidden');
-                document.getElementById('modal-backdrop').classList.add('hidden');
+                hideModal(document.getElementById('summaryModal'));
                 showMessageBox("Salvataggio riuscito!", false);
                 
                 accumulatedIntervals = [];
@@ -530,9 +626,9 @@
             icon.innerHTML = isError 
                 ? `<svg class="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
                 : `<svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
-            document.getElementById('modal-backdrop').classList.remove('hidden'); 
-            box.classList.remove('hidden'); 
+            showModal(box);
         }
+        function showModal(m) { document.getElementById('modal-backdrop').classList.remove('hidden'); m.classList.remove('hidden'); }
         function hideModal(m) { document.getElementById('modal-backdrop').classList.add('hidden'); m.classList.add('hidden'); }
         function fileToBase64(file) { return new Promise((r, j) => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.onerror = j; reader.readAsDataURL(file); }); }
         async function fetchAthleteRecord(id) { try { return (await getDoc(doc(db, 'atleti', id))).data(); } catch { return null; } }
@@ -564,7 +660,7 @@
             if (e.detail.athlete) {
                 currentAthleteId = e.detail.athlete.id;
                 currentAthleteCognome = e.detail.athlete.cognome;
-                document.getElementById('athlete-info').innerHTML = `Stai inserendo un allenamento per: <strong class="text-indigo-400">${e.detail.athlete.cognome}</strong>`;
+                document.getElementById('athlete-info').innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${e.detail.athlete.cognome}</strong>`;
                 document.getElementById('form-content').classList.remove('hidden');
                 document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
             } else {
