@@ -9,8 +9,9 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    
+    <!-- Librerie PDF (Motore Admin) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     
     <script type="module" src="../auth-manager.js"></script>
@@ -57,6 +58,11 @@
 
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
+
+    <!-- Canvas Nascosto per PDF alta risoluzione -->
+    <div style="position: absolute; left: -9999px; top: -9999px;">
+        <canvas id="hiddenPdfCanvas" width="1600" height="800"></canvas>
+    </div>
 
     <div class="p-4 md:p-8 max-w-6xl mx-auto">
         <div class="flex items-center justify-between mb-8">
@@ -177,10 +183,9 @@
         const COLORS = ['#4ADE80', '#0EA5E9', '#F472B6', '#FACC15', '#A78BFA', '#FB923C', '#E11D48', '#14B8A6', '#64748B', '#A3E635'];
         const SR_POINT_MAX_COLOR = '#FACC15'; 
         const SR_POINT_MIN_COLOR = '#E11D48';
-
         const BOATS = ['ROWERG', 'M1X', 'M2X', 'M4X', 'M2-', 'M4-', 'M8+', 'W1X', 'W2X', 'W4X', 'W2-', 'W4-', 'W8+'];
 
-        let chartInstanceSpeed, chartInstanceSR;
+        let chartInstanceSpeed, chartInstanceSR, hiddenChartInstance;
         let selectedDistance = 2000; 
         let selectedRuns = 1;
         let currentDataCache = null; // Cache dati attuali (input o storico)
@@ -201,6 +206,76 @@
             return `${m}:${s}`;
         };
 
+        function parseTimeStringToSeconds(str) {
+            if (!str) return 0;
+            const parts = str.split(':');
+            if (parts.length === 2) return parseInt(parts[0]) * 60 + parseFloat(parts[1]);
+            return parseFloat(str) || 0;
+        }
+
+        // Funzione helper mancante per il PDF (converte secondi in formato mm:ss.d)
+        function secondsToPaceString(s) {
+            if (!isFinite(s) || s <= 0) return '-';
+            const m = Math.floor(s / 60);
+            const sec = (s % 60).toFixed(1).padStart(4, '0');
+            return `${m}:${sec}`;
+        }
+
+        // --- CURVA DI GARLAND (Ideale) - LOGICA ADMIN/PUBLIC ---
+        function getIdealCurvePoints(globalAvg, maxDistance, boatType) {
+            const points = [];
+            const isRowerg = boatType && (boatType.toUpperCase().includes("ROWERG") || boatType.toUpperCase().includes("ERG"));
+            
+            let pStart, p2, p3, p4;
+            if(isRowerg) { pStart = 1.015; p2 = 0.998; p3 = 0.990; p4 = 0.997; } 
+            else { pStart = 1.033; p2 = 0.990; p3 = 0.983; p4 = 0.997; }
+
+            // CORREZIONE ADMIN: Picco iniziale è moltiplicato per 1.12 per garantire START > FINISH
+            const peakVal = globalAvg * pStart * 1.12;
+            
+            points.push({x: 0, y: 0});
+            if (maxDistance >= 50) points.push({x: 50, y: peakVal * 0.7});
+            if (maxDistance >= 100) points.push({x: 100, y: peakVal * 0.95});
+            if (maxDistance >= 200) points.push({x: 200, y: peakVal}); // PICCO FISSO A 200m
+
+            if (maxDistance > 200) {
+                if (maxDistance >= 400) points.push({x: 350, y: globalAvg * pStart}); 
+                if (maxDistance >= 1500) {
+                     points.push({x: 750, y: globalAvg * p2});
+                     points.push({x: 1250, y: globalAvg * p3});
+                     points.push({x: maxDistance - 250, y: globalAvg * (p3 + p4)/2});
+                } else if (maxDistance >= 1000) {
+                     points.push({x: maxDistance * 0.4, y: globalAvg * p2});
+                     points.push({x: maxDistance * 0.7, y: globalAvg * p3});
+                } 
+                const kickStart = maxDistance - 100;
+                if (kickStart > 200) points.push({x: kickStart, y: globalAvg * 1.05});
+                points.push({x: maxDistance, y: globalAvg * 1.10});
+            }
+            return points.sort((a,b) => a.x - b.x);
+        }
+
+        // --- CALCOLO STATISTICHE TECNICHE ---
+        function calculateTechnicalStats(speedPoints, srPoints, distance, timeSeconds) {
+            const speeds = speedPoints ? speedPoints.map(p => p.y).filter(y => y > 0) : [];
+            const srs = srPoints ? srPoints.map(p => p.y).filter(y => y > 0) : [];
+
+            const maxSpeed = speeds.length ? Math.max(...speeds) : 0;
+            const minSpeed = speeds.length ? Math.min(...speeds) : 0;
+            const avgSpeed = (distance && timeSeconds) ? (distance/timeSeconds) : (speeds.length ? speeds.reduce((a,b)=>a+b,0)/speeds.length : 0);
+
+            const maxSr = srs.length ? Math.max(...srs) : 0;
+            const minSr = srs.length ? Math.min(...srs) : 0;
+            const avgSr = srs.length ? srs.reduce((a,b)=>a+b,0)/srs.length : 0;
+
+            const wattPoints = speeds.map(v => 2.8 * Math.pow(v, 3));
+            const maxWatt = wattPoints.length ? Math.max(...wattPoints) : 0;
+            const minWatt = wattPoints.length ? Math.min(...wattPoints) : 0;
+            const avgWatt = 2.8 * Math.pow(avgSpeed, 3);
+
+            return { maxSpeed, minSpeed, avgSpeed, maxSr, minSr, avgSr, maxWatt, minWatt, avgWatt };
+        }
+
         // --- SALVATAGGIO DATI ---
         async function saveRunData(dataToSave) {
             const saveButton = document.getElementById('generate-chart-btn');
@@ -209,9 +284,7 @@
 
             try {
                 await addDoc(collection(db, "graphics"), dataToSave);
-                // RESETTA CACHE STORICO: Abbiamo aggiunto un dato, quindi la prossima volta deve riscaricare
-                historyCache = null;
-                
+                historyCache = null; // Reset cache
                 showMessageBox("Successo!", `Allenamento salvato correttamente.`);
                 saveButton.textContent = "Genera & Salva";
                 document.getElementById('download-data-btn').disabled = false;
@@ -224,7 +297,7 @@
             }
         }
         
-        // --- GESTIONE STORICO OTTIMIZZATA ---
+        // --- GESTIONE STORICO ---
         async function openHistoryModal() {
             const modal = document.getElementById('historyModal');
             const list = document.getElementById('historyListContainer');
@@ -235,7 +308,6 @@
                 return;
             }
 
-            // OTTIMIZZAZIONE: Usa cache se disponibile
             if (historyCache) {
                 renderHistoryList(historyCache);
                 return;
@@ -243,8 +315,6 @@
 
             try {
                 list.innerHTML = '<div class="text-center mt-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div><p class="text-slate-400 mt-2">Caricamento...</p></div>';
-
-                // Query limitata a 20 elementi
                 const q = query(
                     collection(db, "graphics"), 
                     where("uid", "==", auth.currentUser.uid), 
@@ -253,34 +323,26 @@
                 );
                 
                 const querySnapshot = await getDocs(q);
-                
                 if (querySnapshot.empty) {
                     list.innerHTML = '<p class="text-center text-slate-500 mt-10">Nessun allenamento salvato.</p>';
                     return;
                 }
 
-                // Salva in cache
                 historyCache = [];
                 querySnapshot.forEach(doc => {
                     historyCache.push({ id: doc.id, data: doc.data() });
                 });
-
                 renderHistoryList(historyCache);
 
             } catch (error) {
                 console.error("Errore storico:", error);
-                if (error.message.includes("index")) {
-                    list.innerHTML = `<p class="text-center text-yellow-400 mt-10 text-sm">⚠️ Indice Mancante.<br>Controlla la console del browser.</p>`;
-                } else {
-                    list.innerHTML = `<p class="text-center text-red-400 mt-10">Errore: ${error.message}</p>`;
-                }
+                list.innerHTML = `<p class="text-center text-red-400 mt-10">Errore nel caricamento.</p>`;
             }
         }
 
         function renderHistoryList(items) {
             const list = document.getElementById('historyListContainer');
             let html = '';
-            
             items.forEach(item => {
                 const data = item.data;
                 const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
@@ -297,12 +359,11 @@
                                     <span class="text-slate-400 text-xs">${dateStr}, ${timeStr}</span>
                                 </div>
                                 <h4 class="font-bold text-slate-200 group-hover:text-white">${data.crewString || 'Sconosciuto'}</h4>
-                                <p class="text-xs text-slate-400 mt-1">${data.runsCount}x${data.distance}m</p>
+                                <p class="text-xs text-slate-400 mt-1">${data.runsCount || (data.runs ? data.runs.length : '-')}x${data.distance}m</p>
                             </div>
                             <svg class="w-5 h-5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                         </div>
-                    </div>
-                `;
+                    </div>`;
             });
             list.innerHTML = html;
         }
@@ -310,13 +371,12 @@
         window.restoreSessionFromData = (encodedJson) => {
             try {
                 const data = JSON.parse(decodeURIComponent(encodedJson));
-                
                 if(document.getElementById('boat-selector')) document.getElementById('boat-selector').value = data.boat;
                 if(document.getElementById('crew-names')) document.getElementById('crew-names').value = data.crewString;
                 
                 selectedDistance = parseInt(data.distance);
-                selectedRuns = parseInt(data.runsCount);
-                currentDataCache = data.runs; // Imposta cache per PDF
+                selectedRuns = parseInt(data.runsCount || data.runs.length);
+                currentDataCache = data.runs; 
 
                 document.getElementById('speed-chart-container').classList.remove('hidden');
                 document.getElementById('sr-chart-container').classList.remove('hidden');
@@ -328,14 +388,13 @@
 
                 document.getElementById('historyModal').classList.add('hidden');
                 showMessageBox("Caricato", "Dati recuperati dallo storico.");
-                
             } catch (e) {
                 console.error(e);
                 showMessageBox("Errore", "Impossibile ripristinare i dati.");
             }
         };
 
-        // --- LOGICA INTERFACCIA ---
+        // --- UI GESTIONE ---
         function renderBoatSelector() {
             const sel = document.getElementById('boat-selector');
             sel.innerHTML = '<option value="" disabled selected>Seleziona Barca</option>';
@@ -379,12 +438,10 @@
                 document.getElementById('runs-wrapper').classList.remove('hidden');
                 renderInputs();
             }
-
             document.getElementById('speed-chart-container').classList.add('hidden');
             document.getElementById('sr-chart-container').classList.add('hidden');
             document.getElementById('summary-legend-container').classList.add('hidden');
             document.getElementById('download-data-btn').disabled = true;
-
             checkGenerationReadiness();
         };
 
@@ -392,14 +449,6 @@
             const boatSelected = document.getElementById('boat-selector').value !== '';
             const crewFilled = document.getElementById('crew-names').value.trim() !== '';
             const inputsRendered = document.getElementById('input-runs-container').querySelectorAll('.pace-input').length > 0;
-            
-            let allRunsValid = false;
-            if (inputsRendered && !currentDataCache) {
-                 // Controlla validità solo se non stiamo visualizzando dati storici
-                 // Questa è una verifica superficiale per abilitare il tasto
-                 allRunsValid = true; 
-            }
-            
             document.getElementById('generate-chart-btn').disabled = !(crewFilled && inputsRendered && boatSelected);
         };
 
@@ -430,9 +479,6 @@
             let val = '';
             if (d.length === 3) val = `${d.substring(0,2)}.${d.substring(2)}`;
             else val = d;
-            if ((event.data === '.' || event.data === ',') && !val.includes('.')) {
-                if(val.length >=1) val += '.';
-            }
             input.value = val;
             currentDataCache = null; 
         };
@@ -501,26 +547,17 @@
             const lines = event.clipboardData.getData('text').split(/[\n\r]+/).filter(s => s.trim().length > 0);
             const pInps = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
             const sInps = document.querySelectorAll(`.sr-input[data-run-id="${runId}"]`);
-            
             lines.forEach((line, idx) => {
                 const parts = line.split(/[\t\s]+/);
-                if (pInps[idx] && parts[0]) {
-                    pInps[idx].value = parts[0].replace(/[^0-9.]/g, '');
-                    formatPaceInput({target: pInps[idx]});
-                }
-                if (sInps[idx] && parts[1]) {
-                    sInps[idx].value = parts[1].replace(/[^0-9.]/g, '');
-                    formatSrInput({target: sInps[idx]});
-                }
+                if (pInps[idx] && parts[0]) { pInps[idx].value = parts[0].replace(/[^0-9.]/g, ''); formatPaceInput({target: pInps[idx]}); }
+                if (sInps[idx] && parts[1]) { sInps[idx].value = parts[1].replace(/[^0-9.]/g, ''); formatSrInput({target: sInps[idx]}); }
             });
             currentDataCache = null;
         };
 
         function analyzeRunData(runId) {
             const speedDP = [], srDP = [];
-            let totalSec = 0, valid = true;
-            let totalSr = 0, srCount = 0;
-            
+            let totalSec = 0, valid = true, totalSr = 0, srCount = 0;
             const pInps = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
             const sInps = document.querySelectorAll(`.sr-input[data-run-id="${runId}"]`);
             if (pInps.length === 0) return null;
@@ -536,17 +573,9 @@
                     if(disp) disp.textContent = spd.toFixed(2);
                     speedDP.push({x: dist, y: parseFloat(spd.toFixed(3)), pace: secs});
                     totalSec += (secs * (SEGMENT_DISTANCE / PACE_REFERENCE_DISTANCE));
-                } else {
-                    if(disp) disp.textContent = '-';
-                    valid = false;
-                }
+                } else { if(disp) disp.textContent = '-'; valid = false; }
 
-                if (sr > 0) {
-                    srDP.push({x: dist, y: sr});
-                    totalSr += sr; srCount++;
-                } else {
-                    valid = false;
-                }
+                if (sr > 0) { srDP.push({x: dist, y: sr}); totalSr += sr; srCount++; } else { valid = false; }
             });
 
             if (!valid || speedDP.length === 0) return null;
@@ -560,11 +589,11 @@
 
             return {
                 runId, color: COLORS[runId-1],
-                totalSec,
+                totalSec, totalSeconds: totalSec,
                 totalTimeStr: `${Math.floor(totalSec/60)}:${(totalSec%60).toFixed(1).padStart(4,'0')}`,
                 speedData: speedDP, srData: srDP,
                 avgSpd, maxSpd, minSpd,
-                avgSr, maxSr, minSr
+                avgSr, maxSr, minSr, distance: selectedDistance
             };
         }
 
@@ -591,12 +620,21 @@
             return res;
         };
 
+        // --- AGGIORNAMENTO GRAFICI (CON CURVA IDEALE) ---
         function updateCharts(data) {
-            // Speed Chart
-            const spdDatasets = [];
-            let minS = 99, maxS = 0;
-            data.forEach(r => {
-                r.speedData.forEach(p => { if(p.y<minS) minS=p.y; if(p.y>maxS) maxS=p.y; });
+            const spdDatasets = [], srDatasets = [];
+            let totalTime = 0, totalDist = 0;
+            let minVal = 999, maxVal = 0;
+
+            data.forEach((r, i) => {
+                totalTime += r.totalSec; totalDist += r.distance;
+                r.speedData.forEach(p => { 
+                    if(p.y > 0) {
+                        if(p.y < minVal) minVal = p.y; 
+                        if(p.y > maxVal) maxVal = p.y;
+                    }
+                });
+
                 spdDatasets.push({
                     label: `Int. ${r.runId}`,
                     data: r.speedData,
@@ -605,24 +643,6 @@
                     pointBackgroundColor: r.speedData.map(p => p.y===r.maxSpd.y ? '#38BDF8' : (p.y===r.minSpd.y ? '#F87171' : r.color)),
                     tension: 0.4 
                 });
-                spdDatasets.push({
-                    label: `Media ${r.runId}`, data: [{x:0, y:r.avgSpd}, {x:selectedDistance, y:r.avgSpd}],
-                    borderColor: r.color, borderDash: [5,5], pointRadius: 0
-                });
-            });
-            chartInstanceSpeed.data.datasets = spdDatasets;
-            chartInstanceSpeed.options.scales.y.min = minS - 0.2;
-            chartInstanceSpeed.options.scales.y.max = maxS + 0.2;
-            chartInstanceSpeed.options.scales.x.type = 'linear'; 
-            chartInstanceSpeed.options.scales.x.min = 0;
-            chartInstanceSpeed.options.scales.x.max = selectedDistance;
-            chartInstanceSpeed.update();
-
-            // SR Chart
-            const srDatasets = [];
-            let minSr = 99, maxSr = 0;
-            data.forEach(r => {
-                r.srData.forEach(p => { if(p.y<minSr) minSr=p.y; if(p.y>maxSr) maxSr=p.y; });
                 srDatasets.push({
                     label: `Int. ${r.runId}`,
                     data: r.srData,
@@ -632,11 +652,41 @@
                     tension: 0.4
                 });
             });
+
+            // Calcolo Media Globale e Curva Ideale
+            const globalAvg = totalDist / totalTime;
+            
+            // Zoom Aggressivo
+            let suggestedMin = 0;
+            if (minVal < 999 && maxVal > 0) {
+                suggestedMin = Math.max(0, minVal - 0.2);
+            }
+
+            spdDatasets.push({
+                label: 'Media Totale', data: [{x:0, y:globalAvg}, {x:selectedDistance, y:globalAvg}],
+                borderColor: '#94a3b8', borderWidth: 2, borderDash: [10, 5], pointRadius: 0, fill: false, tension: 0
+            });
+
+            const boatType = document.getElementById('boat-selector').value;
+            const idealCurve = getIdealCurvePoints(globalAvg, selectedDistance, boatType);
+            spdDatasets.push({
+                label: 'Curva Ideale', data: idealCurve,
+                borderColor: '#F59E0B', borderWidth: 3, tension: 0.4, pointRadius: 0, fill: false
+            });
+
+            // Update Speed Chart
+            chartInstanceSpeed.data.datasets = spdDatasets;
+            chartInstanceSpeed.options.scales.x.max = selectedDistance;
+            
+            if (suggestedMin > 0) {
+                chartInstanceSpeed.options.scales.y.min = suggestedMin;
+            } else {
+                delete chartInstanceSpeed.options.scales.y.min;
+            }
+            chartInstanceSpeed.update();
+
+            // Update SR Chart
             chartInstanceSR.data.datasets = srDatasets;
-            chartInstanceSR.options.scales.y.min = minSr - 2;
-            chartInstanceSR.options.scales.y.max = maxSr + 2;
-            chartInstanceSR.options.scales.x.type = 'linear';
-            chartInstanceSR.options.scales.x.min = 0;
             chartInstanceSR.options.scales.x.max = selectedDistance;
             chartInstanceSR.update();
         }
@@ -761,79 +811,184 @@
             }
         };
 
-        window.downloadPdf = () => {
-            // Usa la cache se disponibile (per lo storico), altrimenti leggi gli input
-            let results = currentDataCache;
-            if (!results) {
-                 results = updateAllData(false);
-            }
-            if (!results || !results.length) return;
+        // --- PDF GENERATION (Motore Admin) ---
+        async function generateChartImageForPDF(runs, type, globalAvg) {
+            const ctx = document.getElementById('hiddenPdfCanvas').getContext('2d');
+            if (hiddenChartInstance) hiddenChartInstance.destroy();
             
-            const boat = document.getElementById('boat-selector').value;
-            const crew = document.getElementById('crew-names').value;
-            const filename = `Analisi_${boat}_${crew.replace(/[^a-zA-Z0-9]/g,'_')}.pdf`;
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' });
+            let minVal = 999;
+            if(type === 'speed') {
+                runs.forEach(r => r.speedData.forEach(p => { if(p.y > 0 && p.y < minVal) minVal = p.y; }));
+            }
 
-            const captureChart = (chart) => {
-                const oldColor = Chart.defaults.color;
-                const oldBorder = Chart.defaults.borderColor;
-                Chart.defaults.color = '#000000';
-                Chart.defaults.borderColor = '#cccccc';
-                chart.options.scales.x.ticks.color = '#000';
-                chart.options.scales.y.ticks.color = '#000';
-                chart.options.plugins.legend.labels.color = '#000';
-                chart.update();
-                const img = chart.canvas.toDataURL('image/png', 1.0);
-                Chart.defaults.color = '#E2E8F0';
-                Chart.defaults.borderColor = 'rgba(255,255,255,0.1)';
-                chart.options.scales.x.ticks.color = '#CBD5E1';
-                chart.options.scales.y.ticks.color = '#CBD5E1';
-                chart.options.plugins.legend.labels.color = '#E2E8F0';
-                chart.update();
-                return img;
-            };
-
-            doc.setFontSize(18);
-            doc.text(`Report: ${boat} - ${crew}`, 14, 15);
-            doc.setFontSize(12);
-            doc.text(`${selectedRuns}x${selectedDistance}m`, 14, 22);
-
-            doc.addImage(captureChart(chartInstanceSpeed), 'PNG', 14, 30, 130, 80);
-            doc.addImage(captureChart(chartInstanceSR), 'PNG', 150, 30, 130, 80);
-
-            let y = 120;
-            results.forEach(r => {
-                if (y > 170) { doc.addPage(); y = 20; }
-                const avgPace = toPace(r.avgSpd);
-                doc.setFontSize(11);
-                doc.setTextColor(0,0,0);
-                doc.text(`Intervallo ${r.runId} (${r.totalTimeStr}) | Media: ${avgPace} (${r.avgSpd.toFixed(2)} m/s) | SR: ${r.avgSr.toFixed(1)}`, 14, y);
-                y += 5;
-                const body = r.speedData.map((p, i) => [
-                    p.x, 
-                    (PACE_REFERENCE_DISTANCE/p.y).toFixed(2),
-                    r.srData[i].y.toFixed(1), 
-                    p.y.toFixed(2)
-                ]);
-                doc.autoTable({
-                    startY: y,
-                    head: [['Dist', 'Sec (approx)', 'SR', 'm/s']],
-                    body: body,
-                    theme: 'grid',
-                    styles: { fontSize: 8 },
-                    margin: { left: 14 }
-                });
-                y = doc.lastAutoTable.finalY + 10;
+            const datasets = runs.map((run, i) => {
+                const color = COLORS[i % COLORS.length];
+                const data = (type === 'speed') ? run.speedData : run.srData;
+                return { 
+                    label: `Run ${run.runId}`, data: data, 
+                    borderColor: color, borderWidth: 3, pointRadius: 0, tension: 0.4, fill: false, 
+                    parsing: { xAxisKey: 'x', yAxisKey: 'y' } 
+                };
             });
-            doc.save(filename);
+
+            if(type === 'speed' && globalAvg) {
+                 datasets.push({
+                    label: 'Media Totale', data: [{x: 0, y: globalAvg}, {x: selectedDistance, y: globalAvg}],
+                    borderColor: '#94a3b8', borderWidth: 2, borderDash: [10, 5], pointRadius: 0, fill: false, tension: 0
+                });
+                const boatType = document.getElementById('boat-selector').value;
+                datasets.push({
+                    label: 'Curva Ideale', data: getIdealCurvePoints(globalAvg, selectedDistance, boatType),
+                    borderColor: '#F59E0B', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false
+                });
+            }
+            
+            let suggestedMin = undefined;
+            if (type === 'speed' && minVal < 999) {
+                suggestedMin = Math.max(0, minVal - 0.2);
+            }
+
+            hiddenChartInstance = new Chart(ctx, { 
+                type: 'line', data: { datasets: datasets }, 
+                options: { 
+                    responsive: false, animation: false, 
+                    scales: { 
+                        x: { type: 'linear', display: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 16 } } }, 
+                        y: { 
+                            display: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 16 } },
+                            min: suggestedMin 
+                        } 
+                    }, 
+                    plugins: { legend: { display: true, labels: { font: { size: 16 } } } } 
+                } 
+            });
+            return document.getElementById('hiddenPdfCanvas').toDataURL('image/jpeg', 0.9);
+        }
+
+        window.downloadPdf = async () => {
+            const btn = document.getElementById('download-data-btn');
+            const originalText = btn.innerHTML;
+            btn.innerHTML = "Generazione..."; btn.disabled = true;
+
+            try {
+                let runs = currentDataCache;
+                if (!runs) runs = updateAllData(false);
+                if (!runs || !runs.length) throw new Error("Nessun dato valido");
+
+                const { jsPDF } = window.jspdf;
+                const doc = new jsPDF();
+                
+                const chartData = {
+                    boat: document.getElementById('boat-selector').value,
+                    crewString: document.getElementById('crew-names').value,
+                    timestamp: new Date(),
+                    runs: runs,
+                    distance: selectedDistance
+                };
+
+                await drawPdfPage(doc, chartData);
+                doc.save(`Analisi_${chartData.boat}_${chartData.crewString}.pdf`);
+
+            } catch(e) { 
+                console.error(e); 
+                alert("Errore PDF: " + e.message); 
+            } finally { 
+                btn.innerHTML = originalText; btn.disabled = false; 
+            }
         };
+
+        async function drawPdfPage(doc, chartData) {
+            doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 40, 'F');
+            doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.setFont("helvetica", "bold");
+            doc.text(`Analisi Tecnica: ${chartData.crewString}`, 14, 18);
+            doc.setFontSize(12); doc.setTextColor(200, 200, 200); doc.setFont("helvetica", "normal");
+            doc.text(`${chartData.boat} | ${chartData.timestamp.toLocaleDateString('it-IT')} | ${chartData.distance}m x ${chartData.runs.length}`, 14, 28);
+            
+            const headers = ['METRICA'];
+            chartData.runs.forEach(r => headers.push(`RUN ${r.runId}`));
+            const runStats = chartData.runs.map(run => calculateTechnicalStats(run.speedData, run.srData, run.distance, run.totalSeconds));
+            const sd = (v) => isFinite(v) ? v.toFixed(2) : '-';
+
+            // Calcolo Media Globale
+            let totT=0, totD=0;
+            chartData.runs.forEach(r=>{ totT+=r.totalSeconds; totD+=r.distance; });
+            const globalAvg = totD/totT;
+
+            const rows = [
+                [{content: 'SPEEDY (m/s)', colSpan: headers.length, styles: {fillColor: [153, 27, 27], textColor: [255,255,255], fontStyle: 'bold', halign:'center'}}],
+                ['MAX', ...runStats.map(s => s.maxSpeed.toFixed(2))],
+                ['MIN', ...runStats.map(s => s.minSpeed.toFixed(2))],
+                ['AVG', ...runStats.map(s => s.avgSpeed.toFixed(2))],
+                
+                [{content: 'DELTA SPEEDY', colSpan: headers.length, styles: {fillColor: [127, 29, 29], textColor: [255,200,200], fontStyle: 'bold', halign:'center'}}],
+                ['MX/MN', ...runStats.map(s => sd(s.maxSpeed-s.minSpeed))],
+                ['MX/AV', ...runStats.map(s => sd(s.maxSpeed-s.avgSpeed))],
+                ['MN/AV', ...runStats.map(s => sd(s.avgSpeed-s.minSpeed))],
+
+                [{content: 'WATT (Mech)', colSpan: headers.length, styles: {fillColor: [154, 52, 18], textColor: [255,255,255], fontStyle: 'bold', halign:'center'}}],
+                ['MAX', ...runStats.map(s => s.maxWatt.toFixed(0))],
+                ['MIN', ...runStats.map(s => s.minWatt.toFixed(0))],
+                ['AVG', ...runStats.map(s => s.avgWatt.toFixed(0))],
+
+                [{content: 'DELTA WATT', colSpan: headers.length, styles: {fillColor: [124, 45, 18], textColor: [255,200,200], fontStyle: 'bold', halign:'center'}}],
+                ['MX/MN', ...runStats.map(s => sd(s.maxWatt-s.minWatt))],
+                ['MX/AV', ...runStats.map(s => sd(s.maxWatt-s.avgWatt))],
+                ['MN/AV', ...runStats.map(s => sd(s.avgWatt-s.minWatt))],
+
+                [{content: 'STROKES', colSpan: headers.length, styles: {fillColor: [49, 46, 129], textColor: [255,255,255], fontStyle: 'bold', halign:'center'}}],
+                ['MAX', ...runStats.map(s => s.maxSr.toFixed(0))],
+                ['MIN', ...runStats.map(s => s.minSr.toFixed(0))],
+                ['AVG', ...runStats.map(s => s.avgSr.toFixed(1))],
+
+                [{content: 'DELTA STROKES', colSpan: headers.length, styles: {fillColor: [30, 27, 75], textColor: [200,200,255], fontStyle: 'bold', halign:'center'}}],
+                ['MX/MN', ...runStats.map(s => sd(s.maxSr-s.minSr))],
+                ['MX/AV', ...runStats.map(s => sd(s.maxSr-s.avgSr))],
+                ['MN/AV', ...runStats.map(s => sd(s.avgSr-s.minSr))],
+            ];
+
+            let y = 50;
+            doc.autoTable({
+                startY: y, head: [headers], body: rows, theme: 'grid',
+                headStyles: { fillColor: [255, 200, 0], textColor: [0,0,0], fontStyle: 'bold', halign: 'center' },
+                bodyStyles: { halign: 'center', fontSize: 9 },
+                columnStyles: { 0: { fontStyle: 'bold', halign: 'left', fillColor: [245, 245, 245] } },
+                margin: { left: 14, right: 14 }
+            });
+
+            y = doc.lastAutoTable.finalY + 15;
+            
+            if (y + 100 > 280) { doc.addPage(); y = 20; }
+            doc.setFontSize(12); doc.setTextColor(50); doc.setFont("helvetica", "bold");
+            doc.text("Velocità (m/s)", 14, y);
+            y += 5;
+            const imgSpd = await generateChartImageForPDF(chartData.runs, 'speed', globalAvg);
+            doc.addImage(imgSpd, 'JPEG', 14, y, 182, 70);
+            
+            y += 80;
+            if (y + 80 > 280) { doc.addPage(); y = 20; }
+            doc.text("Frequenza (SPM)", 14, y);
+            y += 5;
+            const imgSr = await generateChartImageForPDF(chartData.runs, 'sr', null);
+            doc.addImage(imgSr, 'JPEG', 14, y, 182, 70);
+
+            y += 80;
+            if (y > 250) { doc.addPage(); y = 20; }
+            const splitBody = [];
+            chartData.runs.forEach(run => {
+                const maxD = run.speedData.length > 0 ? run.speedData[run.speedData.length-1].x : 0;
+                for(let d=100; d<=maxD; d+=100) {
+                    const pt = run.speedData.find(p => p.x >= d);
+                    const srPt = run.srData.find(p => p.x >= d);
+                    if(pt) splitBody.push([`Run ${run.runId}`, `${d}m`, secondsToPaceString(PACE_REFERENCE_DISTANCE/pt.y), pt.y.toFixed(2), srPt ? srPt.y.toFixed(0) : '-']);
+                }
+            });
+            doc.autoTable({ startY: y, head: [['Run', 'Dist', 'Passo', 'm/s', 'SR']], body: splitBody, theme: 'striped', headStyles: { fillColor: [59, 130, 246] }, styles: { fontSize: 8, cellPadding: 1, halign: 'center' }, margin: { left: 14, right: 14 } });
+        }
 
         document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('messageBoxOkBtn').addEventListener('click', () => 
                 document.getElementById('messageBox').classList.add('hidden'));
 
-            // Listener per lo storico
             document.getElementById('openHistoryBtn').addEventListener('click', openHistoryModal);
             document.getElementById('closeHistoryBtn').addEventListener('click', () => {
                 document.getElementById('historyModal').classList.add('hidden');
