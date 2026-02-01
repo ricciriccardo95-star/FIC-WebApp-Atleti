@@ -4,23 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Calendario Allenamenti - FIC</title>
-    <script src="../tailwind.js"></script>
+    <script src="https://cdn-tailwindcss.vercel.app/"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     <style>
         body {
             font-family: 'Inter', sans-serif;
-            background-color: #0F172A; /* Colore di sfondo scuro di default */
+            background-color: #0F172A;
             transition: background-color 0.5s ease;
-            color: #E2E8F0; /* Slate 200 */
+            color: #E2E8F0;
         }
-        body.theme-olimpica { background-color: #0F172A; } /* Slate 900 */
-        body.theme-u23 { background-color: #0d1c1a; } /* Dark Teal */
-        body.theme-u19 { background-color: #1c150d; } /* Dark Orange */
-        /* *** NUOVO: Stili tema per Para e Beach *** */
-        body.theme-para-rowing { background-color: #1a1129; } /* Dark Purple */
-        body.theme-beach-sprint { background-color: #2a210f; } /* Dark Yellow/Sand */
+        body.theme-olimpica { background-color: #0F172A; }
+        body.theme-u23 { background-color: #0d1c1a; }
+        body.theme-u19 { background-color: #1c150d; }
+        body.theme-para-rowing { background-color: #1a1129; }
+        body.theme-beach-sprint { background-color: #2a210f; }
 
         .calendar-grid {
             display: grid;
@@ -31,12 +30,12 @@
             transition: background-color 0.2s, border-color 0.2s;
             position: relative;
             aspect-ratio: 1/1;
-            background-color: #0F172A; /* Slate 900 */
+            background-color: #0F172A;
             overflow: hidden;
             border: 2px solid transparent;
         }
          .calendar-day.selected {
-            border-color: #38BDF8; /* Light Blue 400 */
+            border-color: #38BDF8;
         }
         .today-highlight {
             background-color: #38BDF8;
@@ -48,7 +47,7 @@
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 0.875rem; /* text-sm */
+            font-size: 0.875rem;
         }
         .workout-tag {
             cursor: pointer;
@@ -58,44 +57,33 @@
             padding: 0.5rem 1rem;
             border-radius: 0.375rem;
             font-weight: 600;
-            background-color: #334155; /* slate-700 */
-            color: #cbd5e1; /* slate-300 */
+            background-color: #334155;
+            color: #cbd5e1;
             transition: all 0.2s;
         }
         .calendar-btn:hover {
-            background-color: #475569; /* slate-600 */
+            background-color: #475569;
             color: #fff;
         }
         .calendar-btn.active-olimpica {
-            background-color: #38BDF8; /* light-blue-400 */
-            color: #0F172A; /* slate-900 */
-            box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
+            background-color: #38BDF8; color: #0F172A; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
         }
         .calendar-btn.active-u23 {
-            background-color: #2dd4bf; /* teal-400 */
-            color: #0F172A;
-            box-shadow: 0 0 15px rgba(45, 212, 191, 0.4);
+            background-color: #2dd4bf; color: #0F172A; box-shadow: 0 0 15px rgba(45, 212, 191, 0.4);
         }
         .calendar-btn.active-u19 {
-            background-color: #fb923c; /* orange-400 */
-            color: #0F172A;
-            box-shadow: 0 0 15px rgba(251, 146, 60, 0.4);
+            background-color: #fb923c; color: #0F172A; box-shadow: 0 0 15px rgba(251, 146, 60, 0.4);
         }
-         /* *** NUOVO: Stili pulsanti attivi per Para e Beach *** */
         .calendar-btn.active-para-rowing {
-            background-color: #a855f7; /* purple-500 */
-            color: #0F172A;
-            box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
+            background-color: #a855f7; color: #0F172A; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
         }
         .calendar-btn.active-beach-sprint {
-            background-color: #eab308; /* yellow-600 */
-            color: #0F172A;
-            box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
+            background-color: #eab308; color: #0F172A; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
         }
 
         .intensity-bar {
             position: absolute;
-            top: 28px; /* Adjusted for smaller mobile layout */
+            top: 28px;
             left: 0;
             right: 0;
             height: 18px;
@@ -107,16 +95,15 @@
             justify-content: center;
             z-index: 5;
             padding: 0 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
         }
         .intensity-bar.start {
-            left: -1px;
-            border-top-left-radius: 9999px;
-            border-bottom-left-radius: 9999px;
+            left: -1px; border-top-left-radius: 9999px; border-bottom-left-radius: 9999px;
         }
         .intensity-bar.end {
-            right: -1px;
-            border-top-right-radius: 9999px;
-            border-bottom-right-radius: 9999px;
+            right: -1px; border-top-right-radius: 9999px; border-bottom-right-radius: 9999px;
         }
     </style>
 </head>
@@ -131,7 +118,6 @@
         </div>
         <h1 class="text-2xl sm:text-4xl font-black text-center text-slate-100 mb-4 tracking-tight">CALENDARIO ALLENAMENTI</h1>
 
-        <!-- *** MODIFICA: Aggiunti i pulsanti Para-Rowing e Beach Sprint *** -->
         <div id="calendar-selector" class="flex justify-center flex-wrap gap-2 mb-6">
             <button data-collection="calendario_olimpica" data-theme="theme-olimpica" data-active-class="active-olimpica" class="calendar-btn active-olimpica text-xs sm:text-base">SQUADRA OLIMPICA</button>
             <button data-collection="calendario_u23" data-theme="theme-u23" data-active-class="active-u23" class="calendar-btn text-xs sm:text-base">UNDER 23</button>
@@ -149,7 +135,6 @@
                 </div>
             </div>
 
-            <!-- Calendar -->
             <div class="bg-slate-800 rounded-lg shadow-2xl p-1">
                 <div class="calendar-grid text-center font-semibold border-b border-slate-700">
                     <div class="p-2 text-xs">LUN</div>
@@ -161,16 +146,18 @@
                     <div class="p-2 text-xs">DOM</div>
                 </div>
                 <div id="calendar-body" class="calendar-grid bg-slate-700">
-                    <!-- Days will be generated by JS -->
-                </div>
+                    </div>
             </div>
         </div>
     </div>
     
-    <!-- Daily Workout Details Container -->
-    <div id="workout-details-container" class="w-full max-w-4xl mx-auto py-4 px-2 mt-4">
-        <!-- Dynamic content will be injected here -->
+    <div id="intensity-details-banner" class="hidden w-full max-w-4xl mx-auto px-2 mt-3">
+        <div id="intensity-banner-content" class="rounded-md shadow-lg py-2 px-4 flex flex-row justify-center items-center gap-6 text-white transition-all duration-300 border border-white/10">
+            </div>
     </div>
+
+    <div id="workout-details-container" class="w-full max-w-4xl mx-auto py-4 px-2 mt-2">
+        </div>
 
 
     <script type="module">
@@ -199,12 +186,14 @@
         const prevMonthBtn = document.getElementById('prev-month');
         const nextMonthBtn = document.getElementById('next-month');
         const workoutDetailsContainer = document.getElementById('workout-details-container');
+        const intensityDetailsBanner = document.getElementById('intensity-details-banner');
+        const intensityBannerContent = document.getElementById('intensity-banner-content');
 
         // --- State Variables ---
         let currentDate = new Date();
         let eventsData = {};
         let intensityRanges = [];
-        let currentCollection = 'calendario_olimpica'; // Default collection
+        let currentCollection = 'calendario_olimpica'; 
         let selectedDateStr = null;
 
         // --- Firebase Data Fetching ---
@@ -265,20 +254,29 @@
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
+                // Normalizza data corrente calendario
                 const currentDayDate = new Date(dateStr);
+                currentDayDate.setHours(0,0,0,0);
                 
                 dayEl.className = 'calendar-day flex flex-col p-1 text-xs sm:p-1.5 sm:text-sm cursor-pointer';
                 dayEl.dataset.date = dateStr;
                 dayEl.addEventListener('click', () => displayWorkoutForDay(dateStr));
                 
                 intensityRanges.forEach(range => {
+                    // Normalizza date range per confronto sicuro
                     const startDate = new Date(range.startDate);
+                    startDate.setHours(0,0,0,0);
                     const endDate = new Date(range.endDate);
-                    if (currentDayDate >= startDate && currentDayDate <= endDate) {
+                    endDate.setHours(0,0,0,0);
+
+                    if (currentDayDate.getTime() >= startDate.getTime() && currentDayDate.getTime() <= endDate.getTime()) {
                         const bar = document.createElement('div');
                         const rangeColors = ['bg-pink-600', 'bg-purple-600', 'bg-teal-600', 'bg-orange-600', 'bg-lime-600'];
                         bar.className = `intensity-bar ${range.color || rangeColors[0]}`;
+                        
+                        // MODIFICA: SOLO PERCENTUALE INTENSITÀ, NIENTE POLARIZZAZIONE QUI
                         bar.textContent = `${range.intensity}%`;
+
                         if (currentDayDate.getTime() === startDate.getTime()) bar.classList.add('start');
                         if (currentDayDate.getTime() === endDate.getTime()) bar.classList.add('end');
                         dayEl.appendChild(bar);
@@ -316,11 +314,10 @@
             }
             calendarContainer.style.opacity = '1';
 
-            // Display today's workout on initial load if it hasn't been selected yet
             if (!selectedDateStr) {
                  displayWorkoutForDay(todayStr);
             } else {
-                 displayWorkoutForDay(selectedDateStr); // Re-render for the same selected day after month change
+                 displayWorkoutForDay(selectedDateStr); 
             }
         }
 
@@ -328,6 +325,47 @@
             const eventEl = document.createElement('div');
             eventEl.className = `bg-${color}-500/50 h-1.5 w-full rounded-full mx-auto`;
             return eventEl;
+        }
+
+        // --- Gestione Banner Intensità (Nuovo Layout) ---
+        function updateIntensityBanner(dateStr) {
+            const dateObj = new Date(dateStr);
+            dateObj.setHours(0,0,0,0); // Fondamentale per il confronto corretto
+            
+            const activeRange = intensityRanges.find(range => {
+                const start = new Date(range.startDate);
+                start.setHours(0,0,0,0);
+                const end = new Date(range.endDate);
+                end.setHours(0,0,0,0);
+                return dateObj.getTime() >= start.getTime() && dateObj.getTime() <= end.getTime();
+            });
+
+            if (activeRange) {
+                const rangeColors = ['bg-pink-600', 'bg-purple-600', 'bg-teal-600', 'bg-orange-600', 'bg-lime-600'];
+                const bgColor = activeRange.color || rangeColors[0];
+                const polValue = activeRange.polarization ? activeRange.polarization.toString().replace('.', ',') : '-';
+                
+                // Reset e applica nuovo design
+                intensityBannerContent.className = `rounded-md shadow-lg py-2 px-4 flex flex-row justify-center items-center gap-6 text-white transition-all duration-300 border border-white/10 ${bgColor}`;
+                
+                // Layout orizzontale compatto
+                intensityBannerContent.innerHTML = `
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs uppercase opacity-80 font-semibold">Int:</span>
+                        <span class="text-xl font-black">${activeRange.intensity}%</span>
+                    </div>
+                    ${activeRange.polarization ? `
+                    <div class="w-px h-6 bg-white/30"></div>
+                    <div class="flex items-center gap-2">
+                        <span class="text-xs uppercase opacity-80 font-semibold">Pol:</span>
+                        <span class="text-xl font-black">${polValue}%</span>
+                    </div>` : ''}
+                `;
+                
+                intensityDetailsBanner.classList.remove('hidden');
+            } else {
+                intensityDetailsBanner.classList.add('hidden');
+            }
         }
 
         // --- Workout Details Display Logic ---
@@ -384,12 +422,14 @@
             if (!dateStr) return;
             selectedDateStr = dateStr;
             
-            // Highlight selected day
             document.querySelectorAll('.calendar-day.selected').forEach(el => el.classList.remove('selected'));
             const dayElement = document.querySelector(`.calendar-day[data-date="${dateStr}"]`);
             if (dayElement) {
                 dayElement.classList.add('selected');
             }
+
+            // *** UPDATE BANNER ***
+            updateIntensityBanner(dateStr);
 
             const dayData = eventsData[dateStr];
             const dateObj = new Date(dateStr + 'T00:00:00');
@@ -440,14 +480,14 @@
 
             pageBody.className = `min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 antialiased ${newTheme}`;
 
-            // *** MODIFICA: Rimuovi tutte le classi attive, incluse le nuove ***
             document.querySelectorAll('#calendar-selector .calendar-btn').forEach(btn => {
                 btn.classList.remove('active-olimpica', 'active-u23', 'active-u19', 'active-para-rowing', 'active-beach-sprint');
             });
             buttonElement.classList.add(newActiveClass);
 
-            workoutDetailsContainer.innerHTML = ''; // Clear details on switch
-            selectedDateStr = null; // Reset selected date on calendar switch
+            workoutDetailsContainer.innerHTML = ''; 
+            intensityDetailsBanner.classList.add('hidden'); 
+            selectedDateStr = null; 
             await renderCalendar();
         }
 
@@ -474,4 +514,3 @@
     </script>
 </body>
 </html>
-
