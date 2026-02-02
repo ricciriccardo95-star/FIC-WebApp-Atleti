@@ -64,7 +64,7 @@
         <canvas id="hiddenPdfCanvas" width="1600" height="800"></canvas>
     </div>
 
-    <div class="p-4 md:p-8 max-w-6xl mx-auto">
+    <div class="p-4 md:p-8 max-w-7xl mx-auto">
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-100">Grafici & Analisi</h1>
             <a href="home_carica_dati.html" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors shadow-lg border border-slate-700">
@@ -133,13 +133,22 @@
             <div class="h-64 md:h-96"><canvas id="performanceChartSR"></canvas></div>
         </div>
 
-        <div id="summary-legend-container" class="mt-8 bg-slate-800/70 border border-slate-700/50 rounded-xl p-4 md:p-6 hidden">
-            <h2 class="text-xl font-bold text-slate-100 mb-4">Riepilogo Prestazioni</h2>
+        <!-- RIEPILOGO AVANZATO: Matrice Globale e Card Dettaglio -->
+        <div id="summary-legend-container" class="mt-8 space-y-4 hidden">
             
-            <div id="global-summary" class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8"></div>
+            <!-- SEZIONE ANALISI GLOBALE -->
+            <div class="bg-[#1e293b] border border-[#334155] rounded-xl p-6 mb-8">
+                <h3 class="text-slate-400 font-bold uppercase mb-4 text-sm tracking-wider border-b border-slate-700 pb-2">ANALISI GLOBALE</h3>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="global-stats-content">
+                    <!-- Popolato via JS -->
+                </div>
+            </div>
 
+            <!-- SEZIONE INTERVALLI -->
             <h3 class="text-lg font-bold text-slate-200 mb-3 border-t border-slate-700 pt-4">Dettaglio Intervalli</h3>
-            <div id="run-summary-list" class="space-y-4"></div>
+            <div id="run-summary-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+                <!-- Cards generate via JS -->
+            </div>
         </div>
 
         <div id="messageBox" class="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center hidden backdrop-blur-sm">
@@ -183,9 +192,16 @@
         const COLORS = ['#4ADE80', '#0EA5E9', '#F472B6', '#FACC15', '#A78BFA', '#FB923C', '#E11D48', '#14B8A6', '#64748B', '#A3E635'];
         const SR_POINT_MAX_COLOR = '#FACC15'; 
         const SR_POINT_MIN_COLOR = '#E11D48';
+
         const BOATS = ['ROWERG', 'M1X', 'M2X', 'M4X', 'M2-', 'M4-', 'M8+', 'W1X', 'W2X', 'W4X', 'W2-', 'W4-', 'W8+'];
 
-        let chartInstanceSpeed, chartInstanceSR, hiddenChartInstance;
+        // Record del Mondo per il calcolo del dispendio (semplificato per M/F generico se non specificato, qui uso valori M come base se non diversamente specificato o aggiungo logica di selezione in futuro. Per ora uso valori fissi o logica standard Admin)
+        const WORLD_RECORDS = {
+            'M': { '1X': '06:30.74', '2X': '05:59.70', '4X': '05:32.50', '2-': '06:08.50', '4-': '05:38.00', '8+': '05:18.68', 'ROWERG': '05:35.8' },
+            'F': { '1X': '07:07.71', '2X': '06:37.31', '4X': '06:06.84', '2-': '06:47.41', '4-': '06:14.36', '8+': '05:52.99', 'ROWERG': '06:21.1' }
+        };
+
+        let chartInstanceSpeed, chartInstanceSR;
         let selectedDistance = 2000; 
         let selectedRuns = 1;
         let currentDataCache = null; // Cache dati attuali (input o storico)
@@ -213,7 +229,7 @@
             return parseFloat(str) || 0;
         }
 
-        // Funzione helper mancante per il PDF (converte secondi in formato mm:ss.d)
+        // Funzione helper per PDF
         function secondsToPaceString(s) {
             if (!isFinite(s) || s <= 0) return '-';
             const m = Math.floor(s / 60);
@@ -221,7 +237,23 @@
             return `${m}:${sec}`;
         }
 
-        // --- CURVA DI GARLAND (Ideale) - LOGICA ADMIN/PUBLIC ---
+        // --- CALCOLO DISPENDIO (WR) ---
+        function getWRData(boat, gender = 'M') { // Default M se non specificato
+            const b = boat.toUpperCase();
+            let timeStr = null, label = 'N/D';
+            if (b.includes("ROWERG") || b.includes("ERG")) { timeStr = WORLD_RECORDS[gender]['ROWERG']; label = `WR ${gender} RowErg`; } 
+            else {
+                if(b.includes("1X")) { timeStr = WORLD_RECORDS[gender]['1X']; }
+                else if(b.includes("2X")) { timeStr = WORLD_RECORDS[gender]['2X']; }
+                else if(b.includes("4X")) { timeStr = WORLD_RECORDS[gender]['4X']; }
+                else if(b.includes("2-")) { timeStr = WORLD_RECORDS[gender]['2-']; }
+                else if(b.includes("4-")) { timeStr = WORLD_RECORDS[gender]['4-']; }
+                else if(b.includes("8+")) { timeStr = WORLD_RECORDS[gender]['8+']; }
+            }
+            return { label, seconds: parseTimeStringToSeconds(timeStr) };
+        }
+
+        // --- CURVA DI GARLAND (Ideale) ---
         function getIdealCurvePoints(globalAvg, maxDistance, boatType) {
             const points = [];
             const isRowerg = boatType && (boatType.toUpperCase().includes("ROWERG") || boatType.toUpperCase().includes("ERG"));
@@ -230,13 +262,13 @@
             if(isRowerg) { pStart = 1.015; p2 = 0.998; p3 = 0.990; p4 = 0.997; } 
             else { pStart = 1.033; p2 = 0.990; p3 = 0.983; p4 = 0.997; }
 
-            // CORREZIONE ADMIN: Picco iniziale è moltiplicato per 1.12 per garantire START > FINISH
+            // CORREZIONE ADMIN: Picco iniziale 1.12 per garantire START > FINISH
             const peakVal = globalAvg * pStart * 1.12;
             
             points.push({x: 0, y: 0});
             if (maxDistance >= 50) points.push({x: 50, y: peakVal * 0.7});
             if (maxDistance >= 100) points.push({x: 100, y: peakVal * 0.95});
-            if (maxDistance >= 200) points.push({x: 200, y: peakVal}); // PICCO FISSO A 200m
+            if (maxDistance >= 200) points.push({x: 200, y: peakVal}); 
 
             if (maxDistance > 200) {
                 if (maxDistance >= 400) points.push({x: 350, y: globalAvg * pStart}); 
@@ -255,25 +287,36 @@
             return points.sort((a,b) => a.x - b.x);
         }
 
-        // --- CALCOLO STATISTICHE TECNICHE ---
-        function calculateTechnicalStats(speedPoints, srPoints, distance, timeSeconds) {
+        // --- CALCOLO STATISTICHE TECNICHE (Unificato) ---
+        function calculateTechnicalStats(speedPoints, srPoints, distance, timeSeconds, boatType, wrData) {
+            // Estrazione array valori puliti
             const speeds = speedPoints ? speedPoints.map(p => p.y).filter(y => y > 0) : [];
             const srs = srPoints ? srPoints.map(p => p.y).filter(y => y > 0) : [];
 
+            // Calcoli Speed
             const maxSpeed = speeds.length ? Math.max(...speeds) : 0;
             const minSpeed = speeds.length ? Math.min(...speeds) : 0;
             const avgSpeed = (distance && timeSeconds) ? (distance/timeSeconds) : (speeds.length ? speeds.reduce((a,b)=>a+b,0)/speeds.length : 0);
 
+            // Calcoli SR
             const maxSr = srs.length ? Math.max(...srs) : 0;
             const minSr = srs.length ? Math.min(...srs) : 0;
             const avgSr = srs.length ? srs.reduce((a,b)=>a+b,0)/srs.length : 0;
 
+            // Calcoli Watt (Fisica Barca 2.8 * v^3)
             const wattPoints = speeds.map(v => 2.8 * Math.pow(v, 3));
             const maxWatt = wattPoints.length ? Math.max(...wattPoints) : 0;
             const minWatt = wattPoints.length ? Math.min(...wattPoints) : 0;
-            const avgWatt = 2.8 * Math.pow(avgSpeed, 3);
+            const avgWatt = 2.8 * Math.pow(avgSpeed, 3); // Watt basati sulla media velocità
 
-            return { maxSpeed, minSpeed, avgSpeed, maxSr, minSr, avgSr, maxWatt, minWatt, avgWatt };
+            // Calcolo Dispendio (% WR)
+            let percentWR = 0;
+            if (wrData && wrData.seconds > 0) {
+                 const wattsWR = 2.8 * Math.pow(2000 / wrData.seconds, 3);
+                 if (wattsWR > 0) percentWR = (avgWatt / wattsWR) * 100;
+            }
+
+            return { maxSpeed, minSpeed, avgSpeed, maxSr, minSr, avgSr, maxWatt, minWatt, avgWatt, percentWR };
         }
 
         // --- SALVATAGGIO DATI ---
@@ -284,7 +327,7 @@
 
             try {
                 await addDoc(collection(db, "graphics"), dataToSave);
-                historyCache = null; // Reset cache
+                historyCache = null; 
                 showMessageBox("Successo!", `Allenamento salvato correttamente.`);
                 saveButton.textContent = "Genera & Salva";
                 document.getElementById('download-data-btn').disabled = false;
@@ -297,7 +340,7 @@
             }
         }
         
-        // --- GESTIONE STORICO ---
+        // --- GESTIONE STORICO OTTIMIZZATA ---
         async function openHistoryModal() {
             const modal = document.getElementById('historyModal');
             const list = document.getElementById('historyListContainer');
@@ -308,6 +351,7 @@
                 return;
             }
 
+            // OTTIMIZZAZIONE: Usa cache se disponibile
             if (historyCache) {
                 renderHistoryList(historyCache);
                 return;
@@ -315,6 +359,7 @@
 
             try {
                 list.innerHTML = '<div class="text-center mt-10"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500 mx-auto"></div><p class="text-slate-400 mt-2">Caricamento...</p></div>';
+
                 const q = query(
                     collection(db, "graphics"), 
                     where("uid", "==", auth.currentUser.uid), 
@@ -323,6 +368,7 @@
                 );
                 
                 const querySnapshot = await getDocs(q);
+                
                 if (querySnapshot.empty) {
                     list.innerHTML = '<p class="text-center text-slate-500 mt-10">Nessun allenamento salvato.</p>';
                     return;
@@ -332,17 +378,23 @@
                 querySnapshot.forEach(doc => {
                     historyCache.push({ id: doc.id, data: doc.data() });
                 });
+
                 renderHistoryList(historyCache);
 
             } catch (error) {
                 console.error("Errore storico:", error);
-                list.innerHTML = `<p class="text-center text-red-400 mt-10">Errore nel caricamento.</p>`;
+                if (error.message.includes("index")) {
+                    list.innerHTML = `<p class="text-center text-yellow-400 mt-10 text-sm">⚠️ Indice Mancante.<br>Controlla la console del browser.</p>`;
+                } else {
+                    list.innerHTML = `<p class="text-center text-red-400 mt-10">Errore: ${error.message}</p>`;
+                }
             }
         }
 
         function renderHistoryList(items) {
             const list = document.getElementById('historyListContainer');
             let html = '';
+            
             items.forEach(item => {
                 const data = item.data;
                 const dateObj = data.timestamp ? data.timestamp.toDate() : new Date();
@@ -359,11 +411,12 @@
                                     <span class="text-slate-400 text-xs">${dateStr}, ${timeStr}</span>
                                 </div>
                                 <h4 class="font-bold text-slate-200 group-hover:text-white">${data.crewString || 'Sconosciuto'}</h4>
-                                <p class="text-xs text-slate-400 mt-1">${data.runsCount || (data.runs ? data.runs.length : '-')}x${data.distance}m</p>
+                                <p class="text-xs text-slate-400 mt-1">${data.runsCount}x${data.distance}m</p>
                             </div>
                             <svg class="w-5 h-5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                         </div>
-                    </div>`;
+                    </div>
+                `;
             });
             list.innerHTML = html;
         }
@@ -371,30 +424,33 @@
         window.restoreSessionFromData = (encodedJson) => {
             try {
                 const data = JSON.parse(decodeURIComponent(encodedJson));
+                
                 if(document.getElementById('boat-selector')) document.getElementById('boat-selector').value = data.boat;
                 if(document.getElementById('crew-names')) document.getElementById('crew-names').value = data.crewString;
                 
                 selectedDistance = parseInt(data.distance);
-                selectedRuns = parseInt(data.runsCount || data.runs.length);
+                selectedRuns = parseInt(data.runsCount);
                 currentDataCache = data.runs; 
 
                 document.getElementById('speed-chart-container').classList.remove('hidden');
                 document.getElementById('sr-chart-container').classList.remove('hidden');
                 document.getElementById('summary-legend-container').classList.remove('hidden');
                 
+                // Aggiorna usando la barca salvata
                 updateCharts(data.runs);
                 updateSummary(data.runs);
                 document.getElementById('download-data-btn').disabled = false;
 
                 document.getElementById('historyModal').classList.add('hidden');
                 showMessageBox("Caricato", "Dati recuperati dallo storico.");
+                
             } catch (e) {
                 console.error(e);
                 showMessageBox("Errore", "Impossibile ripristinare i dati.");
             }
         };
 
-        // --- UI GESTIONE ---
+        // --- LOGICA INTERFACCIA ---
         function renderBoatSelector() {
             const sel = document.getElementById('boat-selector');
             sel.innerHTML = '<option value="" disabled selected>Seleziona Barca</option>';
@@ -438,10 +494,12 @@
                 document.getElementById('runs-wrapper').classList.remove('hidden');
                 renderInputs();
             }
+
             document.getElementById('speed-chart-container').classList.add('hidden');
             document.getElementById('sr-chart-container').classList.add('hidden');
             document.getElementById('summary-legend-container').classList.add('hidden');
             document.getElementById('download-data-btn').disabled = true;
+
             checkGenerationReadiness();
         };
 
@@ -479,6 +537,9 @@
             let val = '';
             if (d.length === 3) val = `${d.substring(0,2)}.${d.substring(2)}`;
             else val = d;
+            if ((event.data === '.' || event.data === ',') && !val.includes('.')) {
+                if(val.length >=1) val += '.';
+            }
             input.value = val;
             currentDataCache = null; 
         };
@@ -547,17 +608,26 @@
             const lines = event.clipboardData.getData('text').split(/[\n\r]+/).filter(s => s.trim().length > 0);
             const pInps = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
             const sInps = document.querySelectorAll(`.sr-input[data-run-id="${runId}"]`);
+            
             lines.forEach((line, idx) => {
                 const parts = line.split(/[\t\s]+/);
-                if (pInps[idx] && parts[0]) { pInps[idx].value = parts[0].replace(/[^0-9.]/g, ''); formatPaceInput({target: pInps[idx]}); }
-                if (sInps[idx] && parts[1]) { sInps[idx].value = parts[1].replace(/[^0-9.]/g, ''); formatSrInput({target: sInps[idx]}); }
+                if (pInps[idx] && parts[0]) {
+                    pInps[idx].value = parts[0].replace(/[^0-9.]/g, '');
+                    formatPaceInput({target: pInps[idx]});
+                }
+                if (sInps[idx] && parts[1]) {
+                    sInps[idx].value = parts[1].replace(/[^0-9.]/g, '');
+                    formatSrInput({target: sInps[idx]});
+                }
             });
             currentDataCache = null;
         };
 
         function analyzeRunData(runId) {
             const speedDP = [], srDP = [];
-            let totalSec = 0, valid = true, totalSr = 0, srCount = 0;
+            let totalSec = 0, valid = true;
+            let totalSr = 0, srCount = 0;
+            
             const pInps = document.querySelectorAll(`.pace-input[data-run-id="${runId}"]`);
             const sInps = document.querySelectorAll(`.sr-input[data-run-id="${runId}"]`);
             if (pInps.length === 0) return null;
@@ -573,9 +643,17 @@
                     if(disp) disp.textContent = spd.toFixed(2);
                     speedDP.push({x: dist, y: parseFloat(spd.toFixed(3)), pace: secs});
                     totalSec += (secs * (SEGMENT_DISTANCE / PACE_REFERENCE_DISTANCE));
-                } else { if(disp) disp.textContent = '-'; valid = false; }
+                } else {
+                    if(disp) disp.textContent = '-';
+                    valid = false;
+                }
 
-                if (sr > 0) { srDP.push({x: dist, y: sr}); totalSr += sr; srCount++; } else { valid = false; }
+                if (sr > 0) {
+                    srDP.push({x: dist, y: sr});
+                    totalSr += sr; srCount++;
+                } else {
+                    valid = false;
+                }
             });
 
             if (!valid || speedDP.length === 0) return null;
@@ -589,11 +667,11 @@
 
             return {
                 runId, color: COLORS[runId-1],
-                totalSec, totalSeconds: totalSec,
+                totalSec,
                 totalTimeStr: `${Math.floor(totalSec/60)}:${(totalSec%60).toFixed(1).padStart(4,'0')}`,
                 speedData: speedDP, srData: srDP,
                 avgSpd, maxSpd, minSpd,
-                avgSr, maxSr, minSr, distance: selectedDistance
+                avgSr, maxSr, minSr
             };
         }
 
@@ -620,174 +698,165 @@
             return res;
         };
 
-        // --- AGGIORNAMENTO GRAFICI (CON CURVA IDEALE) ---
         function updateCharts(data) {
-            const spdDatasets = [], srDatasets = [];
+            // Speed Chart
+            const spdDatasets = [];
+            let minS = 99, maxS = 0;
             let totalTime = 0, totalDist = 0;
-            let minVal = 999, maxVal = 0;
 
-            data.forEach((r, i) => {
-                totalTime += r.totalSec; totalDist += r.distance;
-                r.speedData.forEach(p => { 
-                    if(p.y > 0) {
-                        if(p.y < minVal) minVal = p.y; 
-                        if(p.y > maxVal) maxVal = p.y;
-                    }
-                });
+            data.forEach(r => {
+                totalTime += r.totalSec; totalDist += selectedDistance;
+                r.speedData.forEach(p => { if(p.y<minS && p.y>0) minS=p.y; if(p.y>maxS) maxS=p.y; });
+                const stats = calculateTechnicalStats(r.speedData, r.srData, selectedDistance, r.totalSec, '', null);
 
                 spdDatasets.push({
                     label: `Int. ${r.runId}`,
                     data: r.speedData,
                     borderColor: r.color,
-                    pointRadius: r.speedData.map(p => (p.y===r.maxSpd.y || p.y===r.minSpd.y) ? 6 : 3),
-                    pointBackgroundColor: r.speedData.map(p => p.y===r.maxSpd.y ? '#38BDF8' : (p.y===r.minSpd.y ? '#F87171' : r.color)),
+                    pointRadius: r.speedData.map(p => (p.y===stats.maxSpeed || p.y===stats.minSpeed) ? 6 : 3),
+                    pointBackgroundColor: r.speedData.map(p => p.y===stats.maxSpeed ? '#38BDF8' : (p.y===stats.minSpeed ? '#F87171' : r.color)),
                     tension: 0.4 
                 });
+            });
+
+            // Globals & Ideal Curve
+            const globalAvg = totalTime > 0 ? totalDist / totalTime : 0;
+            if(globalAvg > 0) {
+                spdDatasets.push({
+                    label: 'Media Totale', data: [{x:0, y:globalAvg}, {x:selectedDistance, y:globalAvg}],
+                    borderColor: '#94a3b8', borderWidth: 2, borderDash: [10, 5], pointRadius: 0, fill: false, tension: 0
+                });
+                const boatType = document.getElementById('boat-selector').value;
+                const idealCurve = getIdealCurvePoints(globalAvg, selectedDistance, boatType);
+                spdDatasets.push({
+                    label: 'Curva Ideale', data: idealCurve,
+                    borderColor: '#F59E0B', borderWidth: 3, tension: 0.4, pointRadius: 0, fill: false
+                });
+            }
+
+            // Zoom
+            let suggestedMin = minS - 0.2;
+            if (suggestedMin < 0) suggestedMin = 0;
+
+            chartInstanceSpeed.data.datasets = spdDatasets;
+            chartInstanceSpeed.options.scales.y.min = suggestedMin;
+            chartInstanceSpeed.options.scales.x.max = selectedDistance;
+            chartInstanceSpeed.update();
+
+            // SR Chart
+            const srDatasets = [];
+            let minSr = 99, maxSr = 0;
+            data.forEach(r => {
+                r.srData.forEach(p => { if(p.y<minSr) minSr=p.y; if(p.y>maxSr) maxSr=p.y; });
+                const stats = calculateTechnicalStats(r.speedData, r.srData, selectedDistance, r.totalSec, '', null);
                 srDatasets.push({
                     label: `Int. ${r.runId}`,
                     data: r.srData,
                     borderColor: r.color,
-                    pointRadius: r.srData.map(p => (p.y===r.maxSr.y || p.y===r.minSr.y) ? 6 : 3),
-                    pointBackgroundColor: r.srData.map(p => p.y===r.maxSr.y ? SR_POINT_MAX_COLOR : (p.y===r.minSr.y ? SR_POINT_MIN_COLOR : r.color)),
+                    pointRadius: r.srData.map(p => (p.y===stats.maxSr || p.y===stats.minSr) ? 6 : 3),
+                    pointBackgroundColor: r.srData.map(p => p.y===stats.maxSr ? SR_POINT_MAX_COLOR : (p.y===stats.minSr ? SR_POINT_MIN_COLOR : r.color)),
                     tension: 0.4
                 });
             });
-
-            // Calcolo Media Globale e Curva Ideale
-            const globalAvg = totalDist / totalTime;
-            
-            // Zoom Aggressivo
-            let suggestedMin = 0;
-            if (minVal < 999 && maxVal > 0) {
-                suggestedMin = Math.max(0, minVal - 0.2);
-            }
-
-            spdDatasets.push({
-                label: 'Media Totale', data: [{x:0, y:globalAvg}, {x:selectedDistance, y:globalAvg}],
-                borderColor: '#94a3b8', borderWidth: 2, borderDash: [10, 5], pointRadius: 0, fill: false, tension: 0
-            });
-
-            const boatType = document.getElementById('boat-selector').value;
-            const idealCurve = getIdealCurvePoints(globalAvg, selectedDistance, boatType);
-            spdDatasets.push({
-                label: 'Curva Ideale', data: idealCurve,
-                borderColor: '#F59E0B', borderWidth: 3, tension: 0.4, pointRadius: 0, fill: false
-            });
-
-            // Update Speed Chart
-            chartInstanceSpeed.data.datasets = spdDatasets;
-            chartInstanceSpeed.options.scales.x.max = selectedDistance;
-            
-            if (suggestedMin > 0) {
-                chartInstanceSpeed.options.scales.y.min = suggestedMin;
-            } else {
-                delete chartInstanceSpeed.options.scales.y.min;
-            }
-            chartInstanceSpeed.update();
-
-            // Update SR Chart
             chartInstanceSR.data.datasets = srDatasets;
+            chartInstanceSR.options.scales.y.min = minSr - 2;
+            chartInstanceSR.options.scales.y.max = maxSr + 2;
             chartInstanceSR.options.scales.x.max = selectedDistance;
             chartInstanceSR.update();
         }
 
-        // --- RIEPILOGO DETTAGLIATO ---
+        // --- RIEPILOGO DETTAGLIATO (Stile Admin con Card & Delta) ---
         function updateSummary(data) {
-            const globalDiv = document.getElementById('global-summary');
+            const globalDiv = document.getElementById('global-stats-content');
             const listDiv = document.getElementById('run-summary-list');
             
-            listDiv.innerHTML = '';
             globalDiv.innerHTML = '';
-
-            let absoluteMaxSpd = { y: 0, runId: 0, dist: 0 };
-            let fastestRun = null;
-            let totalDistSum = 0;
-            let totalTimeSum = 0;
-
-            data.forEach(r => {
-                if (r.maxSpd.y > absoluteMaxSpd.y) absoluteMaxSpd = { y: r.maxSpd.y, runId: r.runId, dist: r.maxSpd.x };
-                if (!fastestRun || r.avgSpd > fastestRun.avgSpd) fastestRun = r;
-                totalDistSum += selectedDistance;
-                totalTimeSum += r.totalSec;
-            });
-
-            const overallAvgSpd = totalTimeSum > 0 ? (totalDistSum / totalTimeSum) : 0;
+            listDiv.innerHTML = '';
             
-            const globalStats = [
-                { label: "Miglior Intervallo", val: fastestRun ? `Int. ${fastestRun.runId}` : "-", sub: fastestRun ? `${toPace(fastestRun.avgSpd)} (${fastestRun.avgSpd.toFixed(2)} m/s)` : "", color: "text-emerald-400" },
-                { label: "Picco Velocità Max", val: absoluteMaxSpd.y > 0 ? `${absoluteMaxSpd.y.toFixed(2)} m/s` : "-", sub: absoluteMaxSpd.y > 0 ? `${toPace(absoluteMaxSpd.y)} (Int. ${absoluteMaxSpd.runId} @ ${absoluteMaxSpd.dist}m)` : "", color: "text-blue-400" },
-                { label: "Media Totale", val: overallAvgSpd > 0 ? toPace(overallAvgSpd) : "-", sub: overallAvgSpd > 0 ? `${overallAvgSpd.toFixed(2)} m/s` : "Totale Cumulativo", color: "text-indigo-400" }
-            ];
+            const boatType = document.getElementById('boat-selector').value;
+            const wrData = getWRData(boatType, 'M'); // Usa M come default generico per il calcolo %
 
-            globalStats.forEach(stat => {
-                globalDiv.innerHTML += `
-                    <div class="bg-slate-700/50 border border-slate-600/50 p-4 rounded-xl shadow-lg">
-                        <div class="stat-label mb-1">${stat.label}</div>
-                        <div class="stat-value ${stat.color}">${stat.val}</div>
-                        <div class="stat-sub">${stat.sub}</div>
-                    </div>`;
-            });
+            // --- CALCOLO GLOBALE ---
+            let totalDist = 0, totalTime = 0;
+            data.forEach(r => { totalDist += selectedDistance; totalTime += r.totalSec; });
+            const globalAvgSpeed = totalTime > 0 ? totalDist / totalTime : 0;
+            const globalStats = calculateTechnicalStats(null, null, totalDist, totalTime, boatType, wrData); // Solo per AvgWatt -> WR
 
-            data.forEach(r => {
-                const avgPace = toPace(r.avgSpd);
-                const minPace = toPace(r.minSpd.y); 
-                const maxPace = toPace(r.maxSpd.y);
+            // Render Global Stats
+            globalDiv.innerHTML = `
+                <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-4 text-center">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">DISPENDIO (% WR)</div>
+                    <div class="text-3xl font-black text-orange-500">${globalStats.percentWR > 0 ? globalStats.percentWR.toFixed(1) + '%' : '-'}</div>
+                </div>
+                <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-4 text-center">
+                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">VELOCITÀ MEDIA</div>
+                    <div class="text-3xl font-bold text-blue-300">${globalAvgSpeed.toFixed(2)}</div>
+                </div>
+            `;
 
-                listDiv.innerHTML += `
-                    <div class="bg-slate-800/80 border-l-4 p-4 rounded-lg shadow-md" style="border-color:${r.color}">
-                        <div class="card-header flex justify-between items-end">
-                            <div>
-                                <h3 class="font-bold text-lg text-white flex items-center gap-2">
-                                    <span class="w-3 h-3 rounded-full" style="background:${r.color}"></span>
-                                    Intervallo ${r.runId}
-                                </h3>
+            // Render Run Cards
+            const sd = (v) => isFinite(v) ? v.toFixed(2) : '-';
+
+            data.forEach(run => {
+                const s = calculateTechnicalStats(run.speedData, run.srData, selectedDistance, run.totalSec, boatType, null);
+                
+                const card = document.createElement('div');
+                card.className = "bg-[#1e293b] border border-[#334155] rounded-xl overflow-hidden shadow-lg";
+                card.innerHTML = `
+                    <div class="bg-[#334155]/50 text-yellow-500 text-center font-bold py-3 border-b border-slate-600 text-lg">
+                        INTERVALLO ${run.runId} <span class="text-sm font-normal text-slate-400">(${selectedDistance}m)</span>
+                    </div>
+                    <div class="p-4 space-y-4">
+                        <!-- SPEEDY -->
+                        <div class="rounded-lg overflow-hidden border border-red-900/30">
+                            <div class="bg-[#451a1a] text-red-200 text-center text-xs font-bold py-1.5 uppercase">SPEEDY (m/s)</div>
+                            <div class="bg-[#1a1010] grid grid-cols-3 text-center py-2 border-b border-red-900/20">
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MAX</div><div class="font-bold text-white">${s.maxSpeed.toFixed(2)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MIN</div><div class="font-bold text-white">${s.minSpeed.toFixed(2)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">AVE</div><div class="font-bold text-white">${s.avgSpeed.toFixed(2)}</div></div>
                             </div>
-                            <div class="text-right">
-                                <span class="stat-label block mb-0.5">Tempo</span>
-                                <span class="text-xl font-bold text-white tracking-wide">${r.totalTimeStr}</span>
+                            <div class="bg-[#2d1515] text-red-200 text-center text-[10px] font-bold py-1 uppercase">Δ SPEEDY</div>
+                            <div class="bg-[#1a1010] grid grid-cols-3 text-center py-2">
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MX/MN</div><div class="font-mono text-slate-300 text-sm">${sd(s.maxSpeed-s.minSpeed)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MX/AV</div><div class="font-mono text-slate-300 text-sm">${sd(s.maxSpeed-s.avgSpeed)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MN/AV</div><div class="font-mono text-slate-300 text-sm">${sd(s.avgSpeed-s.minSpeed)}</div></div>
+                            </div>
+                        </div>
+                        
+                        <!-- WATT -->
+                        <div class="rounded-lg overflow-hidden border border-orange-900/30">
+                            <div class="bg-[#452f1a] text-[#fed7aa] text-center text-xs font-bold py-1.5 uppercase">WATT</div>
+                            <div class="bg-[#1a1410] grid grid-cols-3 text-center py-2 border-b border-orange-900/20">
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MAX</div><div class="font-bold text-white">${s.maxWatt.toFixed(0)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MIN</div><div class="font-bold text-white">${s.minWatt.toFixed(0)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">AVE</div><div class="font-bold text-white">${s.avgWatt.toFixed(0)}</div></div>
+                            </div>
+                            <div class="bg-[#2a1f15] text-[#fed7aa] text-center text-[10px] font-bold py-1 uppercase">Δ WATT</div>
+                            <div class="bg-[#1a1410] grid grid-cols-3 text-center py-2">
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MX/MN</div><div class="font-mono text-slate-300 text-sm">${sd(s.maxWatt-s.minWatt)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MX/AV</div><div class="font-mono text-slate-300 text-sm">${sd(s.maxWatt-s.avgWatt)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MN/AV</div><div class="font-mono text-slate-300 text-sm">${sd(s.avgWatt-s.minWatt)}</div></div>
                             </div>
                         </div>
 
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-500 uppercase mb-2 border-b border-slate-700 pb-1">Velocità / Passo</h4>
-                                <div class="grid grid-cols-3 gap-2 text-center">
-                                    <div class="bg-slate-700/30 p-2 rounded">
-                                        <div class="stat-label text-emerald-400">Max</div>
-                                        <div class="font-bold text-white text-sm">${maxPace}</div>
-                                        <div class="text-[10px] text-slate-400">${r.maxSpd.y.toFixed(2)}</div>
-                                    </div>
-                                    <div class="bg-slate-700/50 p-2 rounded border border-slate-600/30">
-                                        <div class="stat-label text-blue-300">Media</div>
-                                        <div class="font-bold text-white text-lg">${avgPace}</div>
-                                        <div class="text-[10px] text-slate-400">${r.avgSpd.toFixed(2)} m/s</div>
-                                    </div>
-                                    <div class="bg-slate-700/30 p-2 rounded">
-                                        <div class="stat-label text-red-400">Min</div>
-                                        <div class="font-bold text-white text-sm">${minPace}</div>
-                                        <div class="text-[10px] text-slate-400">${r.minSpd.y.toFixed(2)}</div>
-                                    </div>
-                                </div>
+                        <!-- STROKES -->
+                        <div class="rounded-lg overflow-hidden border border-indigo-900/30">
+                            <div class="bg-[#2e1a45] text-[#e9d5ff] text-center text-xs font-bold py-1.5 uppercase">STROKES</div>
+                            <div class="bg-[#15101a] grid grid-cols-3 text-center py-2 border-b border-indigo-900/20">
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MAX</div><div class="font-bold text-white">${s.maxSr.toFixed(0)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MIN</div><div class="font-bold text-white">${s.minSr.toFixed(0)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">AVE</div><div class="font-bold text-white">${s.avgSr.toFixed(1)}</div></div>
                             </div>
-                            <div>
-                                <h4 class="text-xs font-bold text-slate-500 uppercase mb-2 border-b border-slate-700 pb-1">Frequenza (SR)</h4>
-                                <div class="grid grid-cols-3 gap-2 text-center">
-                                    <div class="bg-slate-700/30 p-2 rounded">
-                                        <div class="stat-label text-yellow-400">Max</div>
-                                        <div class="font-bold text-white text-sm">${r.maxSr.y}</div>
-                                    </div>
-                                    <div class="bg-slate-700/50 p-2 rounded border border-slate-600/30">
-                                        <div class="stat-label text-orange-300">Media</div>
-                                        <div class="font-bold text-white text-lg">${r.avgSr.toFixed(1)}</div>
-                                    </div>
-                                    <div class="bg-slate-700/30 p-2 rounded">
-                                        <div class="stat-label text-slate-400">Min</div>
-                                        <div class="font-bold text-white text-sm">${r.minSr.y}</div>
-                                    </div>
-                                </div>
+                            <div class="bg-[#1f152a] text-[#e9d5ff] text-center text-[10px] font-bold py-1 uppercase">Δ STROKES</div>
+                            <div class="bg-[#15101a] grid grid-cols-3 text-center py-2">
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MX/MN</div><div class="font-mono text-slate-300 text-sm">${sd(s.maxSr-s.minSr)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MX/AV</div><div class="font-mono text-slate-300 text-sm">${sd(s.maxSr-s.avgSr)}</div></div>
+                                <div><div class="text-[9px] text-slate-500 mb-0.5">MN/AV</div><div class="font-mono text-slate-300 text-sm">${sd(s.avgSr-s.minSr)}</div></div>
                             </div>
                         </div>
-                    </div>`;
+                    </div>
+                `;
+                listDiv.appendChild(card);
             });
         }
 
@@ -810,60 +879,6 @@
                 document.getElementById('download-data-btn').disabled = false;
             }
         };
-
-        // --- PDF GENERATION (Motore Admin) ---
-        async function generateChartImageForPDF(runs, type, globalAvg) {
-            const ctx = document.getElementById('hiddenPdfCanvas').getContext('2d');
-            if (hiddenChartInstance) hiddenChartInstance.destroy();
-            
-            let minVal = 999;
-            if(type === 'speed') {
-                runs.forEach(r => r.speedData.forEach(p => { if(p.y > 0 && p.y < minVal) minVal = p.y; }));
-            }
-
-            const datasets = runs.map((run, i) => {
-                const color = COLORS[i % COLORS.length];
-                const data = (type === 'speed') ? run.speedData : run.srData;
-                return { 
-                    label: `Run ${run.runId}`, data: data, 
-                    borderColor: color, borderWidth: 3, pointRadius: 0, tension: 0.4, fill: false, 
-                    parsing: { xAxisKey: 'x', yAxisKey: 'y' } 
-                };
-            });
-
-            if(type === 'speed' && globalAvg) {
-                 datasets.push({
-                    label: 'Media Totale', data: [{x: 0, y: globalAvg}, {x: selectedDistance, y: globalAvg}],
-                    borderColor: '#94a3b8', borderWidth: 2, borderDash: [10, 5], pointRadius: 0, fill: false, tension: 0
-                });
-                const boatType = document.getElementById('boat-selector').value;
-                datasets.push({
-                    label: 'Curva Ideale', data: getIdealCurvePoints(globalAvg, selectedDistance, boatType),
-                    borderColor: '#F59E0B', borderWidth: 2, tension: 0.4, pointRadius: 0, fill: false
-                });
-            }
-            
-            let suggestedMin = undefined;
-            if (type === 'speed' && minVal < 999) {
-                suggestedMin = Math.max(0, minVal - 0.2);
-            }
-
-            hiddenChartInstance = new Chart(ctx, { 
-                type: 'line', data: { datasets: datasets }, 
-                options: { 
-                    responsive: false, animation: false, 
-                    scales: { 
-                        x: { type: 'linear', display: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 16 } } }, 
-                        y: { 
-                            display: true, grid: { color: '#e2e8f0' }, ticks: { font: { size: 16 } },
-                            min: suggestedMin 
-                        } 
-                    }, 
-                    plugins: { legend: { display: true, labels: { font: { size: 16 } } } } 
-                } 
-            });
-            return document.getElementById('hiddenPdfCanvas').toDataURL('image/jpeg', 0.9);
-        }
 
         window.downloadPdf = async () => {
             const btn = document.getElementById('download-data-btn');
@@ -904,9 +919,12 @@
             doc.setFontSize(12); doc.setTextColor(200, 200, 200); doc.setFont("helvetica", "normal");
             doc.text(`${chartData.boat} | ${chartData.timestamp.toLocaleDateString('it-IT')} | ${chartData.distance}m x ${chartData.runs.length}`, 14, 28);
             
+            const boatType = document.getElementById('boat-selector').value || chartData.boat;
+            const wrData = getWRData(boatType);
+
             const headers = ['METRICA'];
             chartData.runs.forEach(r => headers.push(`RUN ${r.runId}`));
-            const runStats = chartData.runs.map(run => calculateTechnicalStats(run.speedData, run.srData, run.distance, run.totalSeconds));
+            const runStats = chartData.runs.map(run => calculateTechnicalStats(run.speedData, run.srData, run.distance, run.totalSeconds, boatType, wrData));
             const sd = (v) => isFinite(v) ? v.toFixed(2) : '-';
 
             // Calcolo Media Globale
