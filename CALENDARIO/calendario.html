@@ -24,141 +24,125 @@
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 1px;
+            gap: 2px; /* Gap leggermente più ampio per mobile */
         }
         .calendar-day {
             transition: background-color 0.2s, border-color 0.2s;
             position: relative;
             aspect-ratio: 1/1;
-            background-color: #0F172A;
+            background-color: #1E293B; /* Leggermente più chiaro del fondo */
             overflow: hidden;
+            border-radius: 6px;
             border: 2px solid transparent;
         }
          .calendar-day.selected {
             border-color: #38BDF8;
+            background-color: #334155;
         }
         .today-highlight {
             background-color: #38BDF8;
             color: #0F172A;
             border-radius: 50%;
-            width: 2rem;
-            height: 2rem;
+            width: 1.5rem;
+            height: 1.5rem;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 0.875rem;
+            font-size: 0.75rem;
         }
-        .workout-tag {
-            cursor: pointer;
-            transition: transform 0.2s;
+        
+        /* Indicatori visuali nel calendario (senza testo) */
+        .dot-indicator {
+            height: 4px;
+            width: 80%;
+            border-radius: 2px;
+            margin: 1px auto;
         }
+        
         .calendar-btn {
-            padding: 0.5rem 1rem;
+            padding: 0.5rem 0.8rem;
             border-radius: 0.375rem;
             font-weight: 600;
             background-color: #334155;
             color: #cbd5e1;
             transition: all 0.2s;
+            flex-grow: 1; /* Per riempire lo spazio su mobile */
+            text-align: center;
         }
-        .calendar-btn:hover {
-            background-color: #475569;
-            color: #fff;
-        }
-        .calendar-btn.active-olimpica {
-            background-color: #38BDF8; color: #0F172A; box-shadow: 0 0 15px rgba(56, 189, 248, 0.4);
-        }
-        .calendar-btn.active-u23 {
-            background-color: #2dd4bf; color: #0F172A; box-shadow: 0 0 15px rgba(45, 212, 191, 0.4);
-        }
-        .calendar-btn.active-u19 {
-            background-color: #fb923c; color: #0F172A; box-shadow: 0 0 15px rgba(251, 146, 60, 0.4);
-        }
-        .calendar-btn.active-para-rowing {
-            background-color: #a855f7; color: #0F172A; box-shadow: 0 0 15px rgba(168, 85, 247, 0.4);
-        }
-        .calendar-btn.active-beach-sprint {
-            background-color: #eab308; color: #0F172A; box-shadow: 0 0 15px rgba(234, 179, 8, 0.4);
-        }
+        .calendar-btn:hover { background-color: #475569; color: #fff; }
+        .calendar-btn.active-olimpica { background-color: #38BDF8; color: #0F172A; }
+        .calendar-btn.active-u23 { background-color: #2dd4bf; color: #0F172A; }
+        .calendar-btn.active-u19 { background-color: #fb923c; color: #0F172A; }
+        .calendar-btn.active-para-rowing { background-color: #a855f7; color: #0F172A; }
+        .calendar-btn.active-beach-sprint { background-color: #eab308; color: #0F172A; }
 
-        .intensity-bar {
-            position: absolute;
-            top: 28px;
-            left: 0;
-            right: 0;
-            height: 18px;
-            color: white;
-            font-size: 10px;
-            font-weight: bold;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 5;
-            padding: 0 4px;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-        }
-        .intensity-bar.start {
-            left: -1px; border-top-left-radius: 9999px; border-bottom-left-radius: 9999px;
-        }
-        .intensity-bar.end {
-            right: -1px; border-top-right-radius: 9999px; border-bottom-right-radius: 9999px;
-        }
+        /* Colori Fissi (uguali all'admin) */
+        .bg-int-50 { background-color: #10B981; }
+        .bg-int-75 { background-color: #F59E0B; }
+        .bg-int-100 { background-color: #EF4444; }
+        .bg-int-tapering { background-color: #06b6d4; }
+        .bg-event-raduno { background-color: #3B82F6; }
+        .bg-event-gara { background-color: #A855F7; }
+
     </style>
 </head>
-<body class="min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 antialiased">
+<body class="min-h-screen flex flex-col items-center justify-start p-2 antialiased pb-20">
 
-    <div class="w-full max-w-4xl mx-auto py-4">
-        <div class="px-2 mb-4">
-            <a href="../home.html" class="inline-flex items-center px-4 py-2 bg-slate-700 hover:bg-slate-600 text-slate-300 font-semibold rounded-lg shadow transition-colors">
-                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
+    <div class="w-full max-w-md mx-auto py-2"> <div class="px-1 mb-4 flex justify-between items-center">
+             <h1 class="text-xl font-black text-slate-100 tracking-tight">CALENDARIO</h1>
+            <a href="../home.html" class="inline-flex items-center px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg shadow transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                 Home
             </a>
         </div>
-        <h1 class="text-2xl sm:text-4xl font-black text-center text-slate-100 mb-4 tracking-tight">CALENDARIO ALLENAMENTI</h1>
 
-        <div id="calendar-selector" class="flex justify-center flex-wrap gap-2 mb-6">
-            <button data-collection="calendario_olimpica" data-theme="theme-olimpica" data-active-class="active-olimpica" class="calendar-btn active-olimpica text-xs sm:text-base">SQUADRA OLIMPICA</button>
-            <button data-collection="calendario_u23" data-theme="theme-u23" data-active-class="active-u23" class="calendar-btn text-xs sm:text-base">UNDER 23</button>
-            <button data-collection="calendario_u19" data-theme="theme-u19" data-active-class="active-u19" class="calendar-btn text-xs sm:text-base">UNDER 19</button>
-            <button data-collection="calendario_para_rowing" data-theme="theme-para-rowing" data-active-class="active-para-rowing" class="calendar-btn text-xs sm:text-base">PARA-ROWING</button>
-            <button data-collection="calendario_beach_sprint" data-theme="theme-beach-sprint" data-active-class="active-beach-sprint" class="calendar-btn text-xs sm:text-base">BEACH SPRINT</button>
+        <div class="overflow-x-auto pb-2 mb-4">
+            <div id="calendar-selector" class="flex gap-2 min-w-max px-1">
+                <button data-collection="calendario_olimpica" data-theme="theme-olimpica" data-active-class="active-olimpica" class="calendar-btn active-olimpica text-xs">OLIMPICA</button>
+                <button data-collection="calendario_u23" data-theme="theme-u23" data-active-class="active-u23" class="calendar-btn text-xs">UNDER 23</button>
+                <button data-collection="calendario_u19" data-theme="theme-u19" data-active-class="active-u19" class="calendar-btn text-xs">UNDER 19</button>
+                <button data-collection="calendario_para_rowing" data-theme="theme-para-rowing" data-active-class="active-para-rowing" class="calendar-btn text-xs">PARA</button>
+                <button data-collection="calendario_beach_sprint" data-theme="theme-beach-sprint" data-active-class="active-beach-sprint" class="calendar-btn text-xs">BEACH</button>
+            </div>
         </div>
         
-        <div id="calendar-container" class="transition-opacity duration-300 ease-in-out">
-            <div class="flex justify-between items-center mb-4">
-                <h2 id="month-year" class="text-xl sm:text-2xl font-bold text-center w-full"></h2>
-                <div class="flex gap-2 absolute right-2 sm:right-4">
-                    <button id="prev-month" class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-md transition-colors">&lt;</button>
-                    <button id="next-month" class="w-8 h-8 sm:w-10 sm:h-10 flex items-center justify-center bg-slate-700 hover:bg-slate-600 rounded-md transition-colors">&gt;</button>
+        <div id="calendar-container" class="transition-opacity duration-300 ease-in-out mb-6">
+            <div class="flex justify-between items-center mb-2 px-1">
+                <h2 id="month-year" class="text-lg font-bold text-white uppercase"></h2>
+                <div class="flex gap-1">
+                    <button id="prev-month" class="w-8 h-8 flex items-center justify-center bg-slate-800 text-slate-300 rounded hover:bg-slate-700">&lt;</button>
+                    <button id="next-month" class="w-8 h-8 flex items-center justify-center bg-slate-800 text-slate-300 rounded hover:bg-slate-700">&gt;</button>
                 </div>
             </div>
 
-            <div class="bg-slate-800 rounded-lg shadow-2xl p-1">
-                <div class="calendar-grid text-center font-semibold border-b border-slate-700">
-                    <div class="p-2 text-xs">LUN</div>
-                    <div class="p-2 text-xs">MAR</div>
-                    <div class="p-2 text-xs">MER</div>
-                    <div class="p-2 text-xs">GIO</div>
-                    <div class="p-2 text-xs">VEN</div>
-                    <div class="p-2 text-xs">SAB</div>
-                    <div class="p-2 text-xs">DOM</div>
+            <div class="bg-slate-800 rounded-xl shadow-lg p-2">
+                <div class="calendar-grid text-center font-bold text-slate-500 mb-2">
+                    <div class="text-[10px]">LUN</div><div class="text-[10px]">MAR</div><div class="text-[10px]">MER</div>
+                    <div class="text-[10px]">GIO</div><div class="text-[10px]">VEN</div><div class="text-[10px]">SAB</div><div class="text-[10px]">DOM</div>
                 </div>
-                <div id="calendar-body" class="calendar-grid bg-slate-700">
-                    </div>
+                <div id="calendar-body" class="calendar-grid"></div>
             </div>
         </div>
-    </div>
-    
-    <div id="intensity-details-banner" class="hidden w-full max-w-4xl mx-auto px-2 mt-3">
-        <div id="intensity-banner-content" class="rounded-md shadow-lg py-2 px-4 flex flex-row justify-center items-center gap-6 text-white transition-all duration-300 border border-white/10">
-            </div>
-    </div>
 
-    <div id="workout-details-container" class="w-full max-w-4xl mx-auto py-4 px-2 mt-2">
+        <div id="day-summary-section" class="mb-6 hidden">
+            <h3 class="text-slate-400 text-xs uppercase font-bold mb-2 ml-1">Riepilogo Giorno</h3>
+            <div class="grid grid-cols-2 gap-3">
+                <div id="summary-intensity" class="bg-slate-800 rounded-lg p-3 flex flex-col justify-center items-center shadow-lg border border-slate-700 hidden">
+                    <span class="text-[10px] uppercase text-slate-400 font-bold mb-1">Intensità</span>
+                    <div id="summary-int-val" class="text-xl font-black text-white"></div>
+                    <div id="summary-pol-val" class="text-xs text-slate-300 mt-1"></div>
+                </div>
+                <div id="summary-event" class="bg-slate-800 rounded-lg p-3 flex flex-col justify-center items-center shadow-lg border border-slate-700 hidden">
+                    <span class="text-[10px] uppercase text-slate-400 font-bold mb-1">Evento</span>
+                    <div id="summary-event-name" class="text-sm font-bold text-white text-center leading-tight"></div>
+                    <div id="summary-event-type" class="text-[10px] text-slate-300 mt-1 uppercase"></div>
+                </div>
+            </div>
         </div>
 
+        <div id="workout-details-container" class="w-full"></div>
+    </div>
 
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
@@ -173,8 +157,7 @@
             appId: "1:576407223567:web:73eaa8e12aae9e4926927a"
         };
 
-        const calendarAppName = "AppCalendario";
-        const app = initializeApp(firebaseConfig, calendarAppName);
+        const app = initializeApp(firebaseConfig);
         const db = getFirestore(app);
         
         // --- DOM Elements ---
@@ -186,15 +169,37 @@
         const prevMonthBtn = document.getElementById('prev-month');
         const nextMonthBtn = document.getElementById('next-month');
         const workoutDetailsContainer = document.getElementById('workout-details-container');
-        const intensityDetailsBanner = document.getElementById('intensity-details-banner');
-        const intensityBannerContent = document.getElementById('intensity-banner-content');
+        
+        // Summary Elements
+        const daySummarySection = document.getElementById('day-summary-section');
+        const summaryIntensity = document.getElementById('summary-intensity');
+        const summaryIntVal = document.getElementById('summary-int-val');
+        const summaryPolVal = document.getElementById('summary-pol-val');
+        const summaryEvent = document.getElementById('summary-event');
+        const summaryEventName = document.getElementById('summary-event-name');
+        const summaryEventType = document.getElementById('summary-event-type');
 
         // --- State Variables ---
         let currentDate = new Date();
         let eventsData = {};
         let intensityRanges = [];
+        let eventRanges = []; // Raduni/Gare
         let currentCollection = 'calendario_olimpica'; 
         let selectedDateStr = null;
+
+        // --- Helpers Colori ---
+        function getIntensityColorClass(val) {
+            if (val == 50) return 'bg-int-50';
+            if (val == 75) return 'bg-int-75';
+            if (val == 100) return 'bg-int-100';
+            if (val === 'Tapering') return 'bg-int-tapering';
+            return 'bg-slate-600';
+        }
+        function getEventColorClass(type) {
+            if (type === 'RADUNO') return 'bg-event-raduno';
+            if (type === 'GARA') return 'bg-event-gara';
+            return 'bg-slate-600';
+        }
 
         // --- Firebase Data Fetching ---
         async function fetchEventsForMonth(year, month) {
@@ -220,7 +225,16 @@
             querySnapshot.forEach(doc => {
                 intensityRanges.push({ id: doc.id, ...doc.data() });
             });
-            intensityRanges.sort((a, b) => new Date(a.startDate) - new Date(b.startDate));
+        }
+
+        async function fetchEventRanges() {
+            const eventsCollection = `${currentCollection}_events`;
+            const q = query(collection(db, eventsCollection));
+            const querySnapshot = await getDocs(q);
+            eventRanges = [];
+            querySnapshot.forEach(doc => {
+                eventRanges.push({ id: doc.id, ...doc.data() });
+            });
         }
         
         // --- Calendar Rendering ---
@@ -235,7 +249,8 @@
 
             await Promise.all([
                 fetchEventsForMonth(year, month),
-                fetchIntensityRanges()
+                fetchIntensityRanges(),
+                fetchEventRanges()
             ]);
             
             monthYearEl.textContent = `${currentDate.toLocaleString('it-IT', { month: 'long' })} ${year}`;
@@ -254,62 +269,41 @@
             for (let day = 1; day <= daysInMonth; day++) {
                 const dayEl = document.createElement('div');
                 const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
-                // Normalizza data corrente calendario
-                const currentDayDate = new Date(dateStr);
-                currentDayDate.setHours(0,0,0,0);
                 
-                dayEl.className = 'calendar-day flex flex-col p-1 text-xs sm:p-1.5 sm:text-sm cursor-pointer';
+                dayEl.className = 'calendar-day flex flex-col items-center justify-center cursor-pointer';
                 dayEl.dataset.date = dateStr;
                 dayEl.addEventListener('click', () => displayWorkoutForDay(dateStr));
                 
-                intensityRanges.forEach(range => {
-                    // Normalizza date range per confronto sicuro
-                    const startDate = new Date(range.startDate);
-                    startDate.setHours(0,0,0,0);
-                    const endDate = new Date(range.endDate);
-                    endDate.setHours(0,0,0,0);
-
-                    if (currentDayDate.getTime() >= startDate.getTime() && currentDayDate.getTime() <= endDate.getTime()) {
-                        const bar = document.createElement('div');
-                        const rangeColors = ['bg-pink-600', 'bg-purple-600', 'bg-teal-600', 'bg-orange-600', 'bg-lime-600'];
-                        bar.className = `intensity-bar ${range.color || rangeColors[0]}`;
-                        
-                        // MODIFICA: SOLO PERCENTUALE INTENSITÀ, NIENTE POLARIZZAZIONE QUI
-                        bar.textContent = `${range.intensity}%`;
-
-                        if (currentDayDate.getTime() === startDate.getTime()) bar.classList.add('start');
-                        if (currentDayDate.getTime() === endDate.getTime()) bar.classList.add('end');
-                        dayEl.appendChild(bar);
-                    }
-                });
-                
-                const topRow = document.createElement('div');
-                topRow.className = 'flex justify-end';
                 const numberSpan = document.createElement('span');
-                numberSpan.className = 'relative z-10';
+                numberSpan.className = 'relative z-10 text-xs sm:text-sm font-semibold mb-1';
                 numberSpan.textContent = day;
 
                 if (day === today.getDate() && month === today.getMonth() && year === today.getFullYear()) {
                     numberSpan.classList.add('today-highlight');
-                } else {
-                    numberSpan.className += ' p-1';
                 }
-                topRow.appendChild(numberSpan);
-                dayEl.appendChild(topRow);
+                dayEl.appendChild(numberSpan);
 
-                const eventsContainer = document.createElement('div');
-                eventsContainer.className = 'flex flex-col gap-1 w-full mt-auto relative z-10';
-                
-                const dayData = eventsData[dateStr];
-                if (dayData) {
-                    if (dayData.mattina && Array.isArray(dayData.mattina) && dayData.mattina.some(w => w.tipo === 'LIBERO' || w.lavoro.distanza || w.lavoro.serie || w.lavoro.intensita || w.lavoro.scheda)) {
-                        eventsContainer.appendChild(createEventElement('cyan'));
-                    }
-                    if (dayData.pomeriggio && Array.isArray(dayData.pomeriggio) && dayData.pomeriggio.some(w => w.tipo === 'LIBERO' || w.lavoro.distanza || w.lavoro.serie || w.lavoro.intensita || w.lavoro.scheda)) {
-                       eventsContainer.appendChild(createEventElement('amber'));
-                    }
+                // Container per indicatori (Intensità + Eventi)
+                const indicatorsContainer = document.createElement('div');
+                indicatorsContainer.className = 'w-full flex flex-col gap-0.5 px-1';
+
+                // Indicatore Intensità
+                const activeIntensity = intensityRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
+                if (activeIntensity) {
+                    const dot = document.createElement('div');
+                    dot.className = `dot-indicator ${getIntensityColorClass(activeIntensity.intensity)}`;
+                    indicatorsContainer.appendChild(dot);
                 }
-                dayEl.appendChild(eventsContainer);
+
+                // Indicatore Eventi
+                const activeEvent = eventRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
+                if (activeEvent) {
+                    const dot = document.createElement('div');
+                    dot.className = `dot-indicator ${getEventColorClass(activeEvent.type)}`;
+                    indicatorsContainer.appendChild(dot);
+                }
+
+                dayEl.appendChild(indicatorsContainer);
                 calendarBody.appendChild(dayEl);
             }
             calendarContainer.style.opacity = '1';
@@ -321,101 +315,110 @@
             }
         }
 
-        function createEventElement(color) {
-            const eventEl = document.createElement('div');
-            eventEl.className = `bg-${color}-500/50 h-1.5 w-full rounded-full mx-auto`;
-            return eventEl;
-        }
-
-        // --- Gestione Banner Intensità (Nuovo Layout) ---
-        function updateIntensityBanner(dateStr) {
-            const dateObj = new Date(dateStr);
-            dateObj.setHours(0,0,0,0); // Fondamentale per il confronto corretto
-            
-            const activeRange = intensityRanges.find(range => {
-                const start = new Date(range.startDate);
-                start.setHours(0,0,0,0);
-                const end = new Date(range.endDate);
-                end.setHours(0,0,0,0);
-                return dateObj.getTime() >= start.getTime() && dateObj.getTime() <= end.getTime();
-            });
-
-            if (activeRange) {
-                const rangeColors = ['bg-pink-600', 'bg-purple-600', 'bg-teal-600', 'bg-orange-600', 'bg-lime-600'];
-                const bgColor = activeRange.color || rangeColors[0];
-                const polValue = activeRange.polarization ? activeRange.polarization.toString().replace('.', ',') : '-';
-                
-                // Reset e applica nuovo design
-                intensityBannerContent.className = `rounded-md shadow-lg py-2 px-4 flex flex-row justify-center items-center gap-6 text-white transition-all duration-300 border border-white/10 ${bgColor}`;
-                
-                // Layout orizzontale compatto
-                intensityBannerContent.innerHTML = `
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs uppercase opacity-80 font-semibold">Int:</span>
-                        <span class="text-xl font-black">${activeRange.intensity}%</span>
-                    </div>
-                    ${activeRange.polarization ? `
-                    <div class="w-px h-6 bg-white/30"></div>
-                    <div class="flex items-center gap-2">
-                        <span class="text-xs uppercase opacity-80 font-semibold">Pol:</span>
-                        <span class="text-xl font-black">${polValue}%</span>
-                    </div>` : ''}
-                `;
-                
-                intensityDetailsBanner.classList.remove('hidden');
-            } else {
-                intensityDetailsBanner.classList.add('hidden');
-            }
-        }
-
-        // --- Workout Details Display Logic ---
+        // --- Recap & Workout Details Logic ---
         function getWorkoutIcon(type) {
              const icons = {
-                BOAT: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><path d="M2.5 17.5l2 2.5h15l2-2.5"/><path d="M12 3v14.5"/><path d="M7.5 12H2l1 5.5"/><path d="M16.5 12H22l-1 5.5"/></svg>`,
-                BIKE: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 18h12"/><path d="M9 18l4-8 4 8"/><path d="M9 9h6"/></svg>`,
-                ERGO: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><path d="M3 12h3l3-9 6 18 3-9h3"/></svg>`,
-                GYM: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-400"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>`,
-                LIBERO: `<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M17 8h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M4 8h13v8H4a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z"/><path d="M7 8V5"/><path d="M10 8V5"/><path d="M13 8V5"/></svg>`
+                BOAT: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><path d="M2.5 17.5l2 2.5h15l2-2.5"/><path d="M12 3v14.5"/><path d="M7.5 12H2l1 5.5"/><path d="M16.5 12H22l-1 5.5"/></svg>`,
+                BIKE: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 18h12"/><path d="M9 18l4-8 4 8"/><path d="M9 9h6"/></svg>`,
+                ERGO: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><path d="M3 12h3l3-9 6 18 3-9h3"/></svg>`,
+                GYM: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-400"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>`,
+                LIBERO: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M17 8h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M4 8h13v8H4a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z"/><path d="M7 8V5"/><path d="M10 8V5"/><path d="M13 8V5"/></svg>`,
+                GARA: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-500"><circle cx="12" cy="8" r="7"></circle><polyline points="8.21 13.89 7 23 12 20 17 23 15.79 13.88"></polyline></svg>`
             };
             return icons[type] || icons['BOAT'];
         }
 
         function buildWorkoutHTML(sessionData, sessionName, sessionColor) {
-            let sessionHTML = `<div class="mb-4"><h3 class="text-xl sm:text-2xl font-bold text-${sessionColor}-400 mb-4">${sessionName}</h3><div class="space-y-4">`;
+            let sessionHTML = `<div class="mb-4"><h3 class="text-lg font-bold text-${sessionColor}-400 mb-2 uppercase tracking-wide">${sessionName}</h3><div class="space-y-3">`;
             sessionData.forEach((workout, index) => {
                 let detailsHTML = '';
                 const iconSVG = getWorkoutIcon(workout.tipo);
 
                 if (workout.tipo === 'GYM') {
-                    detailsHTML = `<div class="flex items-center gap-4"><span class="font-semibold text-slate-400 w-24">Scheda:</span><span class="font-bold text-white text-lg">${workout.lavoro?.scheda || '-'}</span></div>`;
+                    detailsHTML = `<div class="flex items-center gap-2"><span class="text-sm text-slate-400">Scheda:</span><span class="font-bold text-white">${workout.lavoro?.scheda || '-'}</span></div>`;
                 } else if (workout.tipo === 'LIBERO') {
-                    detailsHTML = `<p class="text-slate-300 font-medium text-lg">Giorno di riposo o attività libera.</p>`;
+                    detailsHTML = `<p class="text-slate-300 text-sm italic">Giorno di riposo o attività libera.</p>`;
                 } else {
                     detailsHTML = `
-                        <div class="grid grid-cols-3 gap-4 text-center">
-                            <div><p class="text-sm text-slate-400">Distanza</p><p class="text-lg sm:text-xl font-semibold text-white">${workout.lavoro?.distanza || '-'}</p></div>
-                            <div><p class="text-sm text-slate-400">Serie</p><p class="text-lg sm:text-xl font-semibold text-white">${workout.lavoro?.serie || '-'}</p></div>
-                            <div><p class="text-sm text-slate-400">Intensità</p><p class="text-lg sm:text-xl font-semibold text-white">${workout.lavoro?.intensita ? workout.lavoro.intensita + '%' : '-'}</p></div>
+                        <div class="grid grid-cols-3 gap-2 text-center mt-2">
+                            <div class="bg-slate-800/80 p-1.5 rounded"><p class="text-[10px] text-slate-400 uppercase">Distanza</p><p class="text-sm font-semibold text-white">${workout.lavoro?.distanza || '-'}</p></div>
+                            <div class="bg-slate-800/80 p-1.5 rounded"><p class="text-[10px] text-slate-400 uppercase">Serie</p><p class="text-sm font-semibold text-white">${workout.lavoro?.serie || '-'}</p></div>
+                            <div class="bg-slate-800/80 p-1.5 rounded"><p class="text-[10px] text-slate-400 uppercase">Intensità</p><p class="text-sm font-semibold text-white">${workout.lavoro?.intensita ? workout.lavoro.intensita + '%' : '-'}</p></div>
                         </div>`;
                 }
 
                 const notes = workout.note || '';
                 sessionHTML += `
-                    <div class="bg-slate-900/50 rounded-lg py-5 px-4">
-                        <div class="flex items-center justify-between mb-4">
-                            <div class="flex items-center gap-3">
-                                ${iconSVG}
-                                <h4 class="text-lg font-bold text-slate-200">${workout.tipo} #${index + 1}</h4>
-                            </div>
+                    <div class="bg-slate-900/50 border border-slate-700/50 rounded-lg p-3">
+                        <div class="flex items-center gap-2 mb-1">
+                            ${iconSVG}
+                            <h4 class="text-sm font-bold text-slate-200 uppercase">${workout.tipo}</h4>
                         </div>
-                        <div class="space-y-4">
+                        <div class="">
                             ${detailsHTML}
-                            ${notes ? `<div><p class="text-sm font-semibold text-slate-400 mb-1">NOTE</p><div class="bg-slate-800/60 p-4 rounded-md whitespace-pre-wrap text-base text-slate-300">${notes}</div></div>` : ''}
+                            ${notes ? `
+                            <div class="mt-2 pt-2 border-t border-slate-700/50">
+                                <p class="text-[10px] font-bold text-slate-500 uppercase mb-0.5">Note</p>
+                                <div class="text-sm text-slate-300 whitespace-pre-wrap leading-tight">${notes}</div>
+                            </div>` : ''}
                         </div>
                     </div>`;
             });
             sessionHTML += '</div></div>';
             return sessionHTML;
+        }
+
+        function updateDaySummary(dateStr) {
+            // Reset
+            daySummarySection.classList.add('hidden');
+            summaryIntensity.classList.add('hidden');
+            summaryEvent.classList.add('hidden');
+            
+            // Rimuovi vecchie classi colore
+            summaryIntensity.className = "bg-slate-800 rounded-lg p-3 flex flex-col justify-center items-center shadow-lg border border-slate-700 hidden";
+            summaryEvent.className = "bg-slate-800 rounded-lg p-3 flex flex-col justify-center items-center shadow-lg border border-slate-700 hidden";
+
+            const activeIntensity = intensityRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
+            const activeEvent = eventRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
+
+            if (!activeIntensity && !activeEvent) return; // Se non c'è nulla, resta nascosto
+
+            daySummarySection.classList.remove('hidden');
+
+            if (activeIntensity) {
+                summaryIntensity.classList.remove('hidden');
+                // Colora il bordo o lo sfondo leggermente
+                summaryIntensity.classList.add('border-l-4');
+                let colorClass = getIntensityColorClass(activeIntensity.intensity).replace('bg-', 'border-'); // Trick per usare i colori definiti nel CSS
+                summaryIntensity.classList.add(colorClass);
+
+                const label = activeIntensity.intensity === 'Tapering' ? 'Tapering' : `${activeIntensity.intensity}%`;
+                summaryIntVal.textContent = label;
+                summaryIntVal.className = `text-xl font-black ${activeIntensity.intensity === 'Tapering' ? 'text-cyan-400' : activeIntensity.intensity == 100 ? 'text-red-500' : activeIntensity.intensity == 75 ? 'text-amber-500' : 'text-emerald-500'}`;
+                
+                summaryPolVal.textContent = activeIntensity.polarization ? `Pol: ${activeIntensity.polarization}%` : '';
+            }
+
+            if (activeEvent) {
+                summaryEvent.classList.remove('hidden');
+                summaryEvent.classList.add('border-l-4');
+                let colorClass = getEventColorClass(activeEvent.type).replace('bg-', 'border-');
+                summaryEvent.classList.add(colorClass);
+
+                summaryEventName.textContent = activeEvent.name ? activeEvent.name : activeEvent.type;
+                summaryEventType.textContent = activeEvent.type;
+                summaryEventType.className = `text-[10px] mt-1 uppercase font-bold ${activeEvent.type === 'RADUNO' ? 'text-blue-400' : 'text-purple-400'}`;
+            }
+
+            // Se c'è solo un elemento, facciamolo full width
+            if (activeIntensity && !activeEvent) {
+                summaryIntensity.classList.add('col-span-2');
+            } else if (!activeIntensity && activeEvent) {
+                summaryEvent.classList.add('col-span-2');
+            } else {
+                summaryIntensity.classList.remove('col-span-2');
+                summaryEvent.classList.remove('col-span-2');
+            }
         }
 
         function displayWorkoutForDay(dateStr) {
@@ -428,16 +431,16 @@
                 dayElement.classList.add('selected');
             }
 
-            // *** UPDATE BANNER ***
-            updateIntensityBanner(dateStr);
+            // *** UPDATE RECAP ***
+            updateDaySummary(dateStr);
 
             const dayData = eventsData[dateStr];
             const dateObj = new Date(dateStr + 'T00:00:00');
             const dayName = dateObj.toLocaleDateString('it-IT', { weekday: 'long'});
             const fullDate = dateObj.toLocaleDateString('it-IT', { day: 'numeric', month: 'long', year: 'numeric' });
 
-            let detailsHTML = `<div class="bg-slate-800 border border-slate-700 rounded-lg shadow-2xl p-4 sm:p-6 w-full">`;
-            detailsHTML += `<div class="border-b border-slate-700 pb-3 mb-4"><h2 class="text-2xl font-bold text-white">${dayName}</h2><p class="text-sm text-slate-400">${fullDate}</p></div>`;
+            let detailsHTML = `<div class="bg-slate-800 border-t-4 border-slate-600 rounded-lg shadow-2xl p-4 w-full">`;
+            detailsHTML += `<div class="border-b border-slate-700 pb-2 mb-3 flex justify-between items-baseline"><h2 class="text-xl font-bold text-white capitalize">${dayName}</h2><p class="text-xs text-slate-400">${fullDate}</p></div>`;
 
             if (dayData) {
                 const morningWorkouts = dayData.mattina?.filter(w => w.tipo);
@@ -451,7 +454,7 @@
                 }
 
                 if (hasMorning && hasAfternoon) {
-                    detailsHTML += `<hr class="border-slate-700 my-6">`;
+                    detailsHTML += `<hr class="border-slate-700 my-4">`;
                 }
 
                 if (hasAfternoon) {
@@ -459,15 +462,16 @@
                 }
 
                 if (!hasMorning && !hasAfternoon) {
-                    detailsHTML += `<p class="text-slate-400 text-center py-8">Nessun allenamento programmato per questo giorno.</p>`;
+                    detailsHTML += `<p class="text-slate-500 text-sm text-center py-6 italic">Nessun allenamento programmato.</p>`;
                 }
             } else {
-                detailsHTML += `<p class="text-slate-400 text-center py-8">Nessun allenamento programmato per questo giorno.</p>`;
+                detailsHTML += `<p class="text-slate-500 text-sm text-center py-6 italic">Nessun allenamento programmato.</p>`;
             }
 
             detailsHTML += `</div>`;
             workoutDetailsContainer.innerHTML = detailsHTML;
-            workoutDetailsContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            // Scroll delicato su mobile
+            // daySummarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
         async function switchCalendar(buttonElement) {
@@ -478,7 +482,8 @@
             if (currentCollection === newCollection) return;
             currentCollection = newCollection;
 
-            pageBody.className = `min-h-screen flex flex-col items-center justify-start p-2 sm:p-4 antialiased ${newTheme}`;
+            // Reset classi
+            pageBody.className = `min-h-screen flex flex-col items-center justify-start p-2 antialiased pb-20 ${newTheme}`;
 
             document.querySelectorAll('#calendar-selector .calendar-btn').forEach(btn => {
                 btn.classList.remove('active-olimpica', 'active-u23', 'active-u19', 'active-para-rowing', 'active-beach-sprint');
@@ -486,7 +491,7 @@
             buttonElement.classList.add(newActiveClass);
 
             workoutDetailsContainer.innerHTML = ''; 
-            intensityDetailsBanner.classList.add('hidden'); 
+            daySummarySection.classList.add('hidden'); // Nascondi recap
             selectedDateStr = null; 
             await renderCalendar();
         }
