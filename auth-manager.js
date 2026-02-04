@@ -1,8 +1,9 @@
-// auth-manager.js (AGGIORNATO per includere Record e Dati completi)
+// auth-manager.js (CORRETTO per lettura Storico Peso)
 
 import { initializeApp, getApps } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 import { getAuth, onAuthStateChanged, signOut, setPersistence, browserLocalPersistence } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { getFirestore, collection, query, where, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// AGGIUNTI orderBy e limit agli import
+import { getFirestore, collection, query, where, getDocs, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 // Importa ReCaptchaEnterpriseProvider
 import { initializeAppCheck, ReCaptchaEnterpriseProvider } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app-check.js";
@@ -85,33 +86,47 @@ const authStateManager = async () => {
     let athlete = null;
 
     if (user && user.email) {
-      // 1. Controlla se abbiamo dati in cache e se corrispondono all'utente attuale
       const cachedAthlete = window.getCurrentAthlete();
       
-      // Se c'è cache valida, usala temporaneamente per velocità, ma...
-      // NOTA: Per essere sicuri di avere i record aggiornati, facciamo SEMPRE il fetch o invalidiamo la cache
-      // se mancano i campi rowerg/bikeerg.
-      
+      // Controllo validità cache (incluso il peso se presente)
       let needFetch = true;
-
       if (cachedAthlete && cachedAthlete.uid === user.uid) {
-         // Se abbiamo già i campi record nella cache, potremmo evitare il fetch, 
-         // ma per sicurezza (se li aggiorni da un'altra parte) è meglio ricaricare o controllare se mancano.
-         if (cachedAthlete.rowerg !== undefined && cachedAthlete.bikeerg !== undefined) {
+         if (cachedAthlete.rowerg !== undefined && cachedAthlete.bikeerg !== undefined && cachedAthlete.peso !== undefined) {
              athlete = cachedAthlete;
              needFetch = false; 
          }
       }
 
       if (needFetch) {
-        console.log("Recupero dati completi (inclusi record) da Firestore...");
+        console.log("Recupero dati completi (inclusi record e peso) da Firestore...");
         try {
+          // 1. Recupera documento principale Atleta
           const q = query(collection(db, "atleti"), where("uid", "==", user.uid));
           const querySnapshot = await getDocs(q);
 
           if (!querySnapshot.empty) {
             const athleteDoc = querySnapshot.docs[0];
             const athleteData = athleteDoc.data();
+
+            // 2. Recupera l'ultimo PESO dalla sottocollezione 'storico_peso'
+            let currentWeight = athleteData.peso || ''; // Fallback se fosse nel doc principale (raro nel tuo caso)
+            
+            try {
+                // Riferimento alla sottocollezione dentro il documento dell'atleta trovato
+                const pesoRef = collection(db, "atleti", athleteDoc.id, "storico_peso");
+                // Ordina per 'data' decrescente e prendi solo 1 risultato
+                const qPeso = query(pesoRef, orderBy("data", "desc"), limit(1));
+                const pesoSnap = await getDocs(qPeso);
+
+                if (!pesoSnap.empty) {
+                    const pesoData = pesoSnap.docs[0].data();
+                    // Assumiamo che il campo si chiami 'peso' dentro il documento dello storico
+                    currentWeight = pesoData.peso; 
+                    console.log("Peso recuperato dallo storico:", currentWeight);
+                }
+            } catch (errPeso) {
+                console.warn("Impossibile recuperare storico peso (o collezione vuota):", errPeso);
+            }
             
             // --- COSTRUZIONE OGGETTO COMPLETO ---
             athlete = {
@@ -124,14 +139,15 @@ const authStateManager = async () => {
               nome: athleteData.nome || '',
               societa: athleteData.societa || '',
               gruppo: athleteData.gruppo || '',
+              genere: athleteData.genere || 'M', // Importante per i calcoli WR
               
-              // Record / Dati Tecnici (Quelli che mancavano!)
-              // Mappiamo sia i nuovi nomi (rowerg/bikeerg) che i vecchi (pb_2000...) per compatibilità
+              // Record / Dati Tecnici
               rowerg: athleteData.rowerg || athleteData.pb_2000 || '--:--',
               bikeerg: athleteData.bikeerg || athleteData.pb_6000 || '--:--',
               
-              // Altri campi utili se servono
-              peso: athleteData.peso || '',
+              // Peso recuperato dallo storico
+              peso: currentWeight,
+              
               altezza: athleteData.altezza || ''
             };
 
@@ -171,7 +187,6 @@ const authStateManager = async () => {
 
       if (!isLoginPage()) {
         const path = window.location.pathname;
-        // Gestione redirect per sottocartelle
         if (path.includes('/CARICA DATI/') || path.includes('/RISULTATI/') || path.includes('/CALENDARIO/')) {
              window.location.href = '../index.html';
         } else {
