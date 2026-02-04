@@ -10,7 +10,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
     
-    <!-- Librerie PDF (Motore Admin) -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
     
@@ -59,7 +58,6 @@
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
-    <!-- Canvas Nascosto per PDF alta risoluzione -->
     <div style="position: absolute; left: -9999px; top: -9999px;">
         <canvas id="hiddenPdfCanvas" width="1600" height="800"></canvas>
     </div>
@@ -133,22 +131,17 @@
             <div class="h-64 md:h-96"><canvas id="performanceChartSR"></canvas></div>
         </div>
 
-        <!-- RIEPILOGO AVANZATO: Matrice Globale e Card Dettaglio -->
         <div id="summary-legend-container" class="mt-8 space-y-4 hidden">
             
-            <!-- SEZIONE ANALISI GLOBALE -->
             <div class="bg-[#1e293b] border border-[#334155] rounded-xl p-6 mb-8">
                 <h3 class="text-slate-400 font-bold uppercase mb-4 text-sm tracking-wider border-b border-slate-700 pb-2">ANALISI GLOBALE</h3>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6" id="global-stats-content">
-                    <!-- Popolato via JS -->
-                </div>
+                    </div>
             </div>
 
-            <!-- SEZIONE INTERVALLI -->
             <h3 class="text-lg font-bold text-slate-200 mb-3 border-t border-slate-700 pt-4">Dettaglio Intervalli</h3>
             <div id="run-summary-list" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-                <!-- Cards generate via JS -->
-            </div>
+                </div>
         </div>
 
         <div id="messageBox" class="fixed inset-0 bg-black/80 z-[200] flex items-center justify-center hidden backdrop-blur-sm">
@@ -182,8 +175,8 @@
     <script type="module">
         // Importazioni da Auth Manager e Firestore
         import { db, auth } from '../auth-manager.js';
-        import { collection, addDoc, serverTimestamp, getDocs, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        
+        import { collection, addDoc, serverTimestamp, getDocs, getDoc, doc, query, where, orderBy, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
         // --- CONFIGURAZIONE ---
         const AVAILABLE_DISTANCES = [500, 750, 1000, 1500, 2000];
         const MAX_RUNS = 10;
@@ -195,17 +188,49 @@
 
         const BOATS = ['ROWERG', 'M1X', 'M2X', 'M4X', 'M2-', 'M4-', 'M8+', 'W1X', 'W2X', 'W4X', 'W2-', 'W4-', 'W8+'];
 
-        // Record del Mondo per il calcolo del dispendio (semplificato per M/F generico se non specificato, qui uso valori M come base se non diversamente specificato o aggiungo logica di selezione in futuro. Per ora uso valori fissi o logica standard Admin)
+        // Record del Mondo
         const WORLD_RECORDS = {
             'M': { '1X': '06:30.74', '2X': '05:59.70', '4X': '05:32.50', '2-': '06:08.50', '4-': '05:38.00', '8+': '05:18.68', 'ROWERG': '05:35.8' },
             'F': { '1X': '07:07.71', '2X': '06:37.31', '4X': '06:06.84', '2-': '06:47.41', '4-': '06:14.36', '8+': '05:52.99', 'ROWERG': '06:21.1' }
         };
 
         let chartInstanceSpeed, chartInstanceSR;
+        let hiddenChartInstance = null; // Per PDF
         let selectedDistance = 2000; 
         let selectedRuns = 1;
         let currentDataCache = null; // Cache dati attuali (input o storico)
-        let historyCache = null; // Cache lista storico (per risparmio letture)
+        let historyCache = null; // Cache lista storico
+        
+        // DATI UTENTE (Peso/Record)
+        let currentUserData = {
+            weight: null,
+            rowergRecord: null,
+            gender: 'M'
+        };
+
+        // --- AUTH & DATA SYNC (Aggiornato per usare auth-manager) ---
+        // 1. Ascolta l'evento broadcastato da auth-manager.js
+        document.addEventListener('authStateReady', (e) => {
+            const { athlete, error } = e.detail;
+            if (athlete) {
+                console.log("Dati atleta ricevuti da auth-manager (incluso peso):", athlete);
+                currentUserData.weight = athlete.peso ? parseFloat(athlete.peso) : null;
+                currentUserData.rowergRecord = athlete.rowerg || null;
+                currentUserData.gender = athlete.genere || 'M';
+            } else {
+                console.log("Nessun atleta autenticato o errore:", error);
+                currentUserData = { weight: null, rowergRecord: null, gender: 'M' };
+            }
+        });
+
+        // 2. Controlla la cache all'avvio (nel caso l'evento sia già scattato)
+        const cachedAthlete = window.getCurrentAthlete ? window.getCurrentAthlete() : null;
+        if (cachedAthlete) {
+            console.log("Dati atleta recuperati dalla cache:", cachedAthlete);
+            currentUserData.weight = cachedAthlete.peso ? parseFloat(cachedAthlete.peso) : null;
+            currentUserData.rowergRecord = cachedAthlete.rowerg || null;
+            currentUserData.gender = cachedAthlete.genere || 'M';
+        }
 
         // --- UTILITY ---
         const showMessageBox = (title, message) => {
@@ -238,17 +263,19 @@
         }
 
         // --- CALCOLO DISPENDIO (WR) ---
-        function getWRData(boat, gender = 'M') { // Default M se non specificato
+        function getWRData(boat, gender) {
             const b = boat.toUpperCase();
+            // Default gender se non passato
+            const g = gender || currentUserData.gender || 'M';
             let timeStr = null, label = 'N/D';
-            if (b.includes("ROWERG") || b.includes("ERG")) { timeStr = WORLD_RECORDS[gender]['ROWERG']; label = `WR ${gender} RowErg`; } 
+            if (b.includes("ROWERG") || b.includes("ERG")) { timeStr = WORLD_RECORDS[g]['ROWERG']; label = `WR ${g} RowErg`; } 
             else {
-                if(b.includes("1X")) { timeStr = WORLD_RECORDS[gender]['1X']; }
-                else if(b.includes("2X")) { timeStr = WORLD_RECORDS[gender]['2X']; }
-                else if(b.includes("4X")) { timeStr = WORLD_RECORDS[gender]['4X']; }
-                else if(b.includes("2-")) { timeStr = WORLD_RECORDS[gender]['2-']; }
-                else if(b.includes("4-")) { timeStr = WORLD_RECORDS[gender]['4-']; }
-                else if(b.includes("8+")) { timeStr = WORLD_RECORDS[gender]['8+']; }
+                if(b.includes("1X")) { timeStr = WORLD_RECORDS[g]['1X']; }
+                else if(b.includes("2X")) { timeStr = WORLD_RECORDS[g]['2X']; }
+                else if(b.includes("4X")) { timeStr = WORLD_RECORDS[g]['4X']; }
+                else if(b.includes("2-")) { timeStr = WORLD_RECORDS[g]['2-']; }
+                else if(b.includes("4-")) { timeStr = WORLD_RECORDS[g]['4-']; }
+                else if(b.includes("8+")) { timeStr = WORLD_RECORDS[g]['8+']; }
             }
             return { label, seconds: parseTimeStringToSeconds(timeStr) };
         }
@@ -262,7 +289,6 @@
             if(isRowerg) { pStart = 1.015; p2 = 0.998; p3 = 0.990; p4 = 0.997; } 
             else { pStart = 1.033; p2 = 0.990; p3 = 0.983; p4 = 0.997; }
 
-            // CORREZIONE ADMIN: Picco iniziale 1.12 per garantire START > FINISH
             const peakVal = globalAvg * pStart * 1.12;
             
             points.push({x: 0, y: 0});
@@ -287,9 +313,8 @@
             return points.sort((a,b) => a.x - b.x);
         }
 
-        // --- CALCOLO STATISTICHE TECNICHE (Unificato) ---
+        // --- CALCOLO STATISTICHE TECNICHE (AGGIORNATO CON EFFICIENZA) ---
         function calculateTechnicalStats(speedPoints, srPoints, distance, timeSeconds, boatType, wrData) {
-            // Estrazione array valori puliti
             const speeds = speedPoints ? speedPoints.map(p => p.y).filter(y => y > 0) : [];
             const srs = srPoints ? srPoints.map(p => p.y).filter(y => y > 0) : [];
 
@@ -307,16 +332,34 @@
             const wattPoints = speeds.map(v => 2.8 * Math.pow(v, 3));
             const maxWatt = wattPoints.length ? Math.max(...wattPoints) : 0;
             const minWatt = wattPoints.length ? Math.min(...wattPoints) : 0;
-            const avgWatt = 2.8 * Math.pow(avgSpeed, 3); // Watt basati sulla media velocità
+            const avgWatt = 2.8 * Math.pow(avgSpeed, 3); 
 
-            // Calcolo Dispendio (% WR)
+            // Calcolo Dispendio (% WR) e Efficienza (Solo RowErg se dati presenti)
             let percentWR = 0;
+            let effNominale = 0;
+            let effAssoluta = 0;
+            const isRowerg = boatType && (boatType.toUpperCase().includes("ROWERG") || boatType.toUpperCase().includes("ERG"));
+
             if (wrData && wrData.seconds > 0) {
                  const wattsWR = 2.8 * Math.pow(2000 / wrData.seconds, 3);
                  if (wattsWR > 0) percentWR = (avgWatt / wattsWR) * 100;
             }
 
-            return { maxSpeed, minSpeed, avgSpeed, maxSr, minSr, avgSr, maxWatt, minWatt, avgWatt, percentWR };
+            // Logica Efficienza (Uguale a Admin)
+            if (currentUserData.weight && currentUserData.rowergRecord) {
+                 const rowergSec = parseTimeStringToSeconds(currentUserData.rowergRecord);
+                 if (rowergSec > 0) {
+                     const wattsRecordRowerg = 2.8 * Math.pow(2000 / rowergSec, 3);
+                     effNominale = wattsRecordRowerg / (currentUserData.weight + 15);
+                     
+                     if (isRowerg) {
+                         const reductionPercent = 1500 / currentUserData.weight; 
+                         effAssoluta = effNominale * (1 - (reductionPercent / 100));
+                     }
+                 }
+            }
+
+            return { maxSpeed, minSpeed, avgSpeed, maxSr, minSr, avgSr, maxWatt, minWatt, avgWatt, percentWR, effNominale, effAssoluta, isRowerg };
         }
 
         // --- SALVATAGGIO DATI ---
@@ -351,7 +394,6 @@
                 return;
             }
 
-            // OTTIMIZZAZIONE: Usa cache se disponibile
             if (historyCache) {
                 renderHistoryList(historyCache);
                 return;
@@ -401,6 +443,9 @@
                 const dateStr = dateObj.toLocaleDateString('it-IT', { day: '2-digit', month: 'short' });
                 const timeStr = dateObj.toLocaleTimeString('it-IT', { hour: '2-digit', minute: '2-digit' });
                 const safeData = encodeURIComponent(JSON.stringify(data));
+                
+                // Info extra se è merged
+                const mergedLabel = data.createdVia === 'Admin Merge' ? '<span class="text-[10px] bg-purple-500/30 text-purple-200 px-1 rounded ml-2">UNITE</span>' : '';
 
                 html += `
                     <div onclick="restoreSessionFromData('${safeData}')" class="bg-slate-700/40 hover:bg-slate-700 border border-slate-600/50 hover:border-indigo-500/50 p-4 rounded-xl cursor-pointer transition-all group">
@@ -409,9 +454,10 @@
                                 <div class="flex items-center gap-2 mb-1">
                                     <span class="text-xs font-bold bg-indigo-500/20 text-indigo-300 px-2 py-0.5 rounded">${data.boat || '?'}</span>
                                     <span class="text-slate-400 text-xs">${dateStr}, ${timeStr}</span>
+                                    ${mergedLabel}
                                 </div>
                                 <h4 class="font-bold text-slate-200 group-hover:text-white">${data.crewString || 'Sconosciuto'}</h4>
-                                <p class="text-xs text-slate-400 mt-1">${data.runsCount}x${data.distance}m</p>
+                                <p class="text-xs text-slate-400 mt-1">${data.runsCount}x${data.distance}m (Totale)</p>
                             </div>
                             <svg class="w-5 h-5 text-indigo-400 opacity-0 group-hover:opacity-100 transition-opacity" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
                         </div>
@@ -428,7 +474,19 @@
                 if(document.getElementById('boat-selector')) document.getElementById('boat-selector').value = data.boat;
                 if(document.getElementById('crew-names')) document.getElementById('crew-names').value = data.crewString;
                 
-                selectedDistance = parseInt(data.distance);
+                // --- FIX PER GRAFICI MERGIATI (O NORMALI) ---
+                // Se è un file mergiato o normale, data.distance potrebbe essere la somma totale (es. 6000m).
+                // Per sovrapporre i grafici, selectedDistance deve essere la distanza del SINGOLO intervallo (es. 2000m).
+                // Cerchiamo l'ultimo punto X del primo run valido per determinare la scala corretta.
+                let singleRunDistance = parseInt(data.distance);
+                if (data.runs && data.runs.length > 0) {
+                    const firstRun = data.runs[0];
+                    if (firstRun.speedData && firstRun.speedData.length > 0) {
+                        singleRunDistance = firstRun.speedData[firstRun.speedData.length - 1].x;
+                    }
+                }
+                
+                selectedDistance = singleRunDistance;
                 selectedRuns = parseInt(data.runsCount);
                 currentDataCache = data.runs; 
 
@@ -436,7 +494,6 @@
                 document.getElementById('sr-chart-container').classList.remove('hidden');
                 document.getElementById('summary-legend-container').classList.remove('hidden');
                 
-                // Aggiorna usando la barca salvata
                 updateCharts(data.runs);
                 updateSummary(data.runs);
                 document.getElementById('download-data-btn').disabled = false;
@@ -704,8 +761,9 @@
             let minS = 99, maxS = 0;
             let totalTime = 0, totalDist = 0;
 
+            // Per la "Media Totale" e "Curva Ideale" usiamo le medie cumulative
             data.forEach(r => {
-                totalTime += r.totalSec; totalDist += selectedDistance;
+                totalTime += r.totalSec; totalDist += selectedDistance; // Usa selectedDistance che ora è la singola
                 r.speedData.forEach(p => { if(p.y<minS && p.y>0) minS=p.y; if(p.y>maxS) maxS=p.y; });
                 const stats = calculateTechnicalStats(r.speedData, r.srData, selectedDistance, r.totalSec, '', null);
 
@@ -765,7 +823,7 @@
             chartInstanceSR.update();
         }
 
-        // --- RIEPILOGO DETTAGLIATO (Stile Admin con Card & Delta) ---
+        // --- RIEPILOGO DETTAGLIATO (CON EFFICENZA ROWERG) ---
         function updateSummary(data) {
             const globalDiv = document.getElementById('global-stats-content');
             const listDiv = document.getElementById('run-summary-list');
@@ -774,25 +832,46 @@
             listDiv.innerHTML = '';
             
             const boatType = document.getElementById('boat-selector').value;
-            const wrData = getWRData(boatType, 'M'); // Usa M come default generico per il calcolo %
+            const wrData = getWRData(boatType, currentUserData.gender); 
 
             // --- CALCOLO GLOBALE ---
             let totalDist = 0, totalTime = 0;
             data.forEach(r => { totalDist += selectedDistance; totalTime += r.totalSec; });
             const globalAvgSpeed = totalTime > 0 ? totalDist / totalTime : 0;
-            const globalStats = calculateTechnicalStats(null, null, totalDist, totalTime, boatType, wrData); // Solo per AvgWatt -> WR
+            const globalStats = calculateTechnicalStats(null, null, totalDist, totalTime, boatType, wrData);
 
-            // Render Global Stats
-            globalDiv.innerHTML = `
-                <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-4 text-center">
-                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">DISPENDIO (% WR)</div>
-                    <div class="text-3xl font-black text-orange-500">${globalStats.percentWR > 0 ? globalStats.percentWR.toFixed(1) + '%' : '-'}</div>
+            // Render Global Stats (Condizionale per Rowerg)
+            let globalHtml = '';
+            if (globalStats.isRowerg) {
+                // Layout 4 colonne se rowerg
+                globalDiv.classList.remove('md:grid-cols-2');
+                globalDiv.classList.add('md:grid-cols-4');
+                globalHtml += `
+                    <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-3 text-center">
+                        <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">EFF. NOMINALE</div>
+                        <div class="text-xl font-bold text-white">${globalStats.effNominale > 0 ? globalStats.effNominale.toFixed(2) : '-'}</div>
+                    </div>
+                    <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-3 text-center">
+                        <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">EFF. ASSOLUTA</div>
+                        <div class="text-xl font-bold ${globalStats.effAssoluta < 0 ? 'text-red-400' : 'text-emerald-400'}">${globalStats.effAssoluta !== 0 ? globalStats.effAssoluta.toFixed(2) : '-'}</div>
+                    </div>
+                `;
+            } else {
+                 globalDiv.classList.remove('md:grid-cols-4');
+                 globalDiv.classList.add('md:grid-cols-2');
+            }
+
+            globalHtml += `
+                <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-3 text-center">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">DISPENDIO (% WR)</div>
+                    <div class="text-2xl font-black text-orange-500">${globalStats.percentWR > 0 ? globalStats.percentWR.toFixed(1) + '%' : '-'}</div>
                 </div>
-                <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-4 text-center">
-                    <div class="text-[10px] text-slate-400 uppercase font-bold mb-1">VELOCITÀ MEDIA</div>
-                    <div class="text-3xl font-bold text-blue-300">${globalAvgSpeed.toFixed(2)}</div>
+                <div class="bg-[#0f172a] border border-[#1e293b] rounded-lg p-3 text-center">
+                    <div class="text-[9px] text-slate-400 uppercase font-bold mb-1">VELOCITÀ MEDIA</div>
+                    <div class="text-2xl font-bold text-blue-300">${globalAvgSpeed.toFixed(2)}</div>
                 </div>
             `;
+            globalDiv.innerHTML = globalHtml;
 
             // Render Run Cards
             const sd = (v) => isFinite(v) ? v.toFixed(2) : '-';
@@ -807,7 +886,6 @@
                         INTERVALLO ${run.runId} <span class="text-sm font-normal text-slate-400">(${selectedDistance}m)</span>
                     </div>
                     <div class="p-4 space-y-4">
-                        <!-- SPEEDY -->
                         <div class="rounded-lg overflow-hidden border border-red-900/30">
                             <div class="bg-[#451a1a] text-red-200 text-center text-xs font-bold py-1.5 uppercase">SPEEDY (m/s)</div>
                             <div class="bg-[#1a1010] grid grid-cols-3 text-center py-2 border-b border-red-900/20">
@@ -823,7 +901,6 @@
                             </div>
                         </div>
                         
-                        <!-- WATT -->
                         <div class="rounded-lg overflow-hidden border border-orange-900/30">
                             <div class="bg-[#452f1a] text-[#fed7aa] text-center text-xs font-bold py-1.5 uppercase">WATT</div>
                             <div class="bg-[#1a1410] grid grid-cols-3 text-center py-2 border-b border-orange-900/20">
@@ -839,7 +916,6 @@
                             </div>
                         </div>
 
-                        <!-- STROKES -->
                         <div class="rounded-lg overflow-hidden border border-indigo-900/30">
                             <div class="bg-[#2e1a45] text-[#e9d5ff] text-center text-xs font-bold py-1.5 uppercase">STROKES</div>
                             <div class="bg-[#15101a] grid grid-cols-3 text-center py-2 border-b border-indigo-900/20">
@@ -868,7 +944,7 @@
                 const docData = {
                     boat: document.getElementById('boat-selector').value,
                     crewString: document.getElementById('crew-names').value,
-                    distance: selectedDistance,
+                    distance: selectedDistance, // Salva la distanza del singolo intervallo corrente
                     runsCount: selectedRuns,
                     runs: results,
                     timestamp: serverTimestamp(),
@@ -912,6 +988,102 @@
             }
         };
 
+        // --- FUNZIONE PER GENERARE IMMAGINE GRAFICO (USATA NEL PDF) ---
+        async function generateChartImageForPDF(runs, type, globalAvg, boatType) {
+            const ctx = document.getElementById('hiddenPdfCanvas').getContext('2d');
+            if (hiddenChartInstance) hiddenChartInstance.destroy();
+
+            let globalSum = 0, globalCount = 0, maxDistance = 0;
+            let minDataValue = 999;
+
+            const datasets = runs.map((run, i) => {
+                const color = COLORS[i % COLORS.length];
+                const data = (type === 'speed') ? run.speedData : run.srData;
+                
+                if (type === 'speed' && data) {
+                    const runMax = data.length > 0 ? data[data.length-1].x : 0;
+                    if(runMax > maxDistance) maxDistance = runMax;
+                    data.forEach(p => { 
+                        if(p.y > 0) { 
+                            globalSum += p.y; 
+                            globalCount++; 
+                            if(p.y < minDataValue) minDataValue = p.y;
+                        } 
+                    });
+                }
+                return { 
+                    label: `Run ${run.runId}`, 
+                    data: data, 
+                    borderColor: color, 
+                    borderWidth: 3, 
+                    pointRadius: 0, 
+                    tension: 0.4, 
+                    fill: false, 
+                    parsing: { xAxisKey: 'x', yAxisKey: 'y' } 
+                };
+            }).filter(ds => ds.data && ds.data.length > 0);
+            
+            let suggestedMin = 0;
+            // Aggiungi Media Globale e Curva Ideale solo per Speed
+            if (type === 'speed' && globalCount > 0) {
+                 // Usa globalAvg passato se disponibile, altrimenti calcola
+                 const avg = globalAvg || (globalSum / globalCount);
+                 let targetMin = avg - 0.3; 
+                 if (minDataValue < targetMin && minDataValue > 0) targetMin = minDataValue - 0.1;
+                 if (targetMin < 0) targetMin = 0;
+                 suggestedMin = targetMin;
+
+                 datasets.push({ 
+                    label: 'Media Totale', 
+                    data: [{x: 0, y: avg}, {x: maxDistance, y: avg}], 
+                    borderColor: '#94a3b8', 
+                    borderWidth: 2, 
+                    borderDash: [10, 5], 
+                    pointRadius: 0, 
+                    fill: false, 
+                    tension: 0 
+                });
+                 
+                 const idealPoints = getIdealCurvePoints(avg, maxDistance, boatType);
+                 datasets.push({ 
+                    label: 'Curva Ideale', 
+                    data: idealPoints, 
+                    borderColor: '#F59E0B', 
+                    borderWidth: 2, 
+                    tension: 0.4, 
+                    pointRadius: 0, 
+                    fill: false 
+                });
+            }
+            
+            hiddenChartInstance = new Chart(ctx, { 
+                type: 'line', 
+                data: { datasets: datasets }, 
+                options: { 
+                    responsive: false, 
+                    animation: false, 
+                    scales: { 
+                        x: { 
+                            type: 'linear', 
+                            display: true, 
+                            grid: { color: '#e2e8f0' }, 
+                            ticks: { font: { size: 16 } } 
+                        }, 
+                        y: { 
+                            display: true, 
+                            grid: { color: '#e2e8f0' }, 
+                            ticks: { font: { size: 16 } },
+                            min: (type === 'speed' && suggestedMin > 0) ? suggestedMin : undefined 
+                        } 
+                    }, 
+                    plugins: { 
+                        legend: { display: true, labels: { font: { size: 16 } } } 
+                    } 
+                } 
+            });
+            return document.getElementById('hiddenPdfCanvas').toDataURL('image/jpeg', 1.0);
+        }
+
         async function drawPdfPage(doc, chartData) {
             doc.setFillColor(15, 23, 42); doc.rect(0, 0, 210, 40, 'F');
             doc.setTextColor(255, 255, 255); doc.setFontSize(22); doc.setFont("helvetica", "bold");
@@ -920,7 +1092,7 @@
             doc.text(`${chartData.boat} | ${chartData.timestamp.toLocaleDateString('it-IT')} | ${chartData.distance}m x ${chartData.runs.length}`, 14, 28);
             
             const boatType = document.getElementById('boat-selector').value || chartData.boat;
-            const wrData = getWRData(boatType);
+            const wrData = getWRData(boatType, currentUserData.gender);
 
             const headers = ['METRICA'];
             chartData.runs.forEach(r => headers.push(`RUN ${r.runId}`));
@@ -979,14 +1151,15 @@
             doc.setFontSize(12); doc.setTextColor(50); doc.setFont("helvetica", "bold");
             doc.text("Velocità (m/s)", 14, y);
             y += 5;
-            const imgSpd = await generateChartImageForPDF(chartData.runs, 'speed', globalAvg);
+            // Passa boatType per la curva ideale
+            const imgSpd = await generateChartImageForPDF(chartData.runs, 'speed', globalAvg, boatType);
             doc.addImage(imgSpd, 'JPEG', 14, y, 182, 70);
             
             y += 80;
             if (y + 80 > 280) { doc.addPage(); y = 20; }
             doc.text("Frequenza (SPM)", 14, y);
             y += 5;
-            const imgSr = await generateChartImageForPDF(chartData.runs, 'sr', null);
+            const imgSr = await generateChartImageForPDF(chartData.runs, 'sr', null, boatType);
             doc.addImage(imgSr, 'JPEG', 14, y, 182, 70);
 
             y += 80;
