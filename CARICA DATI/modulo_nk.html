@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Carica Allenamento da CSV - FIC Canottaggio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+        .background-gradient { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: blur(100px); z-index: -1; }
+        .gradient-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%); animation: pulse 10s infinite alternate; }
+        .gradient-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%); animation: pulse 12s infinite alternate-reverse; }
+        @keyframes pulse { 0% { transform: scale(0.9) rotate(0deg); } 100% { transform: scale(1.2) rotate(20deg); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        .form-input, .form-select { width: 100%; background-color: #1E293B; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        .form-input:disabled, .form-select:disabled { background-color: #0F172A; color: #475569; cursor: not-allowed; opacity: 0.7; border-color: #1E293B; }
+        .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; }
+        .dynamic-field { display: none; }
+         .form-select {
+             -webkit-appearance: none;
+            -moz-appearance: none;
+            appearance: none;
+            background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.25em;
+            padding-right: 2.5rem; 
+        }
+        .summary-item {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #334155;
+        }
+        .summary-item:last-child { border-bottom: none; }
+        .summary-label { font-weight: 500; color: #94A3B8; }
+        .summary-value { font-weight: 600; color: #E2E8F0; text-align: right; }
+
+        input[type="date"]::-webkit-calendar-picker-indicator {
+            filter: invert(1);
+            cursor: pointer;
+        }
+        input[type="file"]::file-selector-button {
+            background-color: #3B82F6;
+            color: white;
+            border: none;
+            border-radius: 0.25rem;
+            padding: 0.5rem 1rem;
+            margin-right: 1rem;
+            cursor: pointer;
+            font-weight: 600;
+            transition: background-color 0.2s;
+        }
+        input[type="file"]:disabled::file-selector-button {
+            background-color: #475569; cursor: not-allowed;
+        }
+        input[type="file"]::file-selector-button:hover:not(:disabled) {
+            background-color: #2563EB;
+        }
+    </style>
+    <script type="module" src="../auth-manager.js"></script>
+</head>
+<body class="antialiased">
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+    
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p class="mt-4 text-slate-300">Caricamento...</p>
+    </div>
+    
+    <div class="p-4 md:p-8 max-w-3xl mx-auto">
+        <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Allenamento Barca (CSV)</h1>
+        
+        <div class="mb-6 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-center">
+            <p class="font-semibold text-yellow-300">Per le imbarcazioni multiple l'inserimento deve essere fatto <strong class="text-white">SOLO da un componente</strong> dell'equipaggio.</p>
+        </div>
+        
+        <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
+            
+             <div id="athlete-info-container">
+                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
+            </div>
+
+            <div id="form-content" class="hidden space-y-6">
+            
+                <div>
+                    <label for="workoutDate" class="form-label">Data Allenamento</label>
+                    <input type="date" id="workoutDate" class="form-input">
+                </div>
+
+                <div>
+                    <label for="boatTypeSelect" class="form-label flex items-center gap-2">
+                        <span>1. Seleziona Imbarcazione</span>
+                        <span id="gender-indicator"></span>
+                    </label>
+                    <select id="boatTypeSelect" class="form-select"></select>
+                </div>
+
+                <div id="crew-selection-container" class="dynamic-field grid grid-cols-1 md:grid-cols-2 gap-4"></div>
+
+                <div>
+                    <label for="workoutMode" class="form-label">2. Modalità Allenamento</label>
+                    <select id="workoutMode" class="form-select">
+                        <option value="">-- Seleziona modalità --</option>
+                        <option value="distanza">Distanza</option>
+                        <option value="tempo">Tempo</option>
+                    </select>
+                </div>
+
+                <div id="tipo-lavoro-fields" class="dynamic-field space-y-6">
+                    <div>
+                        <label for="tipoLavoroSelect" class="form-label">Tipo di Lavoro (Distanza)</label>
+                        <select id="tipoLavoroSelect" class="form-select">
+                            <option value="">-- Seleziona tipo di lavoro --</option>
+                            <option value="polarizzato">Lavoro Polarizzato</option>
+                            <option value="steady_state">Lavoro Steady State</option>
+                        </select>
+                    </div>
+                </div>
+
+                <hr class="border-slate-700 my-4">
+
+                <div id="csv-upload-wrapper" class="p-5 md:p-6 bg-sky-900/20 border-2 border-dashed border-sky-600/50 rounded-xl opacity-50 transition-opacity duration-300 relative">
+                    
+                    <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-5">
+                        <label for="csvUpload" class="font-bold text-sky-400 text-lg mb-0 block">3. Importa CSV (SpeedCoach)</label>
+                        
+                        <button id="openGuidaBtn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white font-bold py-2.5 px-4 rounded-lg shadow-lg border border-blue-400/50 transition-all transform hover:-translate-y-0.5 focus:outline-none focus:ring-4 focus:ring-blue-500/50 w-full md:w-auto justify-center">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+                            </svg>
+                            Come esportare il file?
+                        </button>
+                    </div>
+                    
+                    <div id="csv-lock-msg" class="text-sm text-yellow-300 font-medium bg-yellow-900/40 p-3 rounded-lg border border-yellow-700/50 mb-4 flex items-center gap-3">
+                        <span class="text-xl">⚠️</span>
+                        <p>Seleziona prima Imbarcazione e Modalità/Tipo di Lavoro per sbloccare l'importazione.</p>
+                    </div>
+
+                    <div class="relative">
+                        <input type="file" id="csvUpload" accept=".csv" class="form-input bg-slate-800 border-sky-500/50 cursor-pointer p-3 w-full" disabled>
+                    </div>
+                </div>
+
+                <div id="distanza-fields" class="dynamic-field space-y-6">
+                    <div>
+                        <label for="distanzaSelect" class="form-label">Distanza Specifica <span class="text-xs font-normal text-slate-500">(Sbloccato da CSV)</span></label>
+                        <select id="distanzaSelect" class="form-select" disabled>
+                             <option value="">-- Seleziona prima il tipo di lavoro --</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div id="tempo-fields" class="dynamic-field space-y-6">
+                    <div>
+                        <label for="tempoSelect" class="form-label">Tempo (minuti) <span class="text-xs font-normal text-slate-500">(Sbloccato da CSV)</span></label>
+                        <select id="tempoSelect" class="form-select" disabled>
+                            <option value="">-- Seleziona tempo --</option>
+                            <option value="30">30 minuti</option>
+                            <option value="45">45 minuti</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div id="intervalli-common" class="dynamic-field space-y-6">
+                     <div>
+                        <label for="intervalliNumero" class="form-label">Numero di Intervalli <span class="text-xs font-normal text-slate-500">(Sbloccato da CSV)</span></label>
+                        <select id="intervalliNumero" class="form-select" disabled>
+                            <option value="">-- Seleziona numero --</option>
+                        </select>
+                    </div>
+                    <div id="intervalli-inputs-container" class="space-y-4"></div>
+                </div>
+                
+                <div class="pt-4">
+                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
+                </div>
+            </div> 
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
+                ← Torna alla Selezione
+            </a>
+        </div>
+    </div>
+    
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
+        <p id="messageText" class="mb-6 text-lg"></p>
+        <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+    </div>
+
+    <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-lg hidden z-50">
+        <div class="p-6">
+            <h3 class="text-2xl font-bold text-white mb-4">Riepilogo Dati</h3>
+            <div id="summary-content" class="mb-6 max-h-[60vh] overflow-y-auto pr-2"></div>
+            
+            <div id="ep-warning" class="hidden mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-center">
+                <p id="ep-warning-title" class="font-bold text-lg text-red-300">ATTENZIONE: EP Superiore al 110%!</p>
+                <p id="ep-warning-text" class="text-red-400">Il valore calcolato sembra molto alto (probabile errore di inserimento dati). Ricontrolla i tempi estratti.</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <button id="summaryModificaBtn" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Modifica</button>
+                <button id="summaryConfermaBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Conferma e Salva</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { db } from '../auth-manager.js';
+        import { collection, query, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        
+        // --- IMPORTAZIONE GUIDA ---
+        import { initGuidaModal } from './guida_nk.js';
+
+        const loaderOverlay = document.getElementById('loader-overlay');
+        const workoutType = 'boat';
+        let worldRecords = new Map();
+
+        let currentAthlete = null;
+        let pendingWorkoutData = null;
+
+        const modalBackdrop = document.getElementById('modal-backdrop');
+        const messageBox = document.getElementById('messageBox');
+        const summaryModal = document.getElementById('summaryModal');
+        const epWarning = document.getElementById('ep-warning');
+
+        // Distanze
+        const distanzePolarizzate = [
+            { value: '500', text: '500 pol (50%)' }, { value: '750', text: '750 pol (33,3%)' },
+            { value: '1000', text: '1000 pol (25%)' }, { value: '1500', text: '1500 pol (16,6%)' },
+            { value: '2000', text: '2000 pol (12%)' }, { value: '3000', text: '3000 pol (8,33%)' },
+            { value: '4000', text: '4000 pol (6,25%)' }, { value: '5000', text: '5000 pol (5%)' },
+            { value: '6000', text: '6000 pol (4,16%)' }, { value: '10000', text: '10000 pol (2,5%)' }
+        ];
+
+        const distanzeSteadyState = [
+            { value: '2000', text: '2000' }, { value: '4000', text: '4000' },
+            { value: '5000', text: '5000' }, { value: '6000', text: '6000' },
+            { value: '10000', text: '10000' }, { value: '16000', text: '16000' },
+            { value: '20000', text: '20000' }
+        ];
+
+        function showModal(modal) { modalBackdrop.classList.remove('hidden'); modal.classList.remove('hidden'); }
+        function hideModal(modal) { modalBackdrop.classList.add('hidden'); modal.classList.add('hidden'); }
+        function showMessageBox(message) {
+            document.getElementById('messageText').textContent = message;
+            showModal(messageBox);
+        }
+        
+        function timeToSeconds(timeStr) {
+            if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
+            const parts = timeStr.split(':');
+            if (parts.length === 3) {
+                const h = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10);
+                const s = parseFloat(parts[2].replace(',', '.'));
+                return (h * 3600) + (m * 60) + s;
+            }
+            const minutes = parseInt(parts[0], 10);
+            const seconds = parseFloat(parts[1].replace(',', '.'));
+            if (isNaN(minutes) || isNaN(seconds)) return 0;
+            return (minutes * 60) + seconds;
+        }
+
+        function formatNKTime(nkTime) {
+            const parts = nkTime.split(':');
+            if (parts.length === 3) {
+                const h = parseInt(parts[0], 10);
+                const m = parseInt(parts[1], 10);
+                const s = parts[2]; 
+                const totalM = (h * 60) + m;
+                return `${totalM < 10 ? '0'+totalM : totalM}:${s}`;
+            }
+            return nkTime; 
+        }
+
+        // Funzione per capire se l'utente ha compilato il necessario e sbloccare il CSV
+        function checkUnlockCSV() {
+            const boat = document.getElementById('boatTypeSelect').value;
+            const mode = document.getElementById('workoutMode').value;
+            let ready = false;
+            
+            if (boat && mode === 'tempo') ready = true;
+            if (boat && mode === 'distanza' && document.getElementById('tipoLavoroSelect').value) ready = true;
+
+            const csvInput = document.getElementById('csvUpload');
+            const csvWrapper = document.getElementById('csv-upload-wrapper');
+            const csvLockMsg = document.getElementById('csv-lock-msg');
+
+            if (ready) {
+                csvInput.disabled = false;
+                csvWrapper.classList.remove('opacity-50');
+                csvLockMsg.classList.add('hidden');
+            } else {
+                csvInput.disabled = true;
+                csvInput.value = ''; // svuota se viene bloccato
+                csvWrapper.classList.add('opacity-50');
+                csvLockMsg.classList.remove('hidden');
+                
+                // Riblocca i campi dipendenti se resetto il modulo in alto
+                document.getElementById('distanzaSelect').disabled = true;
+                document.getElementById('tempoSelect').disabled = true;
+                document.getElementById('intervalliNumero').disabled = true;
+            }
+        }
+
+        function processCSV(csvText) {
+            const lines = csvText.split(/\r?\n/);
+            let sessionStart = '';
+            let type = '';
+            let intervalSummaries = [];
+            let inIntervals = false;
+
+            for (let i = 0; i < lines.length; i++) {
+                const line = lines[i];
+                if (line.startsWith('Start Time:')) {
+                    sessionStart = line.split(',')[1];
+                } else if (line.startsWith('Type:')) {
+                    type = line.split(',')[1];
+                } else if (line.startsWith('Interval Summaries:')) {
+                    inIntervals = true;
+                } else if (line.startsWith('Per-Stroke Data:')) {
+                    inIntervals = false;
+                } else if (inIntervals) {
+                    const parts = line.split(',');
+                    const intNum = parseInt(parts[0]);
+                    if (!isNaN(intNum) && parts.length > 5) {
+                        intervalSummaries.push({
+                            distance: parseFloat(parts[1]),
+                            time: parts[3]
+                        });
+                    }
+                }
+            }
+            
+            if (intervalSummaries.length === 0) {
+                let inSession = false;
+                for (let i = 0; i < lines.length; i++) {
+                     if (lines[i].startsWith('Session Summary:')) {
+                         inSession = true;
+                     } else if (lines[i].startsWith('Interval Summaries:')) {
+                         inSession = false;
+                     } else if (inSession) {
+                         const parts = lines[i].split(',');
+                         const intNum = parseInt(parts[0]);
+                         if (!isNaN(intNum) && parts.length > 5) {
+                             intervalSummaries.push({
+                                distance: parseFloat(parts[1]),
+                                time: parts[3]
+                            });
+                         }
+                     }
+                }
+            }
+            return { sessionStart, type, intervalSummaries };
+        }
+        
+        async function fetchWorldRecords() {
+            try {
+                const snapshot = await getDocs(collection(db, 'world_records'));
+                worldRecords = new Map();
+                snapshot.forEach(doc => { worldRecords.set(doc.id, doc.data()); });
+            } catch (error) { console.error("Error fetching world records:", error); }
+        }
+
+        function calculateBoatEP(workoutData, boatType) {
+            const worldRecordData = worldRecords.get(boatType);
+            if (!worldRecordData || !worldRecordData.time) return null;
+            
+            const recordWorldSeconds = timeToSeconds(worldRecordData.time);
+            if (recordWorldSeconds <= 0) return null;
+            
+            const wattRecordMondiale = 2.8 * Math.pow(2000 / recordWorldSeconds, 3);
+            if (wattRecordMondiale <= 0) return null;
+            
+            let wattAllenamento = 0;
+            const intervals = workoutData.intervalli.map(i => {
+                 const val = (typeof i === 'object' && i !== null && i['0']) ? i['0'] : i;
+                 return timeToSeconds(val) || parseFloat(String(val || '').replace(',', '.'));
+            }).filter(n => !isNaN(n) && n > 0);
+            
+            if (intervals.length === 0) return null;
+
+            const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
+
+            if (workoutData.modalita === 'tempo') {
+                const mediaMetri = mediaIntervalli; 
+                const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60;
+                if (tempoSelezionatoSec > 0) wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
+            } else if (workoutData.modalita === 'distanza') {
+                const mediaTempoSec = mediaIntervalli; 
+                const distanzaSelezionata = parseInt(workoutData.distanza, 10);
+                if (mediaTempoSec > 0) wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
+            }
+
+            if (wattAllenamento > 0) return (wattAllenamento / wattRecordMondiale) * 100;
+            return null;
+        }
+
+        async function setupPage() {
+            const boatTypes = ["M1X", "W1X", "M2X", "W2X", "M2-", "W2-", "M4X", "W4X", "M4-", "W4-", "M8+", "W8+"];
+            const boatSelect = document.getElementById('boatTypeSelect');
+            boatSelect.innerHTML = '<option value="">-- Seleziona imbarcazione --</option>';
+            boatTypes.forEach(b => boatSelect.innerHTML += `<option value="${b}">${b}</option>`);
+
+            const intervalliSelect = document.getElementById('intervalliNumero');
+            let intervalliHTML = '<option value="">-- Seleziona numero --</option>';
+            for (let i = 1; i <= 20; i++) intervalliHTML += `<option value="${i}">${i}</option>`;
+            intervalliSelect.innerHTML = intervalliHTML;
+            
+            // Imposta la data odierna come default e la lascia intatta.
+            document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
+            await fetchWorldRecords();
+            checkUnlockCSV(); // Controllo iniziale stato CSV
+        }
+
+        function generateCrewSelectors() {
+            const container = document.getElementById('crew-selection-container');
+            const boatType = document.getElementById('boatTypeSelect').value;
+            const genderIndicator = document.getElementById('gender-indicator');
+            container.innerHTML = ''; container.style.display = 'none'; 
+            
+            if (boatType.startsWith('M')) genderIndicator.innerHTML = `<div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">M</div>`;
+            else if (boatType.startsWith('W')) genderIndicator.innerHTML = `<div class="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-sm">F</div>`;
+            else genderIndicator.innerHTML = '';
+            
+            checkUnlockCSV();
+        }
+
+        function updateFormVisibility() {
+            const mode = document.getElementById('workoutMode').value;
+            document.getElementById('tempo-fields').style.display = 'none';
+            document.getElementById('tipo-lavoro-fields').style.display = 'none';
+            document.getElementById('distanza-fields').style.display = 'none';
+            document.getElementById('intervalli-common').style.display = 'none';
+            
+            if (mode === 'distanza') {
+                document.getElementById('tipo-lavoro-fields').style.display = 'block';
+            } else if (mode === 'tempo') {
+                document.getElementById('tempo-fields').style.display = 'block';
+                document.getElementById('intervalli-common').style.display = 'block';
+            }
+            generateIntervalliInputs();
+            checkUnlockCSV();
+        }
+
+        function updateDistanceOptions() {
+            const tipoLavoro = document.getElementById('tipoLavoroSelect').value;
+            const distanzaSelect = document.getElementById('distanzaSelect');
+            
+            const existingCustom = Array.from(distanzaSelect.options).find(o => o.text.includes('(da CSV)'));
+            
+            distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
+            let optionsArray = [];
+            if (tipoLavoro === 'polarizzato') optionsArray = distanzePolarizzate;
+            else if (tipoLavoro === 'steady_state') optionsArray = distanzeSteadyState;
+            
+            optionsArray.forEach(opt => {
+                distanzaSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
+            });
+
+            if(existingCustom) {
+                 distanzaSelect.innerHTML += `<option value="${existingCustom.value}">${existingCustom.text}</option>`;
+                 distanzaSelect.value = existingCustom.value;
+            }
+
+            document.getElementById('distanza-fields').style.display = tipoLavoro ? 'block' : 'none';
+            document.getElementById('intervalli-common').style.display = tipoLavoro ? 'block' : 'none';
+            
+            generateIntervalliInputs();
+            checkUnlockCSV();
+        }
+
+        function generateIntervalliInputs() {
+            const container = document.getElementById('intervalli-inputs-container');
+            const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
+            const mode = document.getElementById('workoutMode').value;
+            
+            // SALVA I VALORI GIÀ INSERITI (evita che si cancellino se cambi opzione)
+            const existingValues = [];
+            const existingInputs = container.querySelectorAll('.intervallo-input');
+            existingInputs.forEach(input => existingValues.push(input.value));
+
+            container.innerHTML = ''; // Pulisce
+            
+            const showInputs = mode && numero > 0 && numero <= 20 && (mode === 'tempo' || (mode === 'distanza' && document.getElementById('tipoLavoroSelect').value));
+            if (showInputs) {
+                for (let i = 1; i <= numero; i++) {
+                    const inputType = mode === 'distanza' ? 'text' : 'number';
+                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore (es. 2500)';
+                    const labelText = mode === 'distanza' ? '(Tempo)' : '(Metri)';
+                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} ${labelText}</label>`;
+                    const inputMode = mode === 'distanza' ? 'inputmode="numeric"' : 'inputmode="decimal"'; 
+                    const inputAttributes = mode === 'distanza' 
+                        ? 'oninput="formatTimeInput(event)" maxlength="8"' 
+                        : 'step="any"';
+                    
+                    // RIPRISTINA VALORE SE ESISTENTE
+                    const val = existingValues[i-1] || '';
+                    
+                    const input = `<input type="${inputType}" ${inputMode} id="intervallo-${i}" class="form-input intervallo-input font-mono" placeholder="${placeholder}" ${inputAttributes} value="${val}">`;
+                    container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
+                }
+            }
+        }
+        
+        window.formatTimeInput = function(event) {
+            const input = event.target;
+            let value = input.value.replace(/[^\d]/g, '');
+            if (value.length > 6) value = value.substring(0, 6); 
+            let formattedValue = value;
+            if (value.length > 2) formattedValue = `${value.substring(0, value.length-3)}:${value.substring(value.length-3)}`;
+            if (value.length > 4) formattedValue = `${value.substring(0, value.length-3)}:${value.substring(value.length-3, value.length-1)}.${value.substring(value.length-1)}`;
+        }
+
+        // EVENTO CARICAMENTO CSV
+        document.getElementById('csvUpload').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const csvText = event.target.result;
+                const data = processCSV(csvText);
+                
+                // --- SBLOCCO I CAMPI FINALI DOPO IL CARICAMENTO ---
+                document.getElementById('distanzaSelect').disabled = false;
+                document.getElementById('tempoSelect').disabled = false;
+                document.getElementById('intervalliNumero').disabled = false;
+                
+                let numIntervals = data.intervalSummaries.length;
+                if (numIntervals === 0) {
+                    showMessageBox("Nessun intervallo trovato nel CSV. Controlla che il file provenga da un'esportazione valida.");
+                    return;
+                }
+
+                document.getElementById('intervalliNumero').value = numIntervals <= 20 ? numIntervals : 20;
+                
+                let isDistance = document.getElementById('workoutMode').value === 'distanza';
+                
+                if (isDistance) {
+                    let avgDist = data.intervalSummaries.reduce((a, b) => a + b.distance, 0) / numIntervals;
+                    let distSelect = document.getElementById('distanzaSelect');
+                    
+                    // LOGICA CALAMITA (SNAP): Trova la distanza standard più vicina tra le opzioni
+                    let closestOptionValue = null;
+                    let minDiff = Infinity;
+
+                    Array.from(distSelect.options).forEach(opt => {
+                        let optVal = parseInt(opt.value);
+                        if (!isNaN(optVal)) {
+                            let diff = Math.abs(optVal - avgDist);
+                            if (diff < minDiff) {
+                                minDiff = diff;
+                                closestOptionValue = opt.value;
+                            }
+                        }
+                    });
+
+                    // Snap automatico se l'errore del GPS è entro i 250 metri
+                    if (closestOptionValue !== null && minDiff <= 250) {
+                        distSelect.value = closestOptionValue;
+                    } else {
+                        // Se è una distanza personalizzata (fuori tolleranza), allora crea una nuova opzione
+                        let roundedDist = Math.round(avgDist);
+                        if (!Array.from(distSelect.options).some(o => o.value == roundedDist)) {
+                            distSelect.innerHTML += `<option value="${roundedDist}">${roundedDist} (da CSV)</option>`;
+                        }
+                        distSelect.value = roundedDist;
+                    }
+
+                } else {
+                    let timeStr = data.intervalSummaries[0].time; 
+                    let parts = timeStr.split(':');
+                    let minutes = 0;
+                    if(parts.length === 3) minutes = Math.round((parseInt(parts[0])*60) + parseInt(parts[1]) + parseFloat(parts[2])/60);
+                    else minutes = Math.round(parseInt(parts[0]) + parseFloat(parts[1])/60);
+
+                    let tempoSelect = document.getElementById('tempoSelect');
+
+                    // LOGICA CALAMITA TEMPI
+                    let closestTimeOption = null;
+                    let minTimeDiff = Infinity;
+                    Array.from(tempoSelect.options).forEach(opt => {
+                        let optVal = parseInt(opt.value);
+                        if (!isNaN(optVal)) {
+                            let diff = Math.abs(optVal - minutes);
+                            if (diff < minTimeDiff) {
+                                minTimeDiff = diff;
+                                closestTimeOption = opt.value;
+                            }
+                        }
+                    });
+
+                    // Snap se lo scarto del tempo è entro 3 minuti (es: 31:40 -> 30)
+                    if (closestTimeOption !== null && minTimeDiff <= 3) {
+                        tempoSelect.value = closestTimeOption;
+                    } else {
+                        if (!Array.from(tempoSelect.options).some(o => o.value == minutes)) {
+                            tempoSelect.innerHTML += `<option value="${minutes}">${minutes} minuti (da CSV)</option>`;
+                        }
+                        tempoSelect.value = minutes;
+                    }
+                }
+                
+                // Rigenera i campi HTML 
+                generateIntervalliInputs();
+
+                // Riempie i valori!
+                for (let i = 0; i < numIntervals && i < 20; i++) {
+                     const input = document.getElementById(`intervallo-${i+1}`);
+                     if (input) {
+                          if (isDistance) {
+                               input.value = formatNKTime(data.intervalSummaries[i].time);
+                          } else {
+                               input.value = Math.round(data.intervalSummaries[i].distance);
+                          }
+                     }
+                }
+                
+                showMessageBox("Dati elaborati con successo dal file CSV. Controlla le distanze ed i tempi estratti qui in basso!");
+            };
+            reader.readAsText(file);
+        });
+
+        // FASE 1: Validazione e apertura modale di riepilogo
+        async function initiateSaveProcess() {
+            const btn = document.getElementById('saveWorkoutBtn');
+            btn.disabled = true; btn.textContent = 'Verifica dati...';
+            
+            const boatTypeSelect = document.getElementById('boatTypeSelect');
+            const boatType = boatTypeSelect.value;
+            const boatTypeText = boatTypeSelect.options[boatTypeSelect.selectedIndex].text;
+            
+            const selectedDate = document.getElementById('workoutDate').value;
+            const mode = document.getElementById('workoutMode').value;
+            
+            if (!selectedDate || !boatType || !mode) {
+                showMessageBox("Assicurati di aver selezionato Imbarcazione, Data e Modalità.");
+                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
+            }
+
+            const equipaggio = [];
+            let crewNames = []; 
+            if (currentAthlete) {
+                equipaggio.push({
+                    atletaId: currentAthlete.id,
+                    cognomeAtleta: currentAthlete.cognome,
+                    nomeAtleta: currentAthlete.nome || '',
+                    gruppo: currentAthlete.gruppo || '',
+                    genere: currentAthlete.genere || ''
+                });
+                crewNames.push(`${currentAthlete.cognome} ${currentAthlete.nome || ''}`);
+            }
+            
+            const workoutData = {
+                tipo: workoutType.toUpperCase(),
+                imbarcazione: boatType,
+                equipaggio: equipaggio,
+                modalita: mode,
+                atletaId: equipaggio[0].atletaId, 
+                cognomeAtleta: equipaggio[0].cognomeAtleta, 
+                data: selectedDate,
+                timestamp: serverTimestamp(),
+                intervalli: [],
+                ep1: null, 
+                tipoLavoro: null
+            };
+
+            let summaryDetails = []; 
+            summaryDetails.push({ label: 'Data', value: new Date(selectedDate).toLocaleDateString('it-IT') });
+            
+            if (mode === 'distanza') {
+                workoutData.tipoLavoro = document.getElementById('tipoLavoroSelect').value;
+                workoutData.distanza = document.getElementById('distanzaSelect').value;
+                if (!workoutData.tipoLavoro || !workoutData.distanza) { 
+                    showMessageBox("Distanza o Tipo di lavoro mancante."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; 
+                }
+                const ts = document.getElementById('tipoLavoroSelect');
+                const ds = document.getElementById('distanzaSelect');
+                summaryDetails.push({ label: 'Tipo Lavoro', value: ts.options[ts.selectedIndex].text });
+                summaryDetails.push({ label: 'Distanza', value: ds.options[ds.selectedIndex].text });
+            } else { 
+                workoutData.tempo = document.getElementById('tempoSelect').value;
+                if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
+                const ts = document.getElementById('tempoSelect');
+                summaryDetails.push({ label: 'Tempo', value: ts.options[ts.selectedIndex].text });
+            }
+
+            const intervalliInputs = document.querySelectorAll('.intervallo-input');
+            let allIntervalsValid = true;
+            
+            intervalliInputs.forEach(input => {
+                const value = input.value.trim();
+                if (value) {
+                    if (mode === 'distanza' && !/^\d{1,3}:\d{2}(\.\d{1})?$/.test(value) && !/^\d{1,3}:\d{2}$/.test(value)) {
+                        if (/^\d{1,3}:\d{2}$/.test(value)) {
+                           input.value = value + ".0"; 
+                           workoutData.intervalli.push(input.value);
+                        } else allIntervalsValid = false;
+                    }
+                    else if (mode === 'tempo' && (isNaN(parseFloat(value)) || parseFloat(value) <= 0)) allIntervalsValid = false;
+                    
+                    if(allIntervalsValid) workoutData.intervalli.push(value);
+                } else allIntervalsValid = false;
+            });
+            
+            if (!allIntervalsValid || intervalliInputs.length === 0) {
+                showMessageBox("Controlla che i campi intervalli siano compilati e corretti.");
+                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
+            }
+
+            const epValueToSave = calculateBoatEP(workoutData, boatType);
+            if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) workoutData.ep1 = parseFloat(epValueToSave.toFixed(2)); 
+            
+            pendingWorkoutData = workoutData;
+            
+            // Popola Modale Riepilogo (Rimossa riga EP)
+            let summaryHTML = `
+                <div class="summary-item"><span class="summary-label">Imbarcazione</span><span class="summary-value">${boatTypeText}</span></div>
+                <div class="summary-item"><span class="summary-label">Atleta</span><span class="summary-value">${crewNames[0]}</span></div>
+            `;
+            summaryDetails.forEach(item => { summaryHTML += `<div class="summary-item"><span class="summary-label">${item.label}</span><span class="summary-value">${item.value}</span></div>`; });
+            summaryHTML += `<div class="summary-item"><span class="summary-label">N. Intervalli</span><span class="summary-value">${workoutData.intervalli.length}</span></div>`;
+            summaryHTML += `<div class="summary-item"><span class="summary-label">Valori Intervalli</span><span class="summary-value">${workoutData.intervalli.join(', ')}</span></div>`;
+
+            document.getElementById('summary-content').innerHTML = summaryHTML;
+
+            const confirmBtn = document.getElementById('summaryConfermaBtn');
+            const modifyBtn = document.getElementById('summaryModificaBtn');
+
+            if (epValueToSave > 110) {
+                epWarning.classList.remove('hidden');
+                confirmBtn.classList.add('hidden'); modifyBtn.classList.add('col-span-2'); 
+            } else {
+                epWarning.classList.add('hidden');
+                confirmBtn.classList.remove('hidden'); modifyBtn.classList.remove('col-span-2'); 
+            }
+            showModal(summaryModal);
+        }
+        
+        async function proceedWithSave() {
+            const confirmBtn = document.getElementById('summaryConfermaBtn');
+            const modifyBtn = document.getElementById('summaryModificaBtn');
+            confirmBtn.disabled = true; modifyBtn.disabled = true; confirmBtn.textContent = 'Salvataggio...';
+
+            if (!pendingWorkoutData) return cancelSaveProcess();
+
+            try {
+                pendingWorkoutData.timestamp = serverTimestamp();
+                await addDoc(collection(db, 'allenamenti'), pendingWorkoutData);
+                hideModal(summaryModal);
+                showMessageBox("Allenamento salvato con successo!");
+                
+                // Resetta form dopo salvataggio
+                document.getElementById('csvUpload').value = '';
+                document.getElementById('boatTypeSelect').value = '';
+                document.getElementById('workoutMode').value = '';
+                document.getElementById('intervalli-inputs-container').innerHTML = '';
+                
+                // Riblocca i campi finali
+                document.getElementById('distanzaSelect').disabled = true;
+                document.getElementById('tempoSelect').disabled = true;
+                document.getElementById('intervalliNumero').disabled = true;
+                updateFormVisibility();
+                
+            } catch (error) {
+                console.error("Errore salvataggio: ", error);
+                showMessageBox("Si è verificato un errore durante il salvataggio.");
+            } finally {
+                confirmBtn.disabled = false; modifyBtn.disabled = false; confirmBtn.textContent = 'Conferma e Salva';
+                document.getElementById('saveWorkoutBtn').disabled = false; document.getElementById('saveWorkoutBtn').textContent = 'Salva Allenamento';
+                pendingWorkoutData = null;
+            }
+        }
+
+        function cancelSaveProcess() {
+            hideModal(summaryModal);
+            pendingWorkoutData = null;
+            document.getElementById('saveWorkoutBtn').disabled = false; document.getElementById('saveWorkoutBtn').textContent = 'Salva Allenamento';
+            document.getElementById('summaryConfermaBtn').classList.remove('hidden'); document.getElementById('summaryModificaBtn').classList.remove('col-span-2');
+        }
+        
+        // AUTENTICAZIONE
+        document.addEventListener('authStateReady', async (e) => {
+            const { athlete, error } = e.detail;
+            if (athlete) {
+                currentAthlete = athlete;
+                document.getElementById('athlete-info').innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
+                document.getElementById('form-content').classList.remove('hidden');
+                await setupPage(); 
+            } else {
+                document.getElementById('athlete-info').innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a>.';
+            }
+            loaderOverlay.style.display = 'none';
+        });
+
+        // EVENT LISTENERS
+        document.addEventListener('DOMContentLoaded', () => {
+            
+            // --- INIZIALIZZA LA GUIDA AL CARICAMENTO ---
+            initGuidaModal();
+            
+            document.getElementById('boatTypeSelect').addEventListener('change', generateCrewSelectors);
+            document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
+            document.getElementById('tipoLavoroSelect').addEventListener('change', updateDistanceOptions);
+            document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
+            document.getElementById('saveWorkoutBtn').addEventListener('click', initiateSaveProcess);
+            document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(messageBox));
+            document.getElementById('summaryModificaBtn').addEventListener('click', cancelSaveProcess);
+            document.getElementById('summaryConfermaBtn').addEventListener('click', proceedWithSave);
+        });
+    </script>
+</body>
+</html>
