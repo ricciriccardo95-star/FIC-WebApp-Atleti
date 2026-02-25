@@ -20,48 +20,25 @@
         .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; }
         .dynamic-field { display: none; }
-        /* Stile Select (per icona freccia)*/
-         .form-select {
-             -webkit-appearance: none;
-            -moz-appearance: none;
-            appearance: none;
+        
+        .form-select {
+            -webkit-appearance: none; -moz-appearance: none; appearance: none;
             background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
-            background-repeat: no-repeat;
-            background-position: right 0.75rem center;
-            background-size: 1.25em;
-            padding-right: 2.5rem; /* Spazio per la freccia */
-        }
-         /* Stile Badge */
-         .badge {
-            display: inline-block;
-            padding: 0.25rem 0.75rem;
-            border-radius: 9999px; /* rounded-full */
-            font-weight: 600;
-            font-size: 0.75rem; /* text-xs */
-            line-height: 1.2;
-            text-align: center;
-            white-space: nowrap;
-            vertical-align: middle;
-            margin-left: 0.5rem; /* Aggiunto margine sx */
+            background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25em; padding-right: 2.5rem;
         }
         
-        /* Stili per il nuovo modale di riepilogo */
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            padding: 0.5rem 0;
-            border-bottom: 1px solid #334155;
-        }
+        /* Stili modale riepilogo */
+        .summary-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #334155; }
         .summary-item:last-child { border-bottom: none; }
         .summary-label { font-weight: 500; color: #94A3B8; }
         .summary-value { font-weight: 600; color: #E2E8F0; text-align: right; }
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
 
-        /* Icona calendario bianca per input date */
-        input[type="date"]::-webkit-calendar-picker-indicator {
-            filter: invert(1);
-            cursor: pointer;
-        }
-        
+        /* Segmented Control per Switch Modalità */
+        .toggle-btn { transition: all 0.2s; font-size: 0.875rem; letter-spacing: 0.05em; }
+        .toggle-active { background-color: #2563EB; color: #ffffff; } /* Tailwind blue-600 */
+        .toggle-inactive { background-color: #1E293B; color: #94A3B8; } /* Tailwind slate-800, text-slate-400 */
+        .toggle-inactive:hover { background-color: #334155; color: #E2E8F0; } /* Tailwind slate-700, text-slate-200 */
     </style>
     <script type="module" src="../auth-manager.js"></script>
 </head>
@@ -77,18 +54,36 @@
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
         <h1 id="page-title" class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-12">Allenamento Barca</h1>
         
-        <div class="mb-6 p-4 bg-yellow-900/30 border border-yellow-700/50 rounded-lg text-center">
-            <p class="font-semibold text-yellow-300">Per le imbarcazioni multiple l'inserimento deve essere fatto <strong class="text-white">da OGNI componente</strong> dell'equipaggio.</p>
-        </div>
-        
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
             
-             <div id="athlete-info-container">
-                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
+            <div id="athlete-info-container">
+                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg border border-slate-700">Verifica utente in corso...</p>
             </div>
 
             <div id="form-content" class="hidden space-y-6">
             
+                <div class="flex flex-row mb-6 rounded-lg overflow-hidden border border-slate-700/50 shadow-sm">
+                    <button id="btn-mode-single" class="toggle-btn toggle-active flex-1 py-3 px-4 text-center font-bold">
+                        ALLENAMENTO SINGOLO
+                    </button>
+                    <button id="btn-mode-crew" class="toggle-btn toggle-inactive flex-1 py-3 px-4 text-center font-bold border-l border-slate-700/50">
+                        ALLENAMENTO EQUIPAGGIO
+                    </button>
+                </div>
+
+                <div id="crew-selection-wrapper" class="hidden p-4 bg-slate-800 border border-slate-600 rounded-lg mb-6">
+                    <div class="flex justify-between items-center mb-2">
+                        <label for="crewSelect" class="form-label text-blue-400 !mb-0">Seleziona Equipaggio</label>
+                        <a href="gestione_equipaggio.html" class="text-xs bg-slate-700 hover:bg-slate-600 text-slate-300 px-3 py-1.5 rounded transition-colors flex items-center gap-1">
+                            ⚙️ Gestisci Equipaggi
+                        </a>
+                    </div>
+                    <select id="crewSelect" class="form-select border-slate-600 focus:border-blue-500">
+                        <option value="">-- Caricamento equipaggi... --</option>
+                    </select>
+                    <p id="crew-no-data-msg" class="text-xs text-orange-400 hidden mt-2">Non fai parte di nessun equipaggio attivo. <a href="gestione_equipaggio.html" class="underline hover:text-orange-300">Creane uno qui</a>.</p>
+                </div>
+
                 <div>
                     <label for="workoutDate" class="form-label">Data Allenamento</label>
                     <input type="date" id="workoutDate" class="form-input">
@@ -100,9 +95,6 @@
                         <span id="gender-indicator"></span>
                     </label>
                     <select id="boatTypeSelect" class="form-select"></select>
-                </div>
-
-                <div id="crew-selection-container" class="dynamic-field grid grid-cols-1 md:grid-cols-2 gap-4">
                 </div>
 
                 <div>
@@ -133,6 +125,7 @@
                         </select>
                     </div>
                 </div>
+
                 <div id="tempo-fields" class="dynamic-field space-y-6">
                     <div>
                         <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
@@ -140,28 +133,31 @@
                             <option value="">-- Seleziona tempo --</option>
                             <option value="30">30 minuti</option>
                             <option value="45">45 minuti</option>
-                             </select>
+                        </select>
                     </div>
                 </div>
+
                 <div id="intervalli-common" class="dynamic-field space-y-6">
                      <div>
                         <label for="intervalliNumero" class="form-label">Numero di Intervalli</label>
                         <select id="intervalliNumero" class="form-select">
                             <option value="">-- Seleziona numero --</option>
-                            </select>
+                        </select>
                     </div>
                     <div id="intervalli-inputs-container" class="space-y-4"></div>
                 </div>
+
                 <div class="pt-4">
-                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
+                    <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors shadow-lg">Salva Allenamento</button>
                 </div>
-            </div> </div>
+            </div> 
+        </div>
 
         <div class="mt-6 text-sm text-slate-400 p-4 bg-slate-800/50 rounded-lg border border-slate-700/50">
-            <h4 class="font-bold text-slate-200 mb-2">N.B. (Note Importanti):</h4>
+            <h4 class="font-bold text-slate-200 mb-2">Note Importanti:</h4>
             <ol class="list-decimal list-inside space-y-1">
-                <li>Non inserire la <strong class="text-slate-300">media</strong> dei lavori, ma il valore <strong class="text-slate-300">totale</strong> per ogni intervallo (es. tempo totale o distanza totale).</li>
-                <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se il lavoro supera l'ora, scrivere 60 + minuti (es. 1h 02m &rarr; <strong class="text-slate-300">62</strong>).</li>
+                <li>Non inserire la <strong class="text-slate-300">media</strong> dei lavori, ma il valore <strong class="text-slate-300">totale</strong> per ogni intervallo.</li>
+                <li>Per la <strong class="text-slate-300">Modalità Tempo</strong>: se il lavoro supera l'ora, scrivere 60 + minuti (es. 1h 02m &rarr; 62).</li>
             </ol>
         </div>
 
@@ -173,583 +169,442 @@
     </div>
     
     <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
-    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
-        <p id="messageText" class="mb-6 text-lg"></p>
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800 border border-slate-700 rounded-lg p-6 shadow-xl text-center hidden z-50">
+        <p id="messageText" class="mb-6 text-lg text-white"></p>
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
 
-    <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg shadow-lg hidden z-50">
-        <div class="p-6">
-            <h3 class="text-2xl font-bold text-white mb-4">Riepilogo Dati</h3>
-            <div id="summary-content" class="mb-6 max-h-[60vh] overflow-y-auto pr-2">
-                </div>
+    <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-lg bg-slate-800 border border-slate-700 rounded-lg shadow-xl hidden z-50 flex flex-col max-h-[90vh]">
+        <div class="p-6 flex-shrink-0 border-b border-slate-700">
+            <h3 class="text-2xl font-bold text-white">Riepilogo Dati</h3>
+        </div>
+        <div class="p-6 overflow-y-auto flex-1" id="summary-scroll-area">
+            <div id="summary-content" class="mb-6 pr-2"></div>
             
             <div id="ep-warning" class="hidden mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-center">
                 <p id="ep-warning-title" class="font-bold text-lg text-red-300">ATTENZIONE: EP Superiore al 110%!</p>
                 <p id="ep-warning-text" class="text-red-400">Il valore EP calcolato sembra molto alto.</p>
             </div>
-
-            <div class="grid grid-cols-2 gap-4">
-                <button id="summaryModificaBtn" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Modifica</button>
-                <button id="summaryConfermaBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Conferma e Salva</button>
-            </div>
+        </div>
+        <div class="p-6 flex-shrink-0 border-t border-slate-700 grid grid-cols-2 gap-4">
+            <button id="summaryModificaBtn" class="w-full bg-slate-600 hover:bg-slate-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Modifica</button>
+            <button id="summaryConfermaBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-4 rounded-lg transition-colors shadow-lg">Conferma e Salva</button>
         </div>
     </div>
+
     <script type="module">
-        // Importa db da auth-manager
         import { db } from '../auth-manager.js';
-        // Importa solo le funzioni necessarie da firestore
-        import { collection, query, getDocs, doc, getDoc, addDoc, serverTimestamp, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { collection, query, where, getDocs, addDoc, serverTimestamp, writeBatch, doc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        const loaderOverlay = document.getElementById('loader-overlay');
         const workoutType = 'boat';
-        let allAthletes = []; // Cache per la lista atleti (non più usata per le select, ma mantenuta se servisse in futuro)
-        let worldRecords = new Map(); // Cache per i record mondiali
-
-        // Variabili per l'atleta autenticato
         let currentAthlete = null;
-        let currentAthleteId = null;
-        let currentAthleteCognome = null;
-        let currentAthleteValueString = null; // Stringa "id|cognome, nome"
-        
-        // Variabile per i dati in attesa di conferma
         let pendingWorkoutData = null;
-
-        // Riferimenti ai modali
-        const modalBackdrop = document.getElementById('modal-backdrop');
-        const messageBox = document.getElementById('messageBox');
-        const summaryModal = document.getElementById('summaryModal');
-        const epWarning = document.getElementById('ep-warning');
+        let userCrews = []; 
+        let isCrewMode = false;
 
         // --- DEFINIZIONE DISTANZE ---
         const distanzePolarizzate = [
-            { value: '500', text: '500 pol (50%)' },
-            { value: '750', text: '750 pol (33,3%)' },
-            { value: '1000', text: '1000 pol (25%)' },
-            { value: '1500', text: '1500 pol (16,6%)' },
-            { value: '2000', text: '2000 pol (12%)' },
-            { value: '3000', text: '3000 pol (8,33%)' },
-            { value: '4000', text: '4000 pol (6,25%)' },
-            { value: '5000', text: '5000 pol (5%)' },
-            { value: '6000', text: '6000 pol (4,16%)' },
-            { value: '10000', text: '10000 pol (2,5%)' }
+            { value: '500', text: '500 pol (50%)' }, { value: '750', text: '750 pol (33,3%)' },
+            { value: '1000', text: '1000 pol (25%)' }, { value: '1500', text: '1500 pol (16,6%)' },
+            { value: '2000', text: '2000 pol (12%)' }, { value: '3000', text: '3000 pol (8,33%)' },
+            { value: '4000', text: '4000 pol (6,25%)' }, { value: '5000', text: '5000 pol (5%)' },
+            { value: '6000', text: '6000 pol (4,16%)' }, { value: '10000', text: '10000 pol (2,5%)' }
         ];
 
         const distanzeSteadyState = [
-            { value: '2000', text: '2000' },
-            { value: '4000', text: '4000' },
-            { value: '5000', text: '5000' },
-            { value: '6000', text: '6000' },
-            { value: '10000', text: '10000' },
-            { value: '16000', text: '16000' },
-            { value: '20000', text: '20000' }
+            { value: '2000', text: '2000' }, { value: '4000', text: '4000' },
+            { value: '5000', text: '5000' }, { value: '6000', text: '6000' },
+            { value: '10000', text: '10000' }, { value: '16000', text: '16000' }, { value: '20000', text: '20000' }
         ];
 
-        // --- FUNZIONI DI UTILITÀ MODALI ---
-        function showModal(modal) { 
-            modalBackdrop.classList.remove('hidden'); 
-            modal.classList.remove('hidden'); 
-        }
-        function hideModal(modal) { 
-            modalBackdrop.classList.add('hidden'); 
-            modal.classList.add('hidden'); 
-        }
-        function showMessageBox(message) {
-            document.getElementById('messageText').textContent = message;
-            showModal(messageBox);
-        }
+        // --- UTILS ---
+        const showModal = (modal) => { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); };
+        const hideModal = (modal) => { document.getElementById('modal-backdrop').classList.add('hidden'); modal.classList.add('hidden'); };
+        const showMessageBox = (msg) => { document.getElementById('messageText').textContent = msg; showModal(document.getElementById('messageBox')); };
         
-        // --- FUNZIONI DI CALCOLO EP ---
         function timeToSeconds(timeStr) {
             if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
-            const minutes = parseInt(parts[0], 10);
-            const seconds = parseFloat(parts[1].replace(',', '.'));
-            if (isNaN(minutes) || isNaN(seconds)) return 0;
-            return (minutes * 60) + seconds;
+            const min = parseInt(parts[0], 10);
+            const sec = parseFloat(parts[1].replace(',', '.'));
+            return isNaN(min) || isNaN(sec) ? 0 : (min * 60) + sec;
         }
-        
+
+        let worldRecords = new Map();
         async function fetchWorldRecords() {
             try {
                 const snapshot = await getDocs(collection(db, 'world_records'));
-                worldRecords = new Map();
-                snapshot.forEach(doc => {
-                    worldRecords.set(doc.id, doc.data());
-                });
-            } catch (error) {
-                console.error("Error fetching world records:", error);
-            }
+                snapshot.forEach(doc => worldRecords.set(doc.id, doc.data()));
+            } catch (error) { console.error("Error fetching WR:", error); }
         }
 
         function calculateBoatEP(workoutData, boatType) {
-            const worldRecordData = worldRecords.get(boatType);
+            const wr = worldRecords.get(boatType);
+            if (!wr || !wr.time) return null;
             
-            if (!worldRecordData || !worldRecordData.time) {
-                console.warn(`Record mondiale per ${boatType} mancante o invalido.`);
-                return null;
-            }
+            const wrSec = timeToSeconds(wr.time);
+            if (wrSec <= 0) return null;
             
-            const recordWorldSeconds = timeToSeconds(worldRecordData.time);
-            if (recordWorldSeconds <= 0) return null;
-            
-            const wattRecordMondiale = 2.8 * Math.pow(2000 / recordWorldSeconds, 3);
-            if (wattRecordMondiale <= 0) return null;
-            
-            let wattAllenamento = 0;
-            const intervals = workoutData.intervalli.map(i => {
-                 const val = (typeof i === 'object' && i !== null && i['0']) ? i['0'] : i;
-                 return timeToSeconds(val) || parseFloat(String(val || '').replace(',', '.'));
-            }).filter(n => !isNaN(n) && n > 0);
+            const wattWR = 2.8 * Math.pow(2000 / wrSec, 3);
+            let wattWorkout = 0;
+            const intervals = workoutData.intervalli.map(i => timeToSeconds(i) || parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n) && n > 0);
             
             if (intervals.length === 0) return null;
+            const media = intervals.reduce((a, b) => a + b, 0) / intervals.length;
 
-            const mediaIntervalli = intervals.reduce((a, b) => a + b, 0) / intervals.length;
-
-            if (workoutData.modalita === 'tempo') {
-                const mediaMetri = mediaIntervalli; 
-                const tempoSelezionatoSec = parseInt(workoutData.tempo, 10) * 60;
-                if (tempoSelezionatoSec > 0) {
-                    wattAllenamento = 2.8 * Math.pow(mediaMetri / tempoSelezionatoSec, 3);
-                }
-            } else if (workoutData.modalita === 'distanza') {
-                const mediaTempoSec = mediaIntervalli; 
-                const distanzaSelezionata = parseInt(workoutData.distanza, 10);
-                if (mediaTempoSec > 0) {
-                    wattAllenamento = 2.8 * Math.pow(distanzaSelezionata / mediaTempoSec, 3);
-                }
+            if (workoutData.modalita === 'tempo' && workoutData.tempo) {
+                const sec = parseInt(workoutData.tempo, 10) * 60;
+                if(sec > 0) wattWorkout = 2.8 * Math.pow(media / sec, 3);
+            } else if (workoutData.modalita === 'distanza' && workoutData.distanza) {
+                if(media > 0) wattWorkout = 2.8 * Math.pow(parseInt(workoutData.distanza, 10) / media, 3);
             }
-
-            if (wattAllenamento > 0) {
-                const epValue = (wattAllenamento / wattRecordMondiale) * 100;
-                return epValue;
-            }
-            
-            return null;
+            return (wattWorkout > 0) ? (wattWorkout / wattWR) * 100 : null;
         }
 
-
-        // --- LOGICA DI SETUP PAGINA ---
+        // --- GESTIONE INTERFACCIA ---
         async function setupPage() {
-            // 1. Popola imbarcazioni
             const boatTypes = ["M1X", "W1X", "M2X", "W2X", "M2-", "W2-", "M4X", "W4X", "M4-", "W4-", "M8+", "W8+"];
-            const boatSelect = document.getElementById('boatTypeSelect');
-            boatSelect.innerHTML = '<option value="">-- Seleziona imbarcazione --</option>';
-            boatTypes.forEach(b => boatSelect.innerHTML += `<option value="${b}">${b}</option>`);
+            const bSelect = document.getElementById('boatTypeSelect');
+            bSelect.innerHTML = '<option value="">-- Seleziona --</option>';
+            boatTypes.forEach(b => bSelect.innerHTML += `<option value="${b}">${b}</option>`);
 
-            // 2. Popola Numero Intervalli
-            const intervalliSelect = document.getElementById('intervalliNumero');
-            let intervalliHTML = '';
-            for (let i = 1; i <= 20; i++) {
-                intervalliHTML += `<option value="${i}">${i}</option>`;
-            }
-            intervalliSelect.innerHTML = '<option value="">-- Seleziona numero --</option>';
-            intervalliSelect.innerHTML += intervalliHTML;
+            const iSelect = document.getElementById('intervalliNumero');
+            iSelect.innerHTML = '<option value="">-- Seleziona --</option>';
+            for (let i = 1; i <= 20; i++) iSelect.innerHTML += `<option value="${i}">${i}</option>`;
             
-            // 3. Imposta data di default (Oggi)
-            const today = new Date().toISOString().split('T')[0];
-            document.getElementById('workoutDate').value = today;
-
-            // 4. Carica e Caching record mondiali
+            document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
             await fetchWorldRecords();
+            await loadUserCrews();
         }
 
-        // --- GESTIONE DINAMICA FORM (MODIFICATA) ---
-        function generateCrewSelectors() {
-            // Questa funzione ora serve solo a gestire l'icona M/F e nascondere il container
-            const container = document.getElementById('crew-selection-container');
-            const boatType = document.getElementById('boatTypeSelect').value;
-            const genderIndicator = document.getElementById('gender-indicator');
-            
-            // Pulisci e nascondi
-            container.innerHTML = '';
-            container.style.display = 'none'; 
-            
-            if (boatType.startsWith('M')) {
-                genderIndicator.innerHTML = `<div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">M</div>`;
-            } else if (boatType.startsWith('W')) {
-                genderIndicator.innerHTML = `<div class="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-sm">F</div>`;
+        // Caricamento Equipaggi
+        async function loadUserCrews() {
+            const crewSelect = document.getElementById('crewSelect');
+            const noDataMsg = document.getElementById('crew-no-data-msg');
+            try {
+                const q = query(collection(db, 'crews'), where('members', 'array-contains', currentAthlete.id), where('active', '==', true));
+                const snapshot = await getDocs(q);
+                
+                crewSelect.innerHTML = '<option value="">-- Seleziona Equipaggio --</option>';
+                userCrews = [];
+
+                if (snapshot.empty) {
+                    noDataMsg.classList.remove('hidden');
+                    crewSelect.disabled = true;
+                } else {
+                    noDataMsg.classList.add('hidden');
+                    crewSelect.disabled = false;
+                    snapshot.forEach(doc => {
+                        const data = doc.data();
+                        userCrews.push({ id: doc.id, ...data });
+                        crewSelect.innerHTML += `<option value="${doc.id}">${data.name} (${data.boatType})</option>`;
+                    });
+                }
+            } catch (error) { console.error("Errore crew:", error); }
+        }
+
+        // Switch Modalità (Singolo / Crew)
+        function toggleMode(isCrew) {
+            isCrewMode = isCrew;
+            const btnS = document.getElementById('btn-mode-single');
+            const btnC = document.getElementById('btn-mode-crew');
+            const wrapper = document.getElementById('crew-selection-wrapper');
+
+            if (isCrew) {
+                btnC.className = "toggle-btn toggle-active flex-1 py-3 px-4 text-center font-bold border-l border-slate-700/50";
+                btnS.className = "toggle-btn toggle-inactive flex-1 py-3 px-4 text-center font-bold";
+                wrapper.classList.remove('hidden');
             } else {
-                genderIndicator.innerHTML = '';
+                btnS.className = "toggle-btn toggle-active flex-1 py-3 px-4 text-center font-bold";
+                btnC.className = "toggle-btn toggle-inactive flex-1 py-3 px-4 text-center font-bold border-l border-slate-700/50";
+                wrapper.classList.add('hidden');
+                document.getElementById('crewSelect').value = ""; // Resetta selezione
             }
         }
 
-        function updateFormVisibility() {
+        // Logiche UI Form
+        // AUTO-SELEZIONE BARCA QUANDO SI CAMBIA EQUIPAGGIO
+        document.getElementById('crewSelect').addEventListener('change', (e) => {
+            const selectedCrewId = e.target.value;
+            if (selectedCrewId) {
+                const crew = userCrews.find(c => c.id === selectedCrewId);
+                if (crew && crew.boatType) {
+                    const boatSelect = document.getElementById('boatTypeSelect');
+                    boatSelect.value = crew.boatType;
+                    // Trigger manuale dell'evento change per aggiornare l'icona
+                    boatSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+
+        document.getElementById('boatTypeSelect').addEventListener('change', (e) => {
+            const v = e.target.value;
+            const ind = document.getElementById('gender-indicator');
+            if(v.startsWith('M')) ind.innerHTML = '<div class="w-6 h-6 rounded-full bg-blue-500 flex items-center justify-center text-white font-bold text-sm">M</div>';
+            else if(v.startsWith('W')) ind.innerHTML = '<div class="w-6 h-6 rounded-full bg-pink-500 flex items-center justify-center text-white font-bold text-sm">F</div>';
+            else ind.innerHTML = '';
+        });
+
+        document.getElementById('workoutMode').addEventListener('change', () => {
             const mode = document.getElementById('workoutMode').value;
             document.getElementById('tempo-fields').style.display = 'none';
             document.getElementById('tipo-lavoro-fields').style.display = 'none';
             document.getElementById('distanza-fields').style.display = 'none';
             document.getElementById('intervalli-common').style.display = 'none';
-            document.getElementById('tipoLavoroSelect').value = "";
-            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona prima il tipo di lavoro --</option>';
-
+            
             if (mode === 'distanza') {
                 document.getElementById('tipo-lavoro-fields').style.display = 'block';
-                 document.getElementById('intervalli-common').style.display = 'none';
             } else if (mode === 'tempo') {
                 document.getElementById('tempo-fields').style.display = 'block';
                 document.getElementById('intervalli-common').style.display = 'block';
-            } else {
-                 document.getElementById('intervalli-common').style.display = 'none';
             }
             generateIntervalliInputs();
-        }
+        });
 
-        function updateDistanceOptions() {
-            const tipoLavoro = document.getElementById('tipoLavoroSelect').value;
-            const distanzaSelect = document.getElementById('distanzaSelect');
-            distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
-            let optionsArray = [];
-            if (tipoLavoro === 'polarizzato') optionsArray = distanzePolarizzate;
-            else if (tipoLavoro === 'steady_state') optionsArray = distanzeSteadyState;
-            optionsArray.forEach(opt => {
-                distanzaSelect.innerHTML += `<option value="${opt.value}">${opt.text}</option>`;
-            });
-            document.getElementById('distanza-fields').style.display = tipoLavoro ? 'block' : 'none';
-            document.getElementById('intervalli-common').style.display = tipoLavoro ? 'block' : 'none';
-             generateIntervalliInputs();
-        }
+        document.getElementById('tipoLavoroSelect').addEventListener('change', () => {
+            const tl = document.getElementById('tipoLavoroSelect').value;
+            const ds = document.getElementById('distanzaSelect');
+            ds.innerHTML = '<option value="">-- Seleziona distanza --</option>';
+            const arr = tl === 'polarizzato' ? distanzePolarizzate : (tl === 'steady_state' ? distanzeSteadyState : []);
+            arr.forEach(opt => ds.innerHTML += `<option value="${opt.value}">${opt.text}</option>`);
+            document.getElementById('distanza-fields').style.display = tl ? 'block' : 'none';
+            document.getElementById('intervalli-common').style.display = tl ? 'block' : 'none';
+            generateIntervalliInputs();
+        });
 
         function generateIntervalliInputs() {
             const container = document.getElementById('intervalli-inputs-container');
-            const numero = parseInt(document.getElementById('intervalliNumero').value) || 0;
+            const num = parseInt(document.getElementById('intervalliNumero').value) || 0;
             const mode = document.getElementById('workoutMode').value;
             container.innerHTML = '';
-            const showInputs = mode && numero > 0 && numero <= 20 && (mode === 'tempo' || (mode === 'distanza' && document.getElementById('tipoLavoroSelect').value));
-            if (showInputs) {
-                for (let i = 1; i <= numero; i++) {
-                    const inputType = mode === 'distanza' ? 'text' : 'number';
-                    const placeholder = mode === 'distanza' ? 'mm:ss.d' : 'Inserisci valore (es. 2500m)';
-                    const labelText = mode === 'distanza' ? '(Tempo)' : '(Distanza)';
-                    const label = `<label for="intervallo-${i}" class="form-label">Intervallo ${i} ${labelText}</label>`;
-                    const inputMode = mode === 'distanza' ? 'inputmode="numeric"' : 'inputmode="decimal"'; 
-                    const inputAttributes = mode === 'distanza' 
-                        ? 'oninput="formatTimeInput(event)" maxlength="7"' 
-                        : 'step="any"';
-                    const input = `<input type="${inputType}" ${inputMode} id="intervallo-${i}" class="form-input intervallo-input" placeholder="${placeholder}" ${inputAttributes}>`;
-                    container.innerHTML += `<div class="mb-2">${label}${input}</div>`;
+            
+            if (mode && num > 0 && num <= 20) {
+                for (let i = 1; i <= num; i++) {
+                    const isDist = mode === 'distanza';
+                    const inp = `<input type="${isDist ? 'text' : 'number'}" inputmode="${isDist ? 'numeric' : 'decimal'}" id="intervallo-${i}" class="form-input intervallo-input" placeholder="${isDist ? 'mm:ss.d' : 'es. 2500'}" ${isDist ? 'oninput="formatTimeInput(event)" maxlength="7"' : 'step="any"'}>`;
+                    container.innerHTML += `<div class="mb-2"><label class="form-label">Intervallo ${i} ${isDist ? '(Tempo)' : '(Distanza)'}</label>${inp}</div>`;
                 }
             }
         }
-        
-        window.formatTimeInput = function(event) {
-            const input = event.target;
-            let value = input.value.replace(/[^\d]/g, '');
-            if (value.length > 5) value = value.substring(0, 5); // mmssd
-            let formattedValue = value;
-            if (value.length > 2) formattedValue = `${value.substring(0, 2)}:${value.substring(2)}`;
-            if (value.length > 4) formattedValue = `${value.substring(0, 2)}:${value.substring(2, 4)}.${value.substring(4)}`;
-            input.value = formattedValue;
+        document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
+
+        window.formatTimeInput = function(e) {
+            let v = e.target.value.replace(/[^\d]/g, '');
+            if(v.length > 5) v = v.substring(0, 5);
+            if(v.length > 2) v = `${v.substring(0,2)}:${v.substring(2)}`;
+            if(v.length > 5) v = `${v.substring(0,5)}.${v.substring(5)}`;
+            e.target.value = v;
         }
-        
-        // --- FUNZIONE DI RESET FORM ---
+
         function resetForm() {
             document.getElementById('boatTypeSelect').value = "";
             document.getElementById('workoutMode').value = "";
             document.getElementById('tipoLavoroSelect').value = "";
-            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona prima il tipo di lavoro --</option>';
             document.getElementById('tempoSelect').value = "";
             document.getElementById('intervalliNumero').value = "";
-            // Reset data a oggi
             document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
+            document.getElementById('workoutMode').dispatchEvent(new Event('change'));
+            toggleMode(false); // Torna a singolo
             pendingWorkoutData = null;
-            generateCrewSelectors();
-            updateFormVisibility();
         }
 
-        // --- NUOVA LOGICA DI SALVATAGGIO (MODIFICATA) ---
-
-        // FASE 1: Validazione e apertura modale di riepilogo
+        // --- SALVATAGGIO FASE 1 ---
         async function initiateSaveProcess() {
             const btn = document.getElementById('saveWorkoutBtn');
-            btn.disabled = true;
-            btn.textContent = 'Verifica dati...';
+            btn.disabled = true; btn.textContent = 'Verifica dati...';
             
-            const boatTypeSelect = document.getElementById('boatTypeSelect');
-            const boatType = boatTypeSelect.value;
-            const boatTypeText = boatTypeSelect.options[boatTypeSelect.selectedIndex].text;
+            const dateStr = document.getElementById('workoutDate').value;
+            const boatSel = document.getElementById('boatTypeSelect');
+            const modeSel = document.getElementById('workoutMode');
             
-            // Validazione Data
-            const dateInput = document.getElementById('workoutDate');
-            const selectedDate = dateInput.value;
-            if (!selectedDate) {
-                showMessageBox("Seleziona una data per l'allenamento.");
+            if (!dateStr || !boatSel.value || !modeSel.value) {
+                showMessageBox("Compila Data, Imbarcazione e Modalità.");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
 
-            const modeSelect = document.getElementById('workoutMode');
-            const mode = modeSelect.value;
-            const modeText = modeSelect.options[modeSelect.selectedIndex].text;
-            
-            // --- COSTRUZIONE EQUIPAGGIO (SOLO UTENTE LOGGATO) ---
-            const equipaggio = [];
-            let crewNames = []; // Per il riepilogo
-            
-            if (currentAthlete) {
-                equipaggio.push({
-                    atletaId: currentAthlete.id,
-                    cognomeAtleta: currentAthlete.cognome,
-                    nomeAtleta: currentAthlete.nome || '',
-                    gruppo: currentAthlete.gruppo || '',
-                    genere: currentAthlete.genere || ''
-                });
-                crewNames.push(`${currentAthlete.cognome} ${currentAthlete.nome || ''}`);
-            } else {
-                // Questo non dovrebbe accadere se i controlli di auth funzionano
-                showMessageBox("Errore: Utente non identificato. Ricarica la pagina.");
-                btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-            }
-            
-            const firstCrewMember = equipaggio[0] || {}; 
-
+            // Dati base per tutti i documenti
             const workoutData = {
                 tipo: workoutType.toUpperCase(),
-                imbarcazione: boatType,
-                equipaggio: equipaggio,
-                modalita: mode,
-                atletaId: firstCrewMember.atletaId || null, 
-                cognomeAtleta: firstCrewMember.cognomeAtleta || null, 
-                data: selectedDate,
-                timestamp: serverTimestamp(),
+                imbarcazione: boatSel.value,
+                modalita: modeSel.value,
+                data: dateStr,
                 intervalli: [],
-                ep1: null, 
-                tipoLavoro: null
+                // L'atletaId verrà assegnato dinamicamente durante il BATCH, qui settiamo il default del creatore
+                atletaId: currentAthlete.id,
+                cognomeAtleta: currentAthlete.cognome
             };
 
-            // Validazioni
-            if (!boatType) {
-                showMessageBox("Seleziona un'imbarcazione.");
+            let summaryDetails = [];
+            summaryDetails.push({ label: 'Data', value: new Date(dateStr).toLocaleDateString('it-IT') });
+
+            // GESTIONE CREW VALIDAZIONE
+            if (isCrewMode) {
+                const crewSel = document.getElementById('crewSelect');
+                if (!crewSel.value) {
+                    showMessageBox("Seleziona l'equipaggio dal menu a tendina.");
+                    btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
+                }
+                workoutData.crewId = crewSel.value;
+                const crewName = crewSel.options[crewSel.selectedIndex].text.split(' (')[0]; 
+                summaryDetails.push({ label: 'Lavoro di Gruppo', value: crewName });
+            } else {
+                summaryDetails.push({ label: 'Lavoro', value: 'Singolo' });
+                // Assegna solo se stesso se lavoro singolo
+                workoutData.equipaggio = [{
+                    atletaId: currentAthlete.id,
+                    cognomeAtleta: currentAthlete.cognome,
+                    nomeAtleta: currentAthlete.nome || ''
+                }];
+            }
+
+            if (modeSel.value === 'distanza') {
+                const tl = document.getElementById('tipoLavoroSelect');
+                const ds = document.getElementById('distanzaSelect');
+                if (!tl.value || !ds.value) { showMessageBox("Seleziona Tipo Lavoro e Distanza."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
+                workoutData.tipoLavoro = tl.value; workoutData.distanza = ds.value;
+                summaryDetails.push({ label: 'Tipo Lavoro', value: tl.options[tl.selectedIndex].text }, { label: 'Distanza', value: ds.options[ds.selectedIndex].text });
+            } else {
+                const ts = document.getElementById('tempoSelect');
+                if (!ts.value) { showMessageBox("Seleziona il tempo."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
+                workoutData.tempo = ts.value;
+                summaryDetails.push({ label: 'Tempo', value: ts.options[ts.selectedIndex].text });
+            }
+
+            const inputs = document.querySelectorAll('.intervallo-input');
+            const targetLen = parseInt(document.getElementById('intervalliNumero').value) || 0;
+            if (inputs.length === 0 || inputs.length !== targetLen) {
+                showMessageBox("Compila il numero corretto di intervalli.");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
-            if (!mode) {
-                showMessageBox("Seleziona una modalità di allenamento.");
+
+            let valid = true;
+            inputs.forEach(inp => {
+                let v = inp.value.trim();
+                if(!v) valid = false;
+                if (modeSel.value === 'distanza') {
+                    if (/^\d{1,2}:\d{2}$/.test(v)) v += ".0"; 
+                    if (!/^\d{1,2}:\d{2}(\.\d{1})?$/.test(v)) valid = false;
+                } else if (isNaN(parseFloat(v)) || parseFloat(v) <= 0) valid = false;
+                
+                if(valid) workoutData.intervalli.push(v);
+            });
+
+            if (!valid) {
+                showMessageBox(modeSel.value === 'distanza' ? "Formato tempo errato (usa mm:ss.d)" : "Inserisci un numero valido per la distanza.");
                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
             }
-            
-            let summaryDetails = []; // Per il riepilogo
-            
-            // Aggiungi Data al riepilogo
-            const dateObj = new Date(selectedDate);
-            const formattedDate = dateObj.toLocaleDateString('it-IT');
-            summaryDetails.push({ label: 'Data', value: formattedDate });
-            
-            if (mode === 'distanza') {
-                const tipoLavoroSelect = document.getElementById('tipoLavoroSelect');
-                const distanzaSelect = document.getElementById('distanzaSelect');
-                workoutData.tipoLavoro = tipoLavoroSelect.value;
-                workoutData.distanza = distanzaSelect.value;
-                
-                if (!workoutData.tipoLavoro) { showMessageBox("Seleziona un tipo di lavoro."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-                if (!workoutData.distanza) { showMessageBox("Seleziona una distanza specifica."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
 
-                summaryDetails.push({ label: 'Tipo Lavoro', value: tipoLavoroSelect.options[tipoLavoroSelect.selectedIndex].text });
-                summaryDetails.push({ label: 'Distanza', value: distanzaSelect.options[distanzaSelect.selectedIndex].text });
+            // Calcolo EP
+            const ep = calculateBoatEP(workoutData, boatSel.value);
+            if (ep) workoutData.ep1 = parseFloat(ep.toFixed(2));
 
-            } else { 
-                const tempoSelect = document.getElementById('tempoSelect');
-                workoutData.tempo = tempoSelect.value;
-                if (!workoutData.tempo) { showMessageBox("Seleziona una durata."); btn.disabled = false; btn.textContent = 'Salva Allenamento'; return; }
-                
-                summaryDetails.push({ label: 'Tempo', value: tempoSelect.options[tempoSelect.selectedIndex].text });
+            pendingWorkoutData = workoutData;
+
+            // RIEPILOGO
+            const sumCont = document.getElementById('summary-content');
+            let h = `<div class="summary-item"><span class="summary-label">Imbarcazione</span><span class="summary-value">${boatSel.options[boatSel.selectedIndex].text}</span></div>`;
+            summaryDetails.forEach(i => h += `<div class="summary-item"><span class="summary-label">${i.label}</span><span class="summary-value">${i.value}</span></div>`);
+            h += `<div class="summary-item"><span class="summary-label">N. Intervalli</span><span class="summary-value">${workoutData.intervalli.length}</span></div>`;
+            h += `<div class="summary-item"><span class="summary-label">Valori</span><span class="summary-value">${workoutData.intervalli.join(', ')}</span></div>`;
+            sumCont.innerHTML = h;
+
+            const ew = document.getElementById('ep-warning');
+            const sb = document.getElementById('summaryConfermaBtn');
+            const mb = document.getElementById('summaryModificaBtn');
+            if (ep > 110) {
+                ew.classList.remove('hidden'); sb.classList.add('hidden'); mb.classList.add('col-span-2');
+            } else {
+                ew.classList.add('hidden'); sb.classList.remove('hidden'); mb.classList.remove('col-span-2');
             }
 
-            const intervalliInputs = document.querySelectorAll('.intervallo-input');
-            let allIntervalsValid = true;
-            
-             if (intervalliInputs.length === 0 || intervalliInputs.length !== parseInt(document.getElementById('intervalliNumero').value)) {
-                 showMessageBox("Assicurati di aver selezionato un numero di intervalli e compilato tutti i campi.");
-                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-             }
+            showModal(document.getElementById('summaryModal'));
+        }
 
-            intervalliInputs.forEach(input => {
-                const value = input.value.trim();
-                if (value) {
-                    if (mode === 'distanza' && !/^\d{1,2}:\d{2}(\.\d{1})?$/.test(value) && !/^\d{1,2}:\d{2}$/.test(value)) {
-                        // Tolleriamo anche mm:ss (aggiungerà .0)
-                        if (/^\d{1,2}:\d{2}$/.test(value)) {
-                           input.value = value + ".0"; // Correggi input
-                           workoutData.intervalli.push(input.value);
-                        } else {
-                           allIntervalsValid = false;
-                        }
-                    }
-                    else if (mode === 'tempo' && (isNaN(parseFloat(value)) || parseFloat(value) <= 0)) allIntervalsValid = false;
+        // --- SALVATAGGIO FASE 2: BATCH O SINGOLO ---
+        async function proceedWithSave() {
+            const btn = document.getElementById('summaryConfermaBtn');
+            btn.disabled = true; btn.textContent = 'Salvataggio in corso...';
+            
+            try {
+                const timestamp = serverTimestamp();
+
+                if (isCrewMode && pendingWorkoutData.crewId) {
+                    // MODALITÀ EQUIPAGGIO: Crea un documento per ogni membro (Batch Write)
+                    const selectedCrew = userCrews.find(c => c.id === pendingWorkoutData.crewId);
                     
-                    if(allIntervalsValid) workoutData.intervalli.push(value);
+                    // Prepara l'array completo per visibilità "Con chi hai remato"
+                    const equipaggioCompleto = [];
+                    for (const [uid, info] of Object.entries(selectedCrew.membersData)) {
+                        equipaggioCompleto.push({
+                            atletaId: uid,
+                            cognomeAtleta: info.cognome,
+                            nomeAtleta: info.nome || ''
+                        });
+                    }
+
+                    // Inizializza Batch
+                    const batch = writeBatch(db);
+
+                    for (const [uid, info] of Object.entries(selectedCrew.membersData)) {
+                        const docRef = doc(collection(db, 'allenamenti'));
+                        const memberData = {
+                            ...pendingWorkoutData,
+                            timestamp: timestamp,
+                            atletaId: uid, // Il doc appartiene a questo membro
+                            cognomeAtleta: info.cognome,
+                            equipaggio: equipaggioCompleto
+                        };
+                        batch.set(docRef, memberData);
+                    }
+                    
+                    await batch.commit();
 
                 } else {
-                    allIntervalsValid = false;
+                    // MODALITÀ SINGOLO: Salvataggio standard
+                    pendingWorkoutData.timestamp = timestamp;
+                    await addDoc(collection(db, 'allenamenti'), pendingWorkoutData);
                 }
-            });
-            
-            if (!allIntervalsValid) {
-                const errorMsg = mode === 'distanza' 
-                    ? "Compila tutti i campi intervallo nel formato corretto (mm:ss.d o mm:ss)."
-                    : "Compila tutti i campi intervallo con un valore numerico valido (es. 2500).";
-                showMessageBox(errorMsg);
-                 btn.disabled = false; btn.textContent = 'Salva Allenamento'; return;
-            }
 
-            // 3. Calcola l'EP
-            const epValueToSave = calculateBoatEP(workoutData, boatType);
-            if (epValueToSave !== null && epValueToSave > 0 && isFinite(epValueToSave)) {
-                workoutData.ep1 = parseFloat(epValueToSave.toFixed(2)); 
-            } else {
-                console.warn(`EP non calcolato per ${boatType}.`);
-            }
-            
-            // 4. Salva i dati per la FASE 2
-            pendingWorkoutData = workoutData;
-            
-            // 5. Popola e mostra il modale di riepilogo
-            const summaryContent = document.getElementById('summary-content');
-            let summaryHTML = `
-                <div class="summary-item"><span class="summary-label">Imbarcazione</span><span class="summary-value">${boatTypeText}</span></div>
-                <div class="summary-item"><span class="summary-label">Atleta</span><span class="summary-value">${crewNames[0]}</span></div>
-                <div class="summary-item"><span class="summary-label">Modalità</span><span class="summary-value">${modeText}</span></div>
-            `;
-            
-            summaryDetails.forEach(item => {
-                 summaryHTML += `<div class="summary-item"><span class="summary-label">${item.label}</span><span class="summary-value">${item.value}</span></div>`;
-            });
-
-            summaryHTML += `<div class="summary-item"><span class="summary-label">N. Intervalli</span><span class="summary-value">${workoutData.intervalli.length}</span></div>`;
-            summaryHTML += `<div class="summary-item"><span class="summary-label">Valori Intervalli</span><span class="summary-value">${workoutData.intervalli.join(', ')}</span></div>`;
-            
-            summaryContent.innerHTML = summaryHTML;
-
-            // 6. Controlla l'avviso EP
-            const confirmBtn = document.getElementById('summaryConfermaBtn');
-            const modifyBtn = document.getElementById('summaryModificaBtn');
-            const epWarningTitle = document.getElementById('ep-warning-title');
-            const epWarningText = document.getElementById('ep-warning-text');
-
-            if (epValueToSave > 110) {
-                // MOSTRA ERRORE E BLOCCA SALVATAGGIO
-                epWarning.classList.remove('hidden');
-                
-                epWarningTitle.textContent = "ERRORE: EP > 110%";
-                epWarningText.textContent = "I dati inseriti generano una performance impossibile (superiore al Record del Mondo o al Record Personale + 10%). Il salvataggio è bloccato. Controlla di non aver inserito il passo invece del tempo totale.";
-                
-                confirmBtn.classList.add('hidden'); // Nasconde il pulsante conferma
-                modifyBtn.classList.add('col-span-2'); // Espande il pulsante modifica
-            } else {
-                // NESSUN ERRORE
-                epWarning.classList.add('hidden');
-                confirmBtn.classList.remove('hidden'); // Mostra conferma
-                modifyBtn.classList.remove('col-span-2'); // Pulsante modifica normale
-            }
-            
-            // 7. Mostra modale
-            showModal(summaryModal);
-        }
-        
-        // FASE 2: Conferma e salvataggio effettivo
-        async function proceedWithSave() {
-            const confirmBtn = document.getElementById('summaryConfermaBtn');
-            const modifyBtn = document.getElementById('summaryModificaBtn');
-            confirmBtn.disabled = true;
-            modifyBtn.disabled = true;
-            confirmBtn.textContent = 'Salvataggio...';
-
-            if (!pendingWorkoutData) {
-                console.error("Dati di allenamento non trovati.");
-                showMessageBox("Errore: dati non trovati. Riprova.");
-                hideModal(summaryModal);
-                confirmBtn.disabled = false;
-                modifyBtn.disabled = false;
-                confirmBtn.textContent = 'Conferma e Salva';
-                document.getElementById('saveWorkoutBtn').disabled = false;
-                document.getElementById('saveWorkoutBtn').textContent = 'Salva Allenamento';
-                return;
-            }
-
-            try {
-                // Modifica il timestamp prima di salvare
-                pendingWorkoutData.timestamp = serverTimestamp();
-                await addDoc(collection(db, 'allenamenti'), pendingWorkoutData);
-                
-                hideModal(summaryModal);
+                hideModal(document.getElementById('summaryModal'));
                 showMessageBox("Allenamento salvato con successo!");
-                resetForm(); // Resetta il form
+                resetForm();
                 
             } catch (error) {
-                console.error("Errore salvataggio: ", error);
-                hideModal(summaryModal); // Nascondi il riepilogo
-                showMessageBox("Si è verificato un errore during il salvataggio.");
+                console.error("Errore salvataggio: ", error); 
+                showMessageBox("Errore critico durante il salvataggio. Riprova.");
             } finally {
-                // Ri-abilita tutti i bottoni
-                confirmBtn.disabled = false;
-                modifyBtn.disabled = false;
-                confirmBtn.textContent = 'Conferma e Salva';
+                btn.disabled = false; btn.textContent = 'Conferma e Salva';
                 document.getElementById('saveWorkoutBtn').disabled = false;
                 document.getElementById('saveWorkoutBtn').textContent = 'Salva Allenamento';
-                pendingWorkoutData = null; // Pulisci i dati in attesa
             }
         }
 
-        // Funzione per il pulsante "Modifica"
-        function cancelSaveProcess() {
-            hideModal(summaryModal);
-            pendingWorkoutData = null; // Pulisci i dati in attesa
-            // Ri-abilita il pulsante di salvataggio principale
-            const btn = document.getElementById('saveWorkoutBtn');
-            btn.disabled = false;
-            btn.textContent = 'Salva Allenamento';
-            
-            // Reset layout bottoni nel caso fosse stato modificato dall'errore
-            const confirmBtn = document.getElementById('summaryConfermaBtn');
-            const modifyBtn = document.getElementById('summaryModificaBtn');
-            confirmBtn.classList.remove('hidden');
-            modifyBtn.classList.remove('col-span-2');
-        }
-        
-        // --- GESTIONE AUTENTICAZIONE E AVVIO ---
-        
-        const athleteInfo = document.getElementById('athlete-info');
-        const formContent = document.getElementById('form-content');
-
-        document.addEventListener('authStateReady', async (e) => {
-            const { athlete, error } = e.detail;
-
-            if (athlete) {
-                currentAthlete = athlete;
-                currentAthleteId = athlete.id;
-                currentAthleteCognome = athlete.cognome;
-                currentAthleteValueString = `${athlete.id}|${athlete.cognome}, ${athlete.nome || ''}`;
-                
-                athleteInfo.innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
-                formContent.classList.remove('hidden');
-                
-                await setupPage(); 
-                
-            } else if (error) {
-                console.error("Errore di autenticazione da auth-manager:", error);
-                athleteInfo.textContent = "Errore nel caricamento dei dati. Riprova.";
-                formContent.classList.add('hidden');
-            } else {
-                athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire i dati.';
-                formContent.classList.add('hidden');
-            }
-            
-            loaderOverlay.style.display = 'none';
+        document.getElementById('summaryModificaBtn').addEventListener('click', () => {
+            hideModal(document.getElementById('summaryModal'));
+            document.getElementById('saveWorkoutBtn').disabled = false;
+            document.getElementById('saveWorkoutBtn').textContent = 'Salva Allenamento';
         });
 
-        // --- EVENT LISTENERS ---
-        document.addEventListener('DOMContentLoaded', () => {
-            document.getElementById('boatTypeSelect').addEventListener('change', generateCrewSelectors);
-            document.getElementById('workoutMode').addEventListener('change', updateFormVisibility);
-            document.getElementById('tipoLavoroSelect').addEventListener('change', updateDistanceOptions);
-            document.getElementById('intervalliNumero').addEventListener('change', generateIntervalliInputs);
-            
-            // Pulsante di salvataggio (Fase 1)
-            document.getElementById('saveWorkoutBtn').addEventListener('click', initiateSaveProcess);
-            
-            // Pulsante OK del modale standard
-            document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(messageBox));
+        // Event Listeners
+        document.getElementById('btn-mode-single').addEventListener('click', () => toggleMode(false));
+        document.getElementById('btn-mode-crew').addEventListener('click', () => toggleMode(true));
+        document.getElementById('saveWorkoutBtn').addEventListener('click', initiateSaveProcess);
+        document.getElementById('summaryConfermaBtn').addEventListener('click', proceedWithSave);
+        document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
 
-            // Nuovi pulsanti del modale di riepilogo
-            document.getElementById('summaryModificaBtn').addEventListener('click', cancelSaveProcess);
-            document.getElementById('summaryConfermaBtn').addEventListener('click', proceedWithSave);
+        // Avvio
+        document.addEventListener('authStateReady', async (e) => {
+            const { athlete } = e.detail;
+            if (athlete) {
+                currentAthlete = athlete;
+                document.getElementById('athlete-info').innerHTML = `Atleta connesso: <strong class="text-sky-400">${athlete.cognome} ${athlete.nome || ''}</strong>`;
+                document.getElementById('form-content').classList.remove('hidden');
+                await setupPage();
+            } else {
+                document.getElementById('athlete-info').innerHTML = 'Devi fare il login.';
+                document.getElementById('form-content').classList.add('hidden');
+            }
+            document.getElementById('loader-overlay').style.display = 'none';
         });
     </script>
 </body>

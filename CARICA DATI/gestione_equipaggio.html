@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestione Equipaggio - FIC Canottaggio</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; }
+        .background-gradient { position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); filter: blur(100px); z-index: -1; }
+        .gradient-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(59, 130, 246, 0.3), transparent 70%); animation: pulse 10s infinite alternate; }
+        .gradient-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%); animation: pulse 12s infinite alternate-reverse; }
+        @keyframes pulse { 0% { transform: scale(0.9) rotate(0deg); } 100% { transform: scale(1.2) rotate(20deg); } }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .loader { border-top-color: #3498db; animation: spin 1s linear infinite; }
+        .form-input, .form-select { width: 100%; background-color: #1E293B; border: 1px solid #334155; border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; }
+        .form-input:focus, .form-select:focus { outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); }
+        .code-input { text-transform: uppercase; letter-spacing: 0.1em; font-weight: bold; }
+    </style>
+    <script type="module" src="../auth-manager.js"></script>
+</head>
+<body class="antialiased">
+    <div class="background-gradient gradient-1"></div>
+    <div class="background-gradient gradient-2"></div>
+    
+    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
+        <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
+        <p class="mt-4 text-slate-300">Verifica in corso...</p>
+    </div>
+    
+    <div class="p-4 md:p-8 max-w-3xl mx-auto space-y-8">
+        
+        <div class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-black tracking-tight text-slate-100 mb-4">Gestione Equipaggi</h1>
+            <button id="btn-how-it-works" class="inline-flex items-center gap-2 bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-600 px-4 py-2 rounded-full text-sm font-semibold transition-colors shadow-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                Come funziona
+            </button>
+        </div>
+        
+        <div id="athlete-info-container">
+            <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente in corso...</p>
+        </div>
+
+        <div id="main-content" class="hidden space-y-8">
+            
+            <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-white">I Tuoi Equipaggi Attivi</h2>
+                    <span id="crew-counter" class="bg-blue-900/50 text-blue-300 px-3 py-1 rounded-full text-sm font-bold border border-blue-700">0/8 equipaggi</span>
+                </div>
+                <div id="my-crews-list" class="space-y-4">
+                    <p class="text-slate-400 italic text-sm">Caricamento in corso...</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 flex flex-col h-full">
+                    <h2 class="text-xl font-bold text-white mb-4">Crea Nuovo Equipaggio</h2>
+                    
+                    <div class="space-y-4 flex-1">
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Nome Equipaggio</label>
+                            <input type="text" id="crew-name" class="form-input" placeholder="Es: Doppio Master, 4 di coppia..." maxlength="30">
+                        </div>
+                        <div>
+                            <label class="block text-sm text-slate-400 mb-1">Imbarcazione (Limita i posti)</label>
+                            <select id="crew-boat" class="form-select">
+                                <option value="">-- Seleziona --</option>
+                                <option value="M1X">M1X (1 posto)</option>
+                                <option value="W1X">W1X (1 posto)</option>
+                                <option value="M2X">M2X (2 posti)</option>
+                                <option value="W2X">W2X (2 posti)</option>
+                                <option value="M2-">M2- (2 posti)</option>
+                                <option value="W2-">W2- (2 posti)</option>
+                                <option value="M4X">M4X (4 posti)</option>
+                                <option value="W4X">W4X (4 posti)</option>
+                                <option value="M4-">M4- (4 posti)</option>
+                                <option value="W4-">W4- (4 posti)</option>
+                                <option value="M8+">M8+ (9 posti)</option>
+                                <option value="W8+">W8+ (9 posti)</option>
+                            </select>
+                        </div>
+                    </div>
+                    
+                    <button id="btn-create-crew" class="w-full mt-6 bg-blue-600 hover:bg-blue-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-bold py-3 px-5 rounded-lg transition-colors">
+                        Genera Codice & Crea
+                    </button>
+                </div>
+
+                <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 flex flex-col h-full">
+                    <h2 class="text-xl font-bold text-white mb-4">Unisciti a un Equipaggio</h2>
+                    <p class="text-slate-400 text-sm mb-4 flex-1">Inserisci il codice di 6 caratteri che ti è stato fornito da un tuo compagno.</p>
+                    
+                    <div class="space-y-4">
+                        <input type="text" id="crew-code-input" class="form-input code-input text-center text-xl" placeholder="ES: XK492J" maxlength="6">
+                        <button id="btn-join-crew" class="w-full bg-green-600 hover:bg-green-500 disabled:bg-slate-600 disabled:cursor-not-allowed text-white font-bold py-3 px-6 rounded-lg transition-colors">
+                            Unisciti
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+
+        <div class="text-center mt-8">
+            <a href="modulo_boat.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors">
+                ← Torna Indietro
+            </a>
+        </div>
+    </div>
+
+    <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-sm bg-slate-800 border border-slate-700 rounded-lg p-6 shadow-xl text-center hidden z-50">
+        <p id="messageText" class="mb-6 text-lg text-slate-200"></p>
+        <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+    </div>
+
+    <script type="module">
+        import { db } from '../auth-manager.js';
+        import { doc, setDoc, getDoc, updateDoc, arrayUnion, arrayRemove, collection, query, where, getDocs, serverTimestamp, deleteField } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        
+        // Importa le funzioni del popup "Come funziona"
+        import { initHowItWorks, openHowItWorks } from './how-it-works-crew.js';
+
+        let currentAthlete = null;
+        let myCrewsCount = 0;
+        const MAX_CREWS = 8;
+
+        const boatCapacities = {
+            'M1X': 1, 'W1X': 1,
+            'M2X': 2, 'W2X': 2, 'M2-': 2, 'W2-': 2,
+            'M4X': 4, 'W4X': 4, 'M4-': 4, 'W4-': 4,
+            'M8+': 9, 'W8+': 9 // 8 vogatori + 1 timoniere
+        };
+
+        // Inizializza il modale "Come funziona" e i bottoni
+        document.addEventListener('DOMContentLoaded', () => {
+            initHowItWorks();
+            document.getElementById('btn-how-it-works').addEventListener('click', openHowItWorks);
+        });
+
+        // Utility Modali
+        const showModal = (msg) => {
+            document.getElementById('messageText').textContent = msg;
+            document.getElementById('modal-backdrop').classList.remove('hidden');
+            document.getElementById('messageBox').classList.remove('hidden');
+        };
+        document.getElementById('messageBoxOkBtn').addEventListener('click', () => {
+            document.getElementById('modal-backdrop').classList.add('hidden');
+            document.getElementById('messageBox').classList.add('hidden');
+        });
+
+        const generateRandomCode = () => {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let result = '';
+            for (let i = 0; i < 6; i++) {
+                result += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return result;
+        };
+
+        // Carica equipaggi dell'utente
+        const loadMyCrews = async () => {
+            const listContainer = document.getElementById('my-crews-list');
+            listContainer.innerHTML = '<p class="text-slate-400 italic text-sm">Caricamento in corso...</p>';
+            
+            try {
+                const q = query(collection(db, 'crews'), where('members', 'array-contains', currentAthlete.id), where('active', '==', true));
+                const querySnapshot = await getDocs(q);
+                
+                myCrewsCount = querySnapshot.size;
+                
+                // Aggiorna UI Contatore
+                const counterSpan = document.getElementById('crew-counter');
+                counterSpan.textContent = `${myCrewsCount}/${MAX_CREWS} equipaggi`;
+                
+                if (myCrewsCount >= MAX_CREWS) {
+                    counterSpan.classList.replace('bg-blue-900/50', 'bg-red-900/50');
+                    counterSpan.classList.replace('text-blue-300', 'text-red-300');
+                    counterSpan.classList.replace('border-blue-700', 'border-red-700');
+                    document.getElementById('btn-create-crew').disabled = true;
+                    document.getElementById('btn-join-crew').disabled = true;
+                } else {
+                    counterSpan.classList.replace('bg-red-900/50', 'bg-blue-900/50');
+                    counterSpan.classList.replace('text-red-300', 'text-blue-300');
+                    counterSpan.classList.replace('border-red-700', 'border-blue-700');
+                    document.getElementById('btn-create-crew').disabled = false;
+                    document.getElementById('btn-join-crew').disabled = false;
+                }
+
+                if (querySnapshot.empty) {
+                    listContainer.innerHTML = '<p class="text-slate-400 italic text-sm">Non fai ancora parte di nessun equipaggio.</p>';
+                    return;
+                }
+
+                let html = '';
+                querySnapshot.forEach((docSnap) => {
+                    const data = docSnap.data();
+                    const isCreator = data.createdBy === currentAthlete.id;
+                    const membersCount = data.members.length;
+                    const isFull = membersCount >= data.maxCapacity;
+                    
+                    let membersListHtml = '';
+                    // Genera lista membri numerata
+                    if(data.membersData) {
+                        let memberIndex = 1;
+                        for (const [uid, info] of Object.entries(data.membersData)) {
+                            const isMe = uid === currentAthlete.id;
+                            membersListHtml += `
+                                <div class="flex justify-between items-center py-1 border-b border-slate-700/50 last:border-0">
+                                    <span class="text-sm ${isMe ? 'text-blue-300 font-bold' : 'text-slate-300'}">
+                                        ${memberIndex}. ${info.nome} ${info.cognome} ${isMe ? '(Tu)' : ''}
+                                    </span>
+                                    ${isCreator && !isMe ? `<button onclick="window.removeMember('${docSnap.id}', '${uid}')" class="text-xs text-red-400 hover:text-red-300 px-2 py-1 bg-red-900/30 rounded border border-red-800/50">Rimuovi</button>` : ''}
+                                </div>
+                            `;
+                            memberIndex++;
+                        }
+                    }
+
+                    html += `
+                        <div class="bg-slate-800 p-4 rounded-lg border border-slate-700">
+                            <div class="flex justify-between items-start mb-3">
+                                <div>
+                                    <h3 class="font-bold text-white text-lg">${data.name}</h3>
+                                    <p class="text-xs text-slate-400">Codice: <span class="font-mono text-blue-400 text-sm tracking-widest font-bold">${docSnap.id}</span> | Barca: ${data.boatType}</p>
+                                </div>
+                                <div class="text-right">
+                                    <span class="${isFull ? 'bg-orange-900/50 text-orange-400 border-orange-800' : 'bg-green-900/50 text-green-400 border-green-800'} text-xs px-2 py-1 rounded border font-bold">
+                                        ${membersCount}/${data.maxCapacity} Posti
+                                    </span>
+                                </div>
+                            </div>
+                            
+                            <div class="bg-slate-900/50 rounded p-3 mb-3">
+                                <h4 class="text-xs text-slate-500 uppercase tracking-wider font-bold mb-2">Membri dell'equipaggio</h4>
+                                ${membersListHtml}
+                            </div>
+
+                            <div class="flex justify-end mt-2">
+                                ${isCreator 
+                                    ? `<button onclick="window.deleteCrew('${docSnap.id}')" class="text-sm text-red-400 hover:text-red-300">🗑️ Elimina Intero Equipaggio</button>`
+                                    : `<button onclick="window.leaveCrew('${docSnap.id}')" class="text-sm text-orange-400 hover:text-orange-300">🚪 Esci dall'equipaggio</button>`
+                                }
+                            </div>
+                        </div>
+                    `;
+                });
+                listContainer.innerHTML = html;
+            } catch (error) {
+                console.error("Errore nel caricamento crew:", error);
+                listContainer.innerHTML = '<p class="text-red-400 text-sm">Errore nel caricamento dei tuoi equipaggi.</p>';
+            }
+        };
+
+        // CREA CREW
+        document.getElementById('btn-create-crew').addEventListener('click', async () => {
+            if (myCrewsCount >= MAX_CREWS) { showModal(`Hai raggiunto il limite massimo di ${MAX_CREWS} equipaggi.`); return; }
+            
+            const name = document.getElementById('crew-name').value.trim();
+            const boatType = document.getElementById('crew-boat').value;
+
+            if (!name) { showModal("Inserisci un nome per l'equipaggio."); return; }
+            if (!boatType) { showModal("Seleziona il tipo di imbarcazione."); return; }
+
+            const btn = document.getElementById('btn-create-crew');
+            btn.disabled = true; btn.textContent = "Generazione...";
+            
+            try {
+                let code;
+                let isUnique = false;
+                
+                // Assicura che il codice sia univoco
+                while (!isUnique) {
+                    code = generateRandomCode();
+                    const docSnap = await getDoc(doc(db, 'crews', code));
+                    if (!docSnap.exists()) isUnique = true;
+                }
+
+                // Struttura dati membro
+                const myData = {
+                    nome: currentAthlete.nome || '',
+                    cognome: currentAthlete.cognome || ''
+                };
+
+                await setDoc(doc(db, 'crews', code), {
+                    name: name,
+                    boatType: boatType,
+                    maxCapacity: boatCapacities[boatType],
+                    members: [currentAthlete.id],
+                    membersData: {
+                        [currentAthlete.id]: myData
+                    },
+                    active: true,
+                    createdAt: serverTimestamp(),
+                    createdBy: currentAthlete.id
+                });
+
+                showModal(`Equipaggio "${name}" creato! Il codice è: ${code}`);
+                document.getElementById('crew-name').value = '';
+                document.getElementById('crew-boat').value = '';
+                loadMyCrews();
+            } catch (error) {
+                console.error(error);
+                showModal("Errore durante la creazione. Riprova.");
+            } finally {
+                btn.disabled = false; btn.textContent = "Genera Codice & Crea";
+            }
+        });
+
+        // UNISCITI A CREW
+        document.getElementById('btn-join-crew').addEventListener('click', async () => {
+            if (myCrewsCount >= MAX_CREWS) { showModal(`Hai raggiunto il limite massimo di ${MAX_CREWS} equipaggi.`); return; }
+
+            const input = document.getElementById('crew-code-input');
+            const code = input.value.trim().toUpperCase();
+            
+            if (code.length !== 6) { showModal("Il codice deve essere di 6 caratteri."); return; }
+
+            const btn = document.getElementById('btn-join-crew');
+            btn.disabled = true; btn.textContent = "...";
+
+            try {
+                const crewRef = doc(db, 'crews', code);
+                const docSnap = await getDoc(crewRef);
+
+                if (!docSnap.exists() || !docSnap.data().active) {
+                    showModal("Codice non valido o equipaggio inesistente.");
+                } else {
+                    const data = docSnap.data();
+                    
+                    if (data.members.includes(currentAthlete.id)) {
+                        showModal("Fai già parte di questo equipaggio!");
+                    } else if (data.members.length >= data.maxCapacity) {
+                        showModal(`Spiacenti, questo equipaggio è pieno (${data.maxCapacity}/${data.maxCapacity} posti).`);
+                    } else {
+                        // Creazione oggetto per aggiornare dot notation
+                        const updateData = {
+                            members: arrayUnion(currentAthlete.id)
+                        };
+                        updateData[`membersData.${currentAthlete.id}`] = {
+                            nome: currentAthlete.nome || '',
+                            cognome: currentAthlete.cognome || ''
+                        };
+
+                        await updateDoc(crewRef, updateData);
+                        showModal(`Ti sei unito all'equipaggio "${data.name}"!`);
+                        input.value = "";
+                        loadMyCrews();
+                    }
+                }
+            } catch (error) {
+                console.error(error);
+                showModal("Errore durante l'adesione. Riprova.");
+            } finally {
+                btn.disabled = false; btn.textContent = "Unisciti";
+            }
+        });
+
+        // --- FUNZIONI GLOBALI PER I PULSANTI GENERATI DINAMICAMENTE ---
+        
+        // Membro esce dal gruppo
+        window.leaveCrew = async (crewId) => {
+            if(!confirm("Sei sicuro di voler uscire da questo equipaggio?")) return;
+            try {
+                const updateData = { members: arrayRemove(currentAthlete.id) };
+                updateData[`membersData.${currentAthlete.id}`] = deleteField();
+                await updateDoc(doc(db, 'crews', crewId), updateData);
+                loadMyCrews();
+            } catch (e) { console.error(e); showModal("Errore durante l'uscita."); }
+        };
+
+        // Creatore rimuove un membro
+        window.removeMember = async (crewId, memberUid) => {
+            if(!confirm("Vuoi rimuovere questo atleta dall'equipaggio?")) return;
+            try {
+                const updateData = { members: arrayRemove(memberUid) };
+                updateData[`membersData.${memberUid}`] = deleteField();
+                await updateDoc(doc(db, 'crews', crewId), updateData);
+                loadMyCrews();
+            } catch (e) { console.error(e); showModal("Errore durante la rimozione."); }
+        };
+
+        // Creatore elimina intero gruppo
+        window.deleteCrew = async (crewId) => {
+            if(!confirm("ATTENZIONE: Stai per eliminare definitivamente questo equipaggio. Tutti i membri verranno rimossi. Procedere?")) return;
+            try {
+                await updateDoc(doc(db, 'crews', crewId), { active: false });
+                loadMyCrews();
+            } catch (e) { console.error(e); showModal("Errore durante l'eliminazione."); }
+        };
+
+        // AUTH READY
+        document.addEventListener('authStateReady', (e) => {
+            const { athlete, error } = e.detail;
+            const loader = document.getElementById('loader-overlay');
+            const info = document.getElementById('athlete-info');
+            const content = document.getElementById('main-content');
+
+            if (athlete) {
+                currentAthlete = athlete;
+                info.innerHTML = `Atleta connesso: <strong class="text-sky-400">${athlete.cognome} ${athlete.nome || ''}</strong>`;
+                content.classList.remove('hidden');
+                loadMyCrews();
+            } else {
+                info.innerHTML = 'Devi prima effettuare il login per gestire gli equipaggi.';
+                content.classList.add('hidden');
+            }
+            loader.style.display = 'none';
+        });
+    </script>
+</body>
+</html>
