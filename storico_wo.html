@@ -320,7 +320,7 @@
             `;
         }
 
-        // --- Funzione Principale di Caricamento (AGGIORNATA CON DEDUPLICAZIONE) ---
+        // --- Funzione Principale di Caricamento (AGGIORNATA PER EVITARE BLOCCHI FIRESTORE) ---
         async function fetchWorkouts(athleteId, startFilterDate, endFilterDate, tipoFilter) {
             loadingMessage.classList.remove('hidden');
             errorMessage.classList.add('hidden');
@@ -343,7 +343,7 @@
             };
             
             try {
-                // 1. Query per i documenti di cui l'atleta è proprietario
+                // 1. Tutti i nuovi allenamenti e quelli individuali ERGO/BIKE
                 let qPersonalParts = [
                     collection(db, "allenamenti"),
                     where("atletaId", "==", athleteId),
@@ -353,19 +353,19 @@
                 if (tipoFilter !== 'TUTTI') qPersonalParts.push(where("tipo", "==", tipoFilter.toUpperCase()));
                 const qPersonal = query(...qPersonalParts);
                 
-                // 2. Query per recuperare eventuali VECCHI allenamenti di gruppo in cui l'atleta era presente ma non proprietario
+                // 2. I VECCHI allenamenti di gruppo compatibili con i permessi (membriIds)
                 let fetchBoats = (tipoFilter === 'TUTTI' || tipoFilter === 'BOAT');
                 let qBoats;
                 if (fetchBoats) {
                     qBoats = query(
                         collection(db, "allenamenti"),
-                        where("tipo", "==", "BOAT"),
+                        where("membriIds", "array-contains", athleteId), 
                         where("data", ">=", startFilterDate),
                         where("data", "<=", endFilterDate)
                     );
                 }
 
-                // 3. Esegui le query
+                // Esegui in parallelo in totale sicurezza
                 const [personalSnap, boatsSnap] = await Promise.all([
                     getDocs(qPersonal),
                     fetchBoats ? getDocs(qBoats) : Promise.resolve({ docs: [] })
@@ -373,18 +373,14 @@
                 
                 const uniqueDocs = new Map();
 
-                // Processa documenti personali
                 personalSnap.forEach((doc) => {
                     uniqueDocs.set(doc.id, doc.data());
                 });
 
-                // Processa documenti vecchi di gruppo
                 if (fetchBoats) {
                     boatsSnap.forEach(doc => {
-                        const d = doc.data();
-                        const eq = d.equipaggio || [];
-                        if (eq.some(m => m.atletaId === athleteId) && !uniqueDocs.has(doc.id)) {
-                            uniqueDocs.set(doc.id, d);
+                        if (!uniqueDocs.has(doc.id)) {
+                            uniqueDocs.set(doc.id, doc.data());
                         }
                     });
                 }
@@ -394,12 +390,10 @@
                 } else {
                     let resultsHtml = '';
                     
-                    // Converte mappa in array e riordina per data decrescente
                     let workoutsArray = Array.from(uniqueDocs.values());
                     workoutsArray.sort((a, b) => new Date(b.data) - new Date(a.data));
                     
                     workoutsArray.forEach((workout) => {
-                        // AGGREGAZIONE DATI PER RIEPILOGO
                         const tipo = (workout.tipo || 'N/A').toLowerCase();
                         if (stats.hasOwnProperty(tipo)) {
                             let workoutMeters = 0;
@@ -423,13 +417,11 @@
                             }
                         }
 
-                        // COSTRUISCI CARD HTML
                         resultsHtml += formatWorkoutData(workout);
                     });
                     
                     workoutList.innerHTML = resultsHtml;
 
-                    // COSTRUISCI E MOSTRA RIEPILOGO
                     let summaryHtml = '<h2 class="text-xl font-bold mb-4 text-white">Riepilogo Periodo</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
                     const formatStat = (km, ep1Sum, ep1Count) => {
                         const avgEp1 = ep1Count > 0 ? (ep1Sum / ep1Count).toFixed(1) + '%' : 'N/A';
@@ -473,7 +465,7 @@
             } catch (error) {
                 console.error("Errore nel recupero degli allenamenti:", error);
                 if (error.code === 'failed-precondition') {
-                     errorMessage.textContent = "Errore Database: Indice non trovato. Contatta l'amministratore per creare l'indice (atletaId, data) in Firestore.";
+                     errorMessage.textContent = "Errore Database: Indice non trovato. Contatta l'amministratore per creare l'indice richiesto in Firestore.";
                 } else {
                     errorMessage.textContent = "Errore nel database: Impossibile caricare i dati degli allenamenti.";
                 }
