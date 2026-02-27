@@ -16,18 +16,17 @@
             min-height: 100vh;
         }
         .wo-card {
-            border-left: 6px solid; /* Bordo più spesso */
+            border-left: 6px solid;
             transition: transform 0.2s ease, box-shadow 0.2s ease;
         }
         .wo-card:hover {
-            transform: translateY(-3px); /* Effetto sollevamento maggiore */
+            transform: translateY(-3px);
             box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.2), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
         }
-        .ergo-border { border-color: #3B82F6; } /* Blu */
-        .bike-border { border-color: #10B981; } /* Verde */
-        .boat-border { border-color: #F59E0B; } /* Giallo/Arancione */
+        .ergo-border { border-color: #3B82F6; } 
+        .bike-border { border-color: #10B981; } 
+        .boat-border { border-color: #F59E0B; } 
         
-        /* Stile specifico per i messaggi di stato */
         #loading-message, #error-message, #no-data-message {
             background-color: #1F2937;
             border-radius: 0.5rem;
@@ -36,63 +35,47 @@
             font-weight: 500;
         }
 
-        /* Stile per input e select modernizzato (risolve problema sfondo bianco) */
         .input-dark {
-            /* Assicura sfondo scuro (slate-900), bordo (slate-700) e testo bianco (text-white) */
-            /* Aggiornato per usare bg-slate-900 e un colore di focus coeso */
             @apply w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white placeholder-slate-500 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none;
         }
 
-        /* Correzioni per Input Date */
-        
-        /* 1. Forza l'icona del calendario ad essere chiara per contrasto */
         input[type="date"]::-webkit-calendar-picker-indicator {
             filter: invert(1);
         }
 
-        /* 2. Forza il testo della data (valore selezionato) ad essere bianco e sfondo scuro */
         input[type="date"], .input-dark[type="date"] {
             color: white; 
-            background-color: #0f172a; /* Corrisponde a bg-slate-900 */
+            background-color: #0f172a; 
         }
         
-        /* Correzioni per Select (Riquadro Tipo) */
-        
-        /* Forza lo sfondo scuro sull'elemento select e le sue opzioni */
         .input-dark, .input-dark option {
-            background-color: #0F172A !important; /* Forza sfondo scuro */
-            color: white !important; /* Forza testo bianco */
-        }
-        
-        /* Aggiunge il filtro invertito alla freccia di sistema del select per farla apparire bianca */
-        .input-dark.appearance-none {
-            /* Per select: Rimuove l'aspetto di default e lo gestisce Tailwind (non necessario qui, ma utile) */
+            background-color: #0F172A !important; 
+            color: white !important; 
         }
 
-        /* Stili per il nuovo pannello di riepilogo */
         #summary-panel .summary-item {
-            background-color: #1E293B; /* slate-800 */
+            background-color: #1E293B; 
             padding: 0.75rem 1rem;
-            border-radius: 0.5rem; /* rounded-lg */
+            border-radius: 0.5rem; 
             display: flex;
-            flex-direction: column; /* Cambiato per allineare i valori */
+            flex-direction: column; 
             align-items: flex-start;
         }
         #summary-panel .summary-label {
             font-weight: 700;
             font-size: 1.1rem;
-            margin-bottom: 0.5rem; /* Spazio sotto il titolo */
+            margin-bottom: 0.5rem; 
         }
         #summary-panel .summary-value {
             font-weight: 500;
             font-size: 0.9rem;
-            color: #94A3B8; /* slate-400 */
+            color: #94A3B8; 
             width: 100%;
             display: flex;
             justify-content: space-between;
         }
         #summary-panel .summary-value strong {
-            color: #E2E8F0; /* slate-200 */
+            color: #E2E8F0; 
             font-size: 1rem;
         }
     </style>
@@ -148,8 +131,8 @@
             </div>
         </div>
 
-        <div id="summary-panel" class="mb-8 hidden">
-            </div>
+        <div id="summary-panel" class="mb-8 hidden"></div>
+        
         <div id="workout-list" class="space-y-6">
             <p id="loading-message" class="text-slate-400 text-center hidden">Caricamento storico allenamenti...</p>
             <p id="error-message" class="text-red-400 text-center hidden">Si è verificato un errore nel caricamento dei dati.</p>
@@ -159,12 +142,9 @@
     </div>
 
     <script type="module">
-        // Importa db da auth-manager
         import { db } from './auth-manager.js';
-        // Importa solo le funzioni necessarie da firestore
         import { collection, query, where, getDocs, orderBy } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Riferimenti al DOM
         const loaderOverlay = document.getElementById('loader-overlay');
         const infoAtleta = document.getElementById('info-atleta');
         const workoutList = document.getElementById('workout-list');
@@ -181,7 +161,6 @@
         let currentAthlete = null; 
 
         // --- Funzioni di Utility ---
-        
         function timeToSeconds(timeStr) {
             if (!timeStr || typeof timeStr !== 'string' || !timeStr.includes(':')) return 0;
             const parts = timeStr.split(':');
@@ -216,13 +195,11 @@
             }
         }
         
-        // --- FUNZIONE formatWorkoutData (MODIFICATA) ---
+        // --- FUNZIONE formatWorkoutData ---
         function formatWorkoutData(data) {
-            
             const defaultValues = { tipo: 'N/A', modalita: 'N/A', distanza: null, tempo: null, ep1: null, ep2: null, data: 'N/A', timestamp: null, intervalli: [], imbarcazione: null, equipaggio: [] };
             const { tipo, modalita, distanza, tempo, ep1, ep2, data: formattedDateString, timestamp, intervalli, imbarcazione, equipaggio } = { ...defaultValues, ...data };
 
-            // --- INIZIO CALCOLO TOTALI PER CARD ---
             const numberOfIntervals = (intervalli || []).length;
             let totalMeters = 0;
             let totalMinutes = 0;
@@ -231,21 +208,15 @@
                 if (modalita === 'tempo') {
                     const durationMinutes = parseInt(tempo, 10);
                     if (!isNaN(durationMinutes)) totalMinutes = durationMinutes * numberOfIntervals;
-                    
-                    totalMeters = intervalli.map(i => parseFloat(String(i).replace(',', '.')))
-                                            .filter(n => !isNaN(n))
-                                            .reduce((a, b) => a + b, 0);
+                    totalMeters = intervalli.map(i => parseFloat(String(i).replace(',', '.'))).filter(n => !isNaN(n)).reduce((a, b) => a + b, 0);
                 } else if (modalita === 'distanza') {
                     const distanceMeters = parseInt(distanza, 10);
                     if (!isNaN(distanceMeters)) totalMeters = distanceMeters * numberOfIntervals;
-                    
-                    const totalSeconds = intervalli.map(i => timeToSeconds(i))
-                                                   .reduce((a, b) => a + b, 0);
+                    const totalSeconds = intervalli.map(i => timeToSeconds(i)).reduce((a, b) => a + b, 0);
                     totalMinutes = totalSeconds / 60;
                 }
             }
 
-            // Formattazione per i totali
             const totalKmFormatted = (totalMeters / 1000).toFixed(2);
             const totalMinutesFormatted = totalMinutes.toFixed(0);
 
@@ -259,7 +230,6 @@
                     <span class="font-semibold text-white">${totalKmFormatted} km</span>
                 </div>
             `;
-            // --- FINE CALCOLO TOTALI PER CARD ---
 
             let intervalsHtml = '';
             if (intervalli && intervalli.length > 0) {
@@ -278,9 +248,9 @@
                     .map(m => m.cognomeAtleta || 'N/D')
                     .join(' / ');
                 boatInfoHtml = `
-                    <div class="flex justify-between text-slate-300 mt-1">
+                    <div class="flex justify-between text-slate-300 mt-1 mb-2">
                         <p>Barca:</p>
-                        <span class="font-semibold text-white">${imbarcazione} (${crewNames})</span>
+                        <span class="font-semibold text-white text-right">${imbarcazione} <br><span class="text-xs text-sky-400/80">(${crewNames})</span></span>
                     </div>
                 `;
             }
@@ -303,7 +273,7 @@
             const formattedEp2 = formatEpValue(ep2);
 
             if (formattedEp1 || formattedEp2) {
-                 epHtml += `<div class="mt-2 pt-2 border-t border-slate-700/50">`; // Contenitore per EP
+                 epHtml += `<div class="mt-2 pt-2 border-t border-slate-700/50">`; 
                  if (formattedEp1) {
                     epHtml += `
                         <div class="flex justify-between text-slate-300">
@@ -323,8 +293,6 @@
                 epHtml += `</div>`;
             }
 
-
-            // Mostra i settaggi dell'intervallo (es. 5000m o 30min)
             let mainMetricHtml = '';
             if (modalita === 'distanza' && distanza) {
                 mainMetricHtml = `
@@ -347,14 +315,12 @@
                         <span class="text-sm text-slate-400 font-medium">${formattedDateString}</span>
                     </div>
                     ${boatInfoHtml} 
-                    ${mainMetricHtml} ${totalsHtml}   ${epHtml}       ${intervalsHtml} </div>
+                    ${mainMetricHtml} ${totalsHtml}   ${epHtml}       ${intervalsHtml} 
+                </div>
             `;
         }
-        // --- FINE FUNZIONE formatWorkoutData ---
 
-
-        // --- Funzione Principale di Caricamento (MODIFICATA per RIEPILOGO) ---
-        
+        // --- Funzione Principale di Caricamento (AGGIORNATA CON DEDUPLICAZIONE) ---
         async function fetchWorkouts(athleteId, startFilterDate, endFilterDate, tipoFilter) {
             loadingMessage.classList.remove('hidden');
             errorMessage.classList.add('hidden');
@@ -370,7 +336,6 @@
                 return;
             }
 
-            // CONTATORI PER LE STATISTICHE
             let stats = {
                 ergo: { km: 0, ep1Sum: 0, ep1Count: 0 },
                 bike: { km: 0, ep1Sum: 0, ep1Count: 0 },
@@ -378,35 +343,65 @@
             };
             
             try {
-                let q_parts = [
+                // 1. Query per i documenti di cui l'atleta è proprietario
+                let qPersonalParts = [
                     collection(db, "allenamenti"),
                     where("atletaId", "==", athleteId),
                     where("data", ">=", startFilterDate),
                     where("data", "<=", endFilterDate)
                 ];
+                if (tipoFilter !== 'TUTTI') qPersonalParts.push(where("tipo", "==", tipoFilter.toUpperCase()));
+                const qPersonal = query(...qPersonalParts);
                 
-                if (tipoFilter !== 'TUTTI') {
-                    q_parts.push(where("tipo", "==", tipoFilter.toUpperCase()));
+                // 2. Query per recuperare eventuali VECCHI allenamenti di gruppo in cui l'atleta era presente ma non proprietario
+                let fetchBoats = (tipoFilter === 'TUTTI' || tipoFilter === 'BOAT');
+                let qBoats;
+                if (fetchBoats) {
+                    qBoats = query(
+                        collection(db, "allenamenti"),
+                        where("tipo", "==", "BOAT"),
+                        where("data", ">=", startFilterDate),
+                        where("data", "<=", endFilterDate)
+                    );
                 }
+
+                // 3. Esegui le query
+                const [personalSnap, boatsSnap] = await Promise.all([
+                    getDocs(qPersonal),
+                    fetchBoats ? getDocs(qBoats) : Promise.resolve({ docs: [] })
+                ]);
                 
-                q_parts.push(orderBy("data", "desc"));
-                
-                const q = query(...q_parts);
-                const querySnapshot = await getDocs(q);
-                
-                if (querySnapshot.empty) {
+                const uniqueDocs = new Map();
+
+                // Processa documenti personali
+                personalSnap.forEach((doc) => {
+                    uniqueDocs.set(doc.id, doc.data());
+                });
+
+                // Processa documenti vecchi di gruppo
+                if (fetchBoats) {
+                    boatsSnap.forEach(doc => {
+                        const d = doc.data();
+                        const eq = d.equipaggio || [];
+                        if (eq.some(m => m.atletaId === athleteId) && !uniqueDocs.has(doc.id)) {
+                            uniqueDocs.set(doc.id, d);
+                        }
+                    });
+                }
+
+                if (uniqueDocs.size === 0) {
                     noDataMessage.classList.remove('hidden');
                 } else {
                     let resultsHtml = '';
                     
-                    querySnapshot.forEach((doc) => {
-                        const workout = doc.data();
-                        
-                        // 1. AGGREGAZIONE DATI PER RIEPILOGO
+                    // Converte mappa in array e riordina per data decrescente
+                    let workoutsArray = Array.from(uniqueDocs.values());
+                    workoutsArray.sort((a, b) => new Date(b.data) - new Date(a.data));
+                    
+                    workoutsArray.forEach((workout) => {
+                        // AGGREGAZIONE DATI PER RIEPILOGO
                         const tipo = (workout.tipo || 'N/A').toLowerCase();
-                        
                         if (stats.hasOwnProperty(tipo)) {
-                            // Calcola Metri/KM
                             let workoutMeters = 0;
                             const intervalli = workout.intervalli || [];
                             const numberOfIntervals = intervalli.length;
@@ -422,22 +417,20 @@
                             }
                             stats[tipo].km += (workoutMeters / 1000);
                             
-                            // Calcola Media EP1
                             if (typeof workout.ep1 === 'number' && workout.ep1 > 0) {
                                 stats[tipo].ep1Sum += workout.ep1;
                                 stats[tipo].ep1Count++;
                             }
                         }
 
-                        // 2. COSTRUISCI CARD HTML
+                        // COSTRUISCI CARD HTML
                         resultsHtml += formatWorkoutData(workout);
                     });
                     
                     workoutList.innerHTML = resultsHtml;
 
-                    // 3. COSTRUISCI E MOSTRA RIEPILOGO
+                    // COSTRUISCI E MOSTRA RIEPILOGO
                     let summaryHtml = '<h2 class="text-xl font-bold mb-4 text-white">Riepilogo Periodo</h2><div class="grid grid-cols-1 md:grid-cols-3 gap-4">';
-                    
                     const formatStat = (km, ep1Sum, ep1Count) => {
                         const avgEp1 = ep1Count > 0 ? (ep1Sum / ep1Count).toFixed(1) + '%' : 'N/A';
                         return `
@@ -455,38 +448,23 @@
                     let itemsFound = 0;
                     if (stats.ergo.km > 0 || stats.ergo.ep1Count > 0) {
                         itemsFound++;
-                        summaryHtml += `
-                            <div class="summary-item ergo-border">
-                                <span class="summary-label text-blue-400">ERGO</span>
-                                ${formatStat(stats.ergo.km, stats.ergo.ep1Sum, stats.ergo.ep1Count)}
-                            </div>`;
+                        summaryHtml += `<div class="summary-item ergo-border"><span class="summary-label text-blue-400">ERGO</span>${formatStat(stats.ergo.km, stats.ergo.ep1Sum, stats.ergo.ep1Count)}</div>`;
                     }
                     if (stats.bike.km > 0 || stats.bike.ep1Count > 0) {
                         itemsFound++;
-                        summaryHtml += `
-                            <div class="summary-item bike-border">
-                                <span class="summary-label text-green-400">BIKE</span>
-                                ${formatStat(stats.bike.km, stats.bike.ep1Sum, stats.bike.ep1Count)}
-                            </div>`;
+                        summaryHtml += `<div class="summary-item bike-border"><span class="summary-label text-green-400">BIKE</span>${formatStat(stats.bike.km, stats.bike.ep1Sum, stats.bike.ep1Count)}</div>`;
                     }
                     if (stats.boat.km > 0 || stats.boat.ep1Count > 0) {
                         itemsFound++;
-                        summaryHtml += `
-                            <div class="summary-item boat-border">
-                                <span class="summary-label text-amber-400">BOAT</span>
-                                ${formatStat(stats.boat.km, stats.boat.ep1Sum, stats.boat.ep1Count)}
-                            </div>`;
+                        summaryHtml += `<div class="summary-item boat-border"><span class="summary-label text-amber-400">BOAT</span>${formatStat(stats.boat.km, stats.boat.ep1Sum, stats.boat.ep1Count)}</div>`;
                     }
                     
                     summaryHtml += '</div>';
                     
-                    // Mostra il pannello solo se ci sono dati e il filtro non è "TUTTI" 
-                    // O se "TUTTI" è selezionato e almeno un item è stato trovato
                     if (itemsFound > 0 && (tipoFilter !== 'TUTTI' || (tipoFilter === 'TUTTI' && itemsFound > 0))) {
                          summaryPanel.innerHTML = summaryHtml;
                          summaryPanel.classList.remove('hidden');
                     } else if (tipoFilter !== 'TUTTI' && itemsFound === 0) {
-                        // Se filtro per un tipo e non trovo nulla, lo dico
                         summaryPanel.innerHTML = `<p class="text-slate-400 text-center p-4 bg-slate-800 rounded-lg">Nessun dato ${tipoFilter} trovato per questo periodo.</p>`;
                         summaryPanel.classList.remove('hidden');
                     }
@@ -494,7 +472,6 @@
 
             } catch (error) {
                 console.error("Errore nel recupero degli allenamenti:", error);
-                
                 if (error.code === 'failed-precondition') {
                      errorMessage.textContent = "Errore Database: Indice non trovato. Contatta l'amministratore per creare l'indice (atletaId, data) in Firestore.";
                 } else {
@@ -531,13 +508,7 @@
                  infoAtleta.textContent = `Storico Workout per ${athlete.cognome}`;
                  setDefaultDates();
                  tipoFilterSelect.value = 'TUTTI'; 
-                 // Carica i dati iniziali
-                 fetchWorkouts(
-                     athlete.id, 
-                     startDateInput.value,
-                     endDateInput.value,
-                     tipoFilterSelect.value 
-                 );
+                 fetchWorkouts(athlete.id, startDateInput.value, endDateInput.value, tipoFilterSelect.value);
              } else if (error) {
                  console.error("Errore di autenticazione da auth-manager:", error);
                  infoAtleta.textContent = "Errore nel caricamento dei dati utente.";
