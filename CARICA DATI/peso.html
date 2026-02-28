@@ -3,10 +3,9 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Inserimento Peso - FIC Canottaggio</title>
-    <!-- Tailwind CSS CDN -->
+    <title>Inserimento e Storico Peso - FIC Canottaggio</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <!-- Google Fonts: Inter -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
@@ -32,7 +31,7 @@
         }
         .gradient-2 {
             width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(139, 92, 246, 0.2), transparent 70%);
+            background: radial-gradient(circle, rgba(16, 185, 129, 0.2), transparent 70%); /* Emerald tint */
             animation: pulse 12s infinite alternate-reverse;
         }
         @keyframes pulse {
@@ -45,8 +44,21 @@
             border-top-color: #3498db;
             animation: spin 1s linear infinite;
         }
+
+        /* Stats Cards */
+        .stat-card {
+            background-color: rgba(30, 41, 59, 0.7); /* Slate 800/70 */
+            border: 1px solid rgba(51, 65, 85, 0.5); /* Slate 700/50 */
+            border-radius: 1rem;
+            padding: 1.5rem;
+            text-align: center;
+            transition: transform 0.2s;
+            backdrop-filter: blur(10px);
+        }
+        .stat-card:hover { transform: translateY(-5px); border-color: rgba(71, 85, 105, 0.8); }
+        
+        input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
-     <!-- Carica l'auth-manager -->
      <script type="module" src="../auth-manager.js"></script>
 </head>
 <body class="antialiased">
@@ -54,70 +66,152 @@
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
 
-    <!-- Loader Overlay -->
     <div id="loader-overlay" class="fixed inset-0 bg-slate-900/80 flex flex-col justify-center items-center z-50">
         <div class="loader h-16 w-16 animate-spin rounded-full border-4 border-t-4 border-slate-600"></div>
         <p class="mt-4 text-slate-300">Caricamento...</p>
     </div>
 
-    <div class="p-4 md:p-8 max-w-2xl mx-auto">
+    <div class="p-4 md:p-8 max-w-5xl mx-auto">
         <h1 class="text-4xl md:text-5xl font-black tracking-tight text-slate-100 text-center mb-4">Area Atleti</h1>
-        <p class="text-lg text-slate-400 text-center mb-12">Inserisci i tuoi dati biometrici.</p>
+        <p class="text-lg text-slate-400 text-center mb-10">Inserisci e monitora i tuoi dati biometrici.</p>
 
-        <!-- Form Container -->
-        <div id="form-container" class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 space-y-6">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
             
-            <h2 class="text-2xl font-bold text-white border-b border-slate-700 pb-4">Aggiornamento Peso</h2>
-            
-            <!-- Questo div mostrerà l'atleta loggato o un messaggio di errore -->
-            <div id="athlete-info-container">
-                <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente...</p>
-            </div>
-            
-            <div>
-                <label for="weightInput" class="block mb-2 font-medium text-slate-300">Peso odierno (kg)</label>
-                <input type="number" id="weightInput" step="0.1" min="40" max="150" placeholder="Es. 85.5" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+            <div class="lg:col-span-1 space-y-6">
+                <div id="form-container" class="bg-slate-900/70 border border-slate-700/50 rounded-xl backdrop-blur-lg p-6 md:p-8 shadow-xl">
+                    <h2 class="text-2xl font-bold text-white border-b border-slate-700 pb-4 mb-6">Aggiornamento Peso</h2>
+                    
+                    <div id="athlete-info-container" class="mb-6">
+                        <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente...</p>
+                    </div>
+                    
+                    <div class="mb-6">
+                        <label for="weightInput" class="block mb-2 font-medium text-slate-300">Peso odierno (kg)</label>
+                        <input type="number" id="weightInput" step="0.1" min="40" max="150" placeholder="Es. 85.5" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-4 py-3 text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500" disabled>
+                    </div>
+
+                    <div>
+                        <button id="saveWeightBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-lg transition-all duration-300 shadow-lg hover:shadow-emerald-500/40 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
+                            Salva Peso
+                        </button>
+                    </div>
+                </div>
+
+                <div class="text-center">
+                    <a href="home_carica_dati.html" class="inline-block bg-slate-800/80 border border-slate-700 hover:bg-slate-700 text-slate-300 font-semibold py-3 px-6 rounded-lg transition-colors duration-300 shadow-lg">
+                        ← Torna alla Home
+                    </a>
+                </div>
             </div>
 
-            <div class="pt-4">
-                <button id="saveWeightBtn" class="w-full bg-emerald-600 hover:bg-emerald-500 text-white font-bold py-3 px-5 rounded-lg transition-colors duration-300 disabled:opacity-50 disabled:cursor-not-allowed" disabled>
-                    Salva Peso
-                </button>
-            </div>
-        </div>
+            <div class="lg:col-span-2 space-y-6">
+                
+                <div class="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4 flex flex-wrap gap-4 items-end shadow-xl backdrop-blur-lg">
+                    <div class="flex-1 min-w-[140px]">
+                        <label class="text-slate-400 text-xs uppercase font-bold mb-1 block">Dal</label>
+                        <input type="date" id="startDate" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="flex-1 min-w-[140px]">
+                        <label class="text-slate-400 text-xs uppercase font-bold mb-1 block">Al</label>
+                        <input type="date" id="endDate" class="w-full bg-slate-800 border border-slate-600 rounded-lg px-3 py-2 text-sm text-white focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    </div>
+                    <div class="w-full sm:w-auto mt-2 sm:mt-0">
+                        <button id="filterBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-6 rounded-lg transition-colors shadow-lg hover:shadow-blue-500/40">
+                            Filtra
+                        </button>
+                    </div>
+                </div>
 
-        <div class="text-center mt-8">
-             <!-- Corretto il link per tornare indietro alla home dei CARICA DATI -->
-            <a href="home_carica_dati.html" class="inline-block bg-slate-700/50 hover:bg-slate-600/50 text-slate-300 font-semibold py-2 px-4 rounded-lg transition-colors duration-300">
-                ← Torna Indietro
-            </a>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase font-bold">Peso Attuale</div>
+                        <div class="text-2xl font-black text-white" id="statCurrent">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase font-bold">Peso Max</div>
+                        <div class="text-2xl font-bold text-red-400" id="statMax">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase font-bold">Peso Min</div>
+                        <div class="text-2xl font-bold text-emerald-400" id="statMin">-</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="text-slate-400 text-xs uppercase font-bold">Media</div>
+                        <div class="text-2xl font-bold text-blue-400" id="statAvg">-</div>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-700/50 rounded-xl p-4 md:p-6 shadow-xl relative h-[300px] md:h-[350px] backdrop-blur-lg">
+                    <canvas id="weightChart"></canvas>
+                    <div id="chartEmptyState" class="absolute inset-0 flex items-center justify-center bg-slate-900/90 rounded-xl z-10 hidden">
+                        <p class="text-slate-400 font-medium text-center px-4">Nessun dato nel periodo selezionato.<br>Inserisci il tuo peso o cambia le date.</p>
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/80 border border-slate-700/50 rounded-xl overflow-hidden shadow-xl backdrop-blur-lg">
+                    <div class="p-4 border-b border-slate-700 bg-slate-800/50">
+                        <h3 class="text-lg font-bold text-slate-200">Dettaglio Registrazioni</h3>
+                    </div>
+                    <div class="overflow-x-auto max-h-[250px] overflow-y-auto">
+                        <table class="w-full text-sm text-left text-slate-400">
+                            <thead class="text-xs text-slate-300 uppercase bg-slate-800 sticky top-0 shadow-md">
+                                <tr>
+                                    <th class="px-6 py-3">Data</th>
+                                    <th class="px-6 py-3">Peso (kg)</th>
+                                    <th class="px-6 py-3 text-right">Variazione</th>
+                                </tr>
+                            </thead>
+                            <tbody id="dataTableBody" class="divide-y divide-slate-700/50">
+                                </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
         </div>
     </div>
 
-    <!-- Modals -->
     <div id="modal-backdrop" class="fixed inset-0 bg-black/60 hidden z-40"></div>
-    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/80 backdrop-blur-md border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-50">
-        <p id="messageText" class="mb-6 text-lg"></p>
-        <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
+    <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full max-w-md bg-slate-800/90 backdrop-blur-md border border-slate-700 rounded-xl p-6 shadow-2xl text-center hidden z-50">
+        <p id="messageText" class="mb-6 text-lg text-slate-200 font-medium"></p>
+        <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">OK</button>
     </div>
 
-    <!-- Script Firebase (versione aggiornata e modulare) -->
     <script type="module">
-        // Importa db da auth-manager
         import { db } from '../auth-manager.js';
-        // Importa solo le funzioni necessarie da firestore
-        import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+        import { doc, setDoc, serverTimestamp, collection, getDocs, query, where, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-        // Rimuovi inizializzazione locale Firebase (app, auth, db, firebaseConfig)
-        // Rimuovi anche le importazioni non più necessarie (initializeApp, getAuth, onAuthStateChanged, getFirestore, collection, query, where, getDocs)
-
-        // Elementi DOM
+        // Elementi DOM - Form
         const weightInput = document.getElementById('weightInput');
         const saveWeightBtn = document.getElementById('saveWeightBtn');
         const loaderOverlay = document.getElementById('loader-overlay');
         const athleteInfo = document.getElementById('athlete-info');
 
-        let currentAthleteId = null; // Variabile per salvare l'ID dell'atleta loggato
+        // Elementi DOM - Filtri e Grafici
+        const startDateInput = document.getElementById('startDate');
+        const endDateInput = document.getElementById('endDate');
+        const filterBtn = document.getElementById('filterBtn');
+        const elCurrent = document.getElementById('statCurrent');
+        const elMax = document.getElementById('statMax');
+        const elMin = document.getElementById('statMin');
+        const elAvg = document.getElementById('statAvg');
+        const tableBody = document.getElementById('dataTableBody');
+        const chartEmptyState = document.getElementById('chartEmptyState');
+        
+        let weightChartInstance = null;
+        let currentAthleteId = null;
+
+        // Inizializza Date (Ultimi 30 giorni)
+        const initDates = () => {
+            const today = new Date();
+            const thirtyDaysAgo = new Date();
+            thirtyDaysAgo.setDate(today.getDate() - 30);
+            
+            const fmtDate = d => d.toISOString().split('T')[0];
+            endDateInput.value = fmtDate(today);
+            startDateInput.value = fmtDate(thirtyDaysAgo);
+        };
+        initDates();
 
         // Funzioni Modals
         function showModal(modal) { document.getElementById('modal-backdrop').classList.remove('hidden'); modal.classList.remove('hidden'); }
@@ -127,47 +221,210 @@
             showModal(document.getElementById('messageBox'));
         }
         
-        // Rimuovi onAuthStateChanged
-        
-        // Ascolta l'evento 'authStateReady'
-        document.addEventListener('authStateReady', (e) => {
+        // Listener Autenticazione
+        document.addEventListener('authStateReady', async (e) => {
             const { athlete, error } = e.detail;
 
             if (athlete) {
-                // Utente loggato e dati atleta disponibili
-                currentAthleteId = athlete.id; // Salva l'ID del documento
-                
-                athleteInfo.innerHTML = `Stai inserendo il peso per: <strong class="text-sky-400">${athlete.cognome}</strong>`;
+                currentAthleteId = athlete.id; 
+                athleteInfo.innerHTML = `Loggato come: <strong class="text-sky-400">${athlete.cognome} ${athlete.nome || ''}</strong>`;
                 weightInput.disabled = false;
                 saveWeightBtn.disabled = false;
-            
+                
+                await loadWeightHistory();
             } else if (error) {
-                 // Errore
-                console.error("Errore di autenticazione da auth-manager:", error);
+                console.error("Errore di autenticazione:", error);
                 athleteInfo.textContent = "Errore nel caricamento dei dati utente.";
-                 weightInput.disabled = true;
-                saveWeightBtn.disabled = true;
-
-            } else {
-                // Utente non loggato (auth-manager dovrebbe aver reindirizzato)
-                athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per inserire il peso.';
                 weightInput.disabled = true;
                 saveWeightBtn.disabled = true;
-                // Considera redirect forzato se necessario: window.location.href = '../index.html';
+            } else {
+                athleteInfo.innerHTML = 'Devi prima effettuare il <a href="../index.html" class="text-sky-400 hover:underline">login</a> per visualizzare e inserire il peso.';
+                weightInput.disabled = true;
+                saveWeightBtn.disabled = true;
             }
-            
-            // Nascondi il loader in ogni caso
             loaderOverlay.style.display = 'none';
         });
 
-        
-        // Funzione per salvare il peso nello storico
+        // Recupero Dati (con Filtro)
+        async function loadWeightHistory() {
+            if (!currentAthleteId) return;
+
+            const start = startDateInput.value;
+            const end = endDateInput.value;
+
+            if (!start || !end) {
+                showMessageBox("Seleziona entrambe le date per il filtro.");
+                return;
+            }
+
+            try {
+                const historyRef = collection(db, 'atleti', currentAthleteId, 'storico_peso');
+                
+                // Query ottimizzata per limitare le letture
+                const q = query(
+                    historyRef, 
+                    where(documentId(), '>=', start),
+                    where(documentId(), '<=', end)
+                );
+
+                const snapshot = await getDocs(q);
+                
+                let dataPoints = [];
+                snapshot.forEach(doc => {
+                    if (doc.data().peso) {
+                        dataPoints.push({
+                            date: doc.id, 
+                            weight: parseFloat(doc.data().peso)
+                        });
+                    }
+                });
+
+                dataPoints.sort((a, b) => new Date(a.date) - new Date(b.date));
+
+                if (dataPoints.length === 0) {
+                    chartEmptyState.classList.remove('hidden');
+                    resetStats();
+                    if(weightChartInstance) weightChartInstance.destroy();
+                    tableBody.innerHTML = '';
+                    return;
+                } else {
+                    chartEmptyState.classList.add('hidden');
+                    renderAnalysis(dataPoints);
+                }
+
+            } catch (err) {
+                console.error("Errore nel recupero storico:", err);
+                showMessageBox("Errore nel recupero dei dati. Riprova.");
+            }
+        }
+
+        function resetStats() {
+            elCurrent.textContent = "-";
+            elMax.textContent = "-";
+            elMin.textContent = "-";
+            elAvg.textContent = "-";
+        }
+
+        // Rendering Dati
+        function renderAnalysis(data) {
+            const weights = data.map(d => d.weight);
+            const max = Math.max(...weights);
+            const min = Math.min(...weights);
+            const sum = weights.reduce((a, b) => a + b, 0);
+            const avg = (sum / weights.length).toFixed(1);
+            const current = weights[weights.length - 1];
+
+            elCurrent.textContent = current + " kg";
+            elMax.textContent = max + " kg";
+            elMin.textContent = min + " kg";
+            elAvg.textContent = avg + " kg";
+
+            tableBody.innerHTML = '';
+            const reversedData = [...data].reverse();
+            
+            reversedData.forEach((d, index) => {
+                let variationHtml = '<span class="text-slate-500">-</span>';
+                if (index < reversedData.length - 1) {
+                    const prev = reversedData[index + 1].weight;
+                    const diff = (d.weight - prev).toFixed(1);
+                    if (diff > 0) variationHtml = `<span class="text-red-400 font-bold">+${diff}</span>`;
+                    else if (diff < 0) variationHtml = `<span class="text-emerald-400 font-bold">${diff}</span>`;
+                    else variationHtml = `<span class="text-slate-400">=</span>`;
+                }
+
+                const dateObj = new Date(d.date);
+                const day = String(dateObj.getDate()).padStart(2, '0');
+                const month = dateObj.toLocaleString('it-IT', { month: 'short' }); 
+                const year = dateObj.getFullYear();
+                const formattedDate = `${day}-${month} - ${year}`;
+
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-700/30 transition-colors border-b border-slate-700/50";
+                tr.innerHTML = `
+                    <td class="px-6 py-4 font-mono text-slate-300 capitalize whitespace-nowrap">${formattedDate}</td>
+                    <td class="px-6 py-4 font-bold text-white">${d.weight}</td>
+                    <td class="px-6 py-4 text-right">${variationHtml}</td>
+                `;
+                tableBody.appendChild(tr);
+            });
+
+            renderChart(data);
+        }
+
+        function renderChart(data) {
+            const ctx = document.getElementById('weightChart').getContext('2d');
+            
+            if (weightChartInstance) {
+                weightChartInstance.destroy();
+            }
+
+            const gradient = ctx.createLinearGradient(0, 0, 0, 400);
+            gradient.addColorStop(0, 'rgba(59, 130, 246, 0.4)'); // Blue 500
+            gradient.addColorStop(1, 'rgba(59, 130, 246, 0.0)');
+
+            weightChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: data.map(d => {
+                        const dateObj = new Date(d.date);
+                        return `${String(dateObj.getDate()).padStart(2,'0')}/${String(dateObj.getMonth()+1).padStart(2,'0')}`;
+                    }),
+                    datasets: [{
+                        label: 'Peso Corporeo (kg)',
+                        data: data.map(d => d.weight),
+                        borderColor: '#3B82F6', 
+                        backgroundColor: gradient,
+                        borderWidth: 3,
+                        tension: 0.3, 
+                        pointBackgroundColor: '#0F172A',
+                        pointBorderColor: '#3B82F6',
+                        pointBorderWidth: 2,
+                        pointRadius: 4,
+                        pointHoverRadius: 6,
+                        fill: true
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    interaction: { intersect: false, mode: 'index' },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(30, 41, 59, 0.9)',
+                            titleColor: '#94A3B8',
+                            bodyColor: '#60A5FA',
+                            bodyFont: { size: 14, weight: 'bold' },
+                            padding: 12,
+                            cornerRadius: 8,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) { return context.parsed.y + ' kg'; }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#64748B', maxTicksLimit: 10 }
+                        },
+                        y: {
+                            grid: { color: 'rgba(51, 65, 85, 0.4)', borderDash: [5, 5] },
+                            ticks: { color: '#64748B' },
+                            suggestedMin: Math.min(...data.map(d => d.weight)) - 2,
+                            suggestedMax: Math.max(...data.map(d => d.weight)) + 2
+                        }
+                    }
+                }
+            });
+        }
+
+        // Salvataggio nuovo peso
         async function saveWeight() {
             const weightValue = weightInput.value;
 
-            // Validazione
             if (!currentAthleteId) {
-                showMessageBox("Impossibile identificare l'atleta. Effettua nuovamente il login.");
+                showMessageBox("Impossibile identificare l'atleta.");
                 return;
             }
             if (!weightValue) {
@@ -175,37 +432,41 @@
                 return;
             }
             const weight = parseFloat(weightValue);
-            if (isNaN(weight) || weight <= 0 || weight > 200) { // Aggiunto limite superiore
-                showMessageBox("Per favore, inserisci un valore di peso valido (tra 0 e 200 kg).");
+            if (isNaN(weight) || weight <= 0 || weight > 200) {
+                showMessageBox("Inserisci un valore di peso valido.");
                 return;
             }
 
             saveWeightBtn.disabled = true;
-            saveWeightBtn.textContent = 'Salvataggio in corso...';
+            saveWeightBtn.textContent = 'Salvataggio...';
             
             try {
-                // Crea un ID per il documento basato sulla data odierna (YYYY-MM-DD)
                 const today = new Date();
                 const yyyy = today.getFullYear();
-                const mm = String(today.getMonth() + 1).padStart(2, '0'); // Mesi partono da 0
+                const mm = String(today.getMonth() + 1).padStart(2, '0');
                 const dd = String(today.getDate()).padStart(2, '0');
                 const dateId = `${yyyy}-${mm}-${dd}`;
 
-                // Crea il riferimento al documento del giorno nella sottocollezione "storico_peso"
-                // Usa 'db' importato
                 const dailyWeightRef = doc(db, "atleti", currentAthleteId, "storico_peso", dateId);
 
-                // Usa setDoc per creare o sovrascrivere il dato del giorno
                 await setDoc(dailyWeightRef, {
                     peso: weight,
-                    data: serverTimestamp() // Salva la data esatta del server
+                    data: serverTimestamp()
                 });
                 
-                showMessageBox("Peso salvato con successo per la giornata di oggi!");
-                weightInput.value = ""; // Pulisce il campo dopo il salvataggio
+                showMessageBox("Peso salvato con successo!");
+                weightInput.value = ""; 
+                
+                // Aggiorna la vista corrente (assicurandosi che la data di oggi sia nel range)
+                const endVal = new Date(endDateInput.value);
+                if (today > endVal) {
+                    endDateInput.value = dateId; // Estende la fine a oggi se era nel passato
+                }
+                await loadWeightHistory();
+
             } catch (error) {
-                console.error("Errore nel salvataggio dello storico del peso: ", error);
-                showMessageBox("Si è verificato un errore durante il salvataggio. Assicurati di essere connesso a internet e riprova.");
+                console.error("Errore nel salvataggio: ", error);
+                showMessageBox("Si è verificato un errore durante il salvataggio.");
             } finally {
                 saveWeightBtn.disabled = false;
                 saveWeightBtn.textContent = 'Salva Peso';
@@ -214,6 +475,7 @@
 
         // Event Listeners
         saveWeightBtn.addEventListener('click', saveWeight);
+        filterBtn.addEventListener('click', loadWeightHistory); // Ascolta il click sul pulsante Filtra
         document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
     </script>
 </body>
