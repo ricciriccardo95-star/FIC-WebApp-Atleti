@@ -24,13 +24,13 @@
         .calendar-grid {
             display: grid;
             grid-template-columns: repeat(7, minmax(0, 1fr));
-            gap: 2px; /* Gap leggermente più ampio per mobile */
+            gap: 2px;
         }
         .calendar-day {
             transition: background-color 0.2s, border-color 0.2s;
             position: relative;
             aspect-ratio: 1/1;
-            background-color: #1E293B; /* Leggermente più chiaro del fondo */
+            background-color: #1E293B;
             overflow: hidden;
             border-radius: 6px;
             border: 2px solid transparent;
@@ -52,7 +52,6 @@
             font-size: 0.75rem;
         }
         
-        /* Indicatori visuali nel calendario (senza testo) */
         .dot-indicator {
             height: 4px;
             width: 80%;
@@ -67,7 +66,7 @@
             background-color: #334155;
             color: #cbd5e1;
             transition: all 0.2s;
-            flex-grow: 1; /* Per riempire lo spazio su mobile */
+            flex-grow: 1;
             text-align: center;
         }
         .calendar-btn:hover { background-color: #475569; color: #fff; }
@@ -86,11 +85,15 @@
         .bg-event-gara { background-color: #A855F7; }
 
     </style>
+
+    <!-- Auth Manager: gestisce autenticazione e dati atleta -->
+    <script type="module" src="../auth-manager.js"></script>
 </head>
 <body class="min-h-screen flex flex-col items-center justify-start p-2 antialiased pb-20">
 
-    <div class="w-full max-w-md mx-auto py-2"> <div class="px-1 mb-4 flex justify-between items-center">
-             <h1 class="text-xl font-black text-slate-100 tracking-tight">CALENDARIO</h1>
+    <div class="w-full max-w-md mx-auto py-2">
+        <div class="px-1 mb-4 flex justify-between items-center">
+            <h1 class="text-xl font-black text-slate-100 tracking-tight">CALENDARIO</h1>
             <a href="../home.html" class="inline-flex items-center px-3 py-1.5 bg-slate-700 hover:bg-slate-600 text-slate-300 text-xs font-semibold rounded-lg shadow transition-colors">
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="mr-1"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg>
                 Home
@@ -99,7 +102,8 @@
 
         <div class="overflow-x-auto pb-2 mb-4">
             <div id="calendar-selector" class="flex gap-2 min-w-max px-1">
-                <button data-collection="calendario_olimpica" data-theme="theme-olimpica" data-active-class="active-olimpica" class="calendar-btn active-olimpica text-xs">OLIMPICA</button>
+                <!-- Il bottone OLIMPICA parte nascosto: verrà mostrato solo se l'atleta è "Squadra olimpica" -->
+                <button id="btn-olimpica" data-collection="calendario_olimpica" data-theme="theme-olimpica" data-active-class="active-olimpica" class="calendar-btn text-xs hidden">OLIMPICA</button>
                 <button data-collection="calendario_u23" data-theme="theme-u23" data-active-class="active-u23" class="calendar-btn text-xs">UNDER 23</button>
                 <button data-collection="calendario_u19" data-theme="theme-u19" data-active-class="active-u19" class="calendar-btn text-xs">UNDER 19</button>
                 <button data-collection="calendario_para_rowing" data-theme="theme-para-rowing" data-active-class="active-para-rowing" class="calendar-btn text-xs">PARA</button>
@@ -145,7 +149,7 @@
     </div>
 
     <script type="module">
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+        import { initializeApp, getApps, getApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
         import { getFirestore, collection, getDocs, query, where, documentId } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
         const firebaseConfig = {
@@ -157,8 +161,9 @@
             appId: "1:576407223567:web:73eaa8e12aae9e4926927a"
         };
 
-        const app = initializeApp(firebaseConfig);
-        const db = getFirestore(app);
+        // Usa un nome distinto per evitare conflitto con auth-manager.js che usa '[DEFAULT]'
+        const calApp = getApps().find(a => a.name === 'calendario') || initializeApp(firebaseConfig, 'calendario');
+        const db = getFirestore(calApp);
         
         // --- DOM Elements ---
         const pageBody = document.body;
@@ -169,6 +174,7 @@
         const prevMonthBtn = document.getElementById('prev-month');
         const nextMonthBtn = document.getElementById('next-month');
         const workoutDetailsContainer = document.getElementById('workout-details-container');
+        const btnOlimpica = document.getElementById('btn-olimpica');
         
         // Summary Elements
         const daySummarySection = document.getElementById('day-summary-section');
@@ -183,8 +189,8 @@
         let currentDate = new Date();
         let eventsData = {};
         let intensityRanges = [];
-        let eventRanges = []; // Raduni/Gare
-        let currentCollection = 'calendario_olimpica'; 
+        let eventRanges = [];
+        let currentCollection = null; // Sarà impostato dopo il controllo auth
         let selectedDateStr = null;
 
         // --- Helpers Colori ---
@@ -239,6 +245,8 @@
         
         // --- Calendar Rendering ---
         async function renderCalendar() {
+            if (!currentCollection) return;
+
             calendarContainer.style.opacity = '0';
             await new Promise(resolve => setTimeout(resolve, 150)); 
 
@@ -283,11 +291,9 @@
                 }
                 dayEl.appendChild(numberSpan);
 
-                // Container per indicatori (Intensità + Eventi)
                 const indicatorsContainer = document.createElement('div');
                 indicatorsContainer.className = 'w-full flex flex-col gap-0.5 px-1';
 
-                // Indicatore Intensità
                 const activeIntensity = intensityRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
                 if (activeIntensity) {
                     const dot = document.createElement('div');
@@ -295,7 +301,6 @@
                     indicatorsContainer.appendChild(dot);
                 }
 
-                // Indicatore Eventi
                 const activeEvent = eventRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
                 if (activeEvent) {
                     const dot = document.createElement('div');
@@ -369,27 +374,24 @@
         }
 
         function updateDaySummary(dateStr) {
-            // Reset
             daySummarySection.classList.add('hidden');
             summaryIntensity.classList.add('hidden');
             summaryEvent.classList.add('hidden');
             
-            // Rimuovi vecchie classi colore
             summaryIntensity.className = "bg-slate-800 rounded-lg p-3 flex flex-col justify-center items-center shadow-lg border border-slate-700 hidden";
             summaryEvent.className = "bg-slate-800 rounded-lg p-3 flex flex-col justify-center items-center shadow-lg border border-slate-700 hidden";
 
             const activeIntensity = intensityRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
             const activeEvent = eventRanges.find(r => dateStr >= r.startDate && dateStr <= r.endDate);
 
-            if (!activeIntensity && !activeEvent) return; // Se non c'è nulla, resta nascosto
+            if (!activeIntensity && !activeEvent) return;
 
             daySummarySection.classList.remove('hidden');
 
             if (activeIntensity) {
                 summaryIntensity.classList.remove('hidden');
-                // Colora il bordo o lo sfondo leggermente
                 summaryIntensity.classList.add('border-l-4');
-                let colorClass = getIntensityColorClass(activeIntensity.intensity).replace('bg-', 'border-'); // Trick per usare i colori definiti nel CSS
+                let colorClass = getIntensityColorClass(activeIntensity.intensity).replace('bg-', 'border-');
                 summaryIntensity.classList.add(colorClass);
 
                 const label = activeIntensity.intensity === 'Tapering' ? 'Tapering' : `${activeIntensity.intensity}%`;
@@ -410,7 +412,6 @@
                 summaryEventType.className = `text-[10px] mt-1 uppercase font-bold ${activeEvent.type === 'RADUNO' ? 'text-blue-400' : 'text-purple-400'}`;
             }
 
-            // Se c'è solo un elemento, facciamolo full width
             if (activeIntensity && !activeEvent) {
                 summaryIntensity.classList.add('col-span-2');
             } else if (!activeIntensity && activeEvent) {
@@ -431,7 +432,6 @@
                 dayElement.classList.add('selected');
             }
 
-            // *** UPDATE RECAP ***
             updateDaySummary(dateStr);
 
             const dayData = eventsData[dateStr];
@@ -470,8 +470,6 @@
 
             detailsHTML += `</div>`;
             workoutDetailsContainer.innerHTML = detailsHTML;
-            // Scroll delicato su mobile
-            // daySummarySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
         
         async function switchCalendar(buttonElement) {
@@ -482,7 +480,6 @@
             if (currentCollection === newCollection) return;
             currentCollection = newCollection;
 
-            // Reset classi
             pageBody.className = `min-h-screen flex flex-col items-center justify-start p-2 antialiased pb-20 ${newTheme}`;
 
             document.querySelectorAll('#calendar-selector .calendar-btn').forEach(btn => {
@@ -491,7 +488,7 @@
             buttonElement.classList.add(newActiveClass);
 
             workoutDetailsContainer.innerHTML = ''; 
-            daySummarySection.classList.add('hidden'); // Nascondi recap
+            daySummarySection.classList.add('hidden');
             selectedDateStr = null; 
             await renderCalendar();
         }
@@ -513,9 +510,31 @@
             }
         });
 
-        // --- Initial Load ---
-        pageBody.classList.add('theme-olimpica');
-        renderCalendar();
+        // --- Initial Load: aspetta authStateReady da auth-manager.js ---
+        document.addEventListener('authStateReady', async (e) => {
+            const athlete = e.detail?.athlete;
+            const isOlimpica = athlete?.gruppo === 'Squadra olimpica';
+
+            if (isOlimpica) {
+                // Mostra il bottone e lo imposta come calendario di default
+                btnOlimpica.classList.remove('hidden');
+                btnOlimpica.classList.add('active-olimpica');
+                currentCollection = 'calendario_olimpica';
+                pageBody.classList.add('theme-olimpica');
+            } else {
+                // Non è olimpica: bottone nascosto, default su U23
+                btnOlimpica.classList.add('hidden');
+                const u23Btn = document.querySelector('[data-collection="calendario_u23"]');
+                if (u23Btn) {
+                    u23Btn.classList.add('active-u23');
+                }
+                currentCollection = 'calendario_u23';
+                pageBody.classList.add('theme-u23');
+            }
+
+            await renderCalendar();
+        });
+
     </script>
 </body>
 </html>
