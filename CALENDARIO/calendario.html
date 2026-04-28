@@ -107,7 +107,7 @@
                 <button data-collection="calendario_u23" data-theme="theme-u23" data-active-class="active-u23" class="calendar-btn text-xs">UNDER 23</button>
                 <button data-collection="calendario_u19" data-theme="theme-u19" data-active-class="active-u19" class="calendar-btn text-xs">UNDER 19</button>
                 <button data-collection="calendario_para_rowing" data-theme="theme-para-rowing" data-active-class="active-para-rowing" class="calendar-btn text-xs">PARA</button>
-                <button data-collection="calendario_beach_sprint" data-theme="theme-beach-sprint" data-active-class="active-beach-sprint" class="calendar-btn text-xs">BEACH</button>
+                <button id="btn-beach" data-collection="calendario_beach_sprint" data-theme="theme-beach-sprint" data-active-class="active-beach-sprint" class="calendar-btn text-xs hidden">BEACH</button>
             </div>
         </div>
         
@@ -175,6 +175,7 @@
         const nextMonthBtn = document.getElementById('next-month');
         const workoutDetailsContainer = document.getElementById('workout-details-container');
         const btnOlimpica = document.getElementById('btn-olimpica');
+        const btnBeach = document.getElementById('btn-beach');
         
         // Summary Elements
         const daySummarySection = document.getElementById('day-summary-section');
@@ -514,6 +515,7 @@
         document.addEventListener('authStateReady', async (e) => {
             const athlete = e.detail?.athlete;
             const isOlimpica = athlete?.gruppo === 'Squadra olimpica';
+            const isBeachSprint = athlete?.gruppo && athlete.gruppo.toLowerCase().includes('beach');
 
             if (isOlimpica) {
                 // Mostra il bottone e lo imposta come calendario di default
@@ -521,9 +523,16 @@
                 btnOlimpica.classList.add('active-olimpica');
                 currentCollection = 'calendario_olimpica';
                 pageBody.classList.add('theme-olimpica');
+            } else if (isBeachSprint) {
+                // Mostra il bottone Beach e lo imposta come calendario di default
+                btnBeach.classList.remove('hidden');
+                btnBeach.classList.add('active-beach-sprint');
+                currentCollection = 'calendario_beach_sprint';
+                pageBody.classList.add('theme-beach-sprint');
             } else {
-                // Non è olimpica: bottone nascosto, default su U23
+                // Non è né olimpica né beach sprint: bottoni nascosti, default su U23
                 btnOlimpica.classList.add('hidden');
+                btnBeach.classList.add('hidden');
                 const u23Btn = document.querySelector('[data-collection="calendario_u23"]');
                 if (u23Btn) {
                     u23Btn.classList.add('active-u23');
