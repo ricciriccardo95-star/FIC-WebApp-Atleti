@@ -65,6 +65,7 @@
             <div class="mb-6 flex border-b border-slate-700">
                 <button id="tab-btn-schede" class="tab-btn active">Schede</button>
                 <button id="tab-btn-circuiti" class="tab-btn">Circuiti</button>
+                <button id="tab-btn-beach" class="tab-btn hidden">Schede Beach</button>
             </div>
 
             <div id="schede-content" class="tab-content active">
@@ -80,6 +81,14 @@
                 <div id="circuits-container" class="space-y-6"></div>
                 <div id="no-circuits-message" class="hidden text-center py-16 px-6 bg-slate-900/70 border border-slate-700/50 rounded-xl">
                     <p class="text-slate-400">Nessun circuito trovato.</p>
+                </div>
+            </div>
+
+            <div id="schede-beach-content" class="tab-content">
+                <h2 class="text-2xl font-bold text-white mb-6">Schede Beach Sprint</h2>
+                <div id="beach-container" class="space-y-6"></div>
+                <div id="no-beach-message" class="hidden text-center py-16 px-6 bg-slate-900/70 border border-slate-700/50 rounded-xl">
+                    <p class="text-slate-400">Nessuna scheda beach trovata.</p>
                 </div>
             </div>
         </main>
@@ -141,6 +150,7 @@
         const welcomeMessage = document.getElementById('welcome-message');
         const plansContainer = document.getElementById('plans-container');
         const circuitsContainer = document.getElementById('circuits-container');
+        const beachContainer = document.getElementById('beach-container');
         
         // Lightbox
         const imageLightbox = document.getElementById('image-lightbox');
@@ -199,10 +209,22 @@
                 const eserciziSnap = await getDocs(query(collection(db, "esercizi_pesistica")));
                 eserciziSnap.forEach(doc => eserciziMap.set(doc.id, doc.data()));
 
-                const [schedeSnap, circuitiSnap] = await Promise.all([
+                // Verifica appartenenza al gruppo Beach sprint
+                const isBeachSprint = athlete.gruppo === 'Beach sprint';
+                if (isBeachSprint) {
+                    document.getElementById('tab-btn-beach').classList.remove('hidden');
+                }
+
+                // Prepara le query
+                const fetchPromises = [
                     getDocs(query(collection(db, "schede_pesistica"))),
                     getDocs(query(collection(db, "circuiti_pesistica")))
-                ]);
+                ];
+
+                if (isBeachSprint) fetchPromises.push(getDocs(query(collection(db, "schede_beach"))));
+
+                const results = await Promise.all(fetchPromises);
+                const [schedeSnap, circuitiSnap, beachSnap] = results;
 
                 // Render Schede
                 if (schedeSnap.empty) {
@@ -228,6 +250,21 @@
                         circuitsContainer.appendChild(createCircuitElement(circuito, eserciziMap));
                     });
                     document.getElementById('no-circuits-message').classList.add('hidden');
+                }
+
+                // Render Schede Beach (solo se previste)
+                if (isBeachSprint && beachSnap) {
+                    if (beachSnap.empty) {
+                        document.getElementById('no-beach-message').classList.remove('hidden');
+                    } else {
+                        beachContainer.innerHTML = '';
+                        const schedeBeach = beachSnap.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                        schedeBeach.sort((a, b) => (a.nomeScheda || '').localeCompare(b.nomeScheda || ''));
+                        schedeBeach.forEach(scheda => {
+                            beachContainer.appendChild(createBeachPlanElement(scheda));
+                        });
+                        document.getElementById('no-beach-message').classList.add('hidden');
+                    }
                 }
 
             } catch (error) {
@@ -330,6 +367,36 @@
             }
             details.appendChild(summary); details.appendChild(content);
             return details;
+        }
+
+        // --- SCHEDE BEACH ELEMENT (PDF) ---
+        function createBeachPlanElement(scheda) {
+            const a = document.createElement('a');
+            // Cerca il link del PDF usando chiavi di fallback comuni. 
+            // Adattalo se nella Web App Coach salvi il link in una chiave specifica (es. pdfUrl)
+            a.href = scheda.pdfUrl || scheda.url || scheda.fileUrl || '#';
+            if (a.href !== '#') a.target = "_blank";
+            
+            a.className = 'block bg-slate-900/70 border border-slate-700/50 rounded-xl p-4 md:p-6 hover:bg-slate-800/70 transition-colors flex justify-between items-center group shadow-lg';
+            
+            const title = scheda.name || scheda.nomeScheda || scheda.titolo || scheda.nome || 'Scheda Beach';
+            const desc = scheda.descrizione || scheda.note || scheda.fileName || '';
+
+            a.innerHTML = `
+                <div class="flex items-center gap-4 min-w-0">
+                    <div class="bg-red-500/20 p-3 md:p-4 rounded-lg text-red-400 group-hover:bg-red-500/30 transition-colors shrink-0">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><path d="M12 18v-6"></path><path d="M9 15l3 3 3-3"></path></svg>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <h3 class="text-lg md:text-xl font-bold text-white truncate">${title}</h3>
+                        ${desc ? `<p class="text-sm text-slate-400 mt-1 truncate">${desc}</p>` : ''}
+                    </div>
+                </div>
+                <div class="text-sky-400 group-hover:scale-110 transition-transform shrink-0 ml-4 bg-slate-800 p-3 rounded-full border border-slate-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+                </div>
+            `;
+            return a;
         }
 
         // --- TIMER LOGIC (VOICE + AUDIO) ---
@@ -498,9 +565,10 @@
         closeTimerBtn.onclick = () => { clearInterval(timerInterval); isRunning = false; timerOverlay.classList.add('hidden'); timerOverlay.style.display = 'none'; window.speechSynthesis.cancel(); };
 
         // Tabs
-        const t1=document.getElementById('tab-btn-schede'), t2=document.getElementById('tab-btn-circuiti'), c1=document.getElementById('schede-content'), c2=document.getElementById('circuiti-content');
-        t1.onclick=()=>{t1.classList.add('active');t2.classList.remove('active');c1.classList.add('active');c2.classList.remove('active')};
-        t2.onclick=()=>{t2.classList.add('active');t1.classList.remove('active');c2.classList.add('active');c1.classList.remove('active')};
+        const t1=document.getElementById('tab-btn-schede'), t2=document.getElementById('tab-btn-circuiti'), t3=document.getElementById('tab-btn-beach'), c1=document.getElementById('schede-content'), c2=document.getElementById('circuiti-content'), c3=document.getElementById('schede-beach-content');
+        t1.onclick=()=>{t1.classList.add('active');t2.classList.remove('active');t3.classList.remove('active');c1.classList.add('active');c2.classList.remove('active');c3.classList.remove('active');};
+        t2.onclick=()=>{t2.classList.add('active');t1.classList.remove('active');t3.classList.remove('active');c2.classList.add('active');c1.classList.remove('active');c3.classList.remove('active');};
+        t3.onclick=()=>{t3.classList.add('active');t1.classList.remove('active');t2.classList.remove('active');c3.classList.add('active');c1.classList.remove('active');c2.classList.remove('active');};
 
         // Lightbox
         mainContent.addEventListener('click', e => { if(e.target.classList.contains('enlargeable-image')){ lightboxImage.src=e.target.src; imageLightbox.classList.remove('hidden'); setTimeout(()=>imageLightbox.classList.remove('opacity-0'),10) } });
