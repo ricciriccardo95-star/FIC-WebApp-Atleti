@@ -326,6 +326,7 @@
              const icons = {
                 BOAT: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-sky-400"><path d="M2.5 17.5l2 2.5h15l2-2.5"/><path d="M12 3v14.5"/><path d="M7.5 12H2l1 5.5"/><path d="M16.5 12H22l-1 5.5"/></svg>`,
                 BIKE: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-green-400"><circle cx="6" cy="18" r="3"/><circle cx="18" cy="18" r="3"/><path d="M6 18h12"/><path d="M9 18l4-8 4 8"/><path d="M9 9h6"/></svg>`,
+                CORSA: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-yellow-400"><path d="M13 4a2 2 0 1 0-4 0 2 2 0 0 0 4 0Z"/><path d="M13 10l-2-2-4 2"/><path d="M10 14l-2 8"/><path d="M10 14l4 4 4-2"/><path d="M10 9v5"/></svg>`,
                 ERGO: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-red-400"><path d="M3 12h3l3-9 6 18 3-9h3"/></svg>`,
                 GYM: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-orange-400"><rect x="3" y="10" width="4" height="4" rx="1"/><rect x="17" y="10" width="4" height="4" rx="1"/><line x1="7" y1="12" x2="17" y2="12"/></svg>`,
                 LIBERO: `<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-purple-400"><path d="M17 8h2a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2h-2"/><path d="M4 8h13v8H4a2 2 0 0 1-2-2V10a2 2 0 0 1 2-2z"/><path d="M7 8V5"/><path d="M10 8V5"/><path d="M13 8V5"/></svg>`,
@@ -346,8 +347,9 @@
                     detailsHTML = `<p class="text-slate-300 text-sm italic">Giorno di riposo o attività libera.</p>`;
                 } else {
                     detailsHTML = `
-                        <div class="grid grid-cols-3 gap-2 text-center mt-2">
+                        <div class="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center mt-2">
                             <div class="bg-slate-800/80 p-1.5 rounded"><p class="text-[10px] text-slate-400 uppercase">Distanza</p><p class="text-sm font-semibold text-white">${workout.lavoro?.distanza || '-'}</p></div>
+                            <div class="bg-slate-800/80 p-1.5 rounded"><p class="text-[10px] text-slate-400 uppercase">Tempo</p><p class="text-sm font-semibold text-white">${workout.lavoro?.tempo || '-'}</p></div>
                             <div class="bg-slate-800/80 p-1.5 rounded"><p class="text-[10px] text-slate-400 uppercase">Serie</p><p class="text-sm font-semibold text-white">${workout.lavoro?.serie || '-'}</p></div>
                             <div class="bg-slate-800/80 p-1.5 rounded"><p class="text-[10px] text-slate-400 uppercase">Intensità</p><p class="text-sm font-semibold text-white">${workout.lavoro?.intensita ? workout.lavoro.intensita + '%' : '-'}</p></div>
                         </div>`;
