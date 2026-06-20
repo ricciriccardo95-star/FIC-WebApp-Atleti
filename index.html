@@ -56,11 +56,80 @@
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="apple-mobile-web-app-title" content="FIC Canottaggio">
-    
     <link rel="icon" href="logo.png">
-    <link rel="manifest" href="manifest.json">
 </head>
 <body class="antialiased overflow-hidden">
+
+    <!-- ======================================================== -->
+    <!-- MANUTENZIONE — rimuovi questo blocco per riaprire il sito -->
+    <!-- ======================================================== -->
+    <div id="maintenance-overlay" style="
+        position: fixed; inset: 0; z-index: 9999;
+        background: #0F172A;
+        display: flex; flex-direction: column;
+        align-items: center; justify-content: center;
+        padding: 2rem; text-align: center;
+    ">
+        <!-- Gradient sfondo -->
+        <div style="
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            width: 600px; height: 600px;
+            background: radial-gradient(circle, rgba(59,130,246,0.15), transparent 70%);
+            filter: blur(80px); pointer-events: none;
+        "></div>
+
+        <div style="position: relative; max-width: 400px; width: 100%;">
+            <!-- Logo -->
+            <img src="logo.png" alt="FIC Logo" style="height: 72px; width: auto; object-fit: contain; margin: 0 auto 2rem; display: block;">
+
+            <!-- Icona manutenzione -->
+            <div style="
+                width: 64px; height: 64px; margin: 0 auto 1.5rem;
+                background: rgba(251,191,36,0.1);
+                border: 1px solid rgba(251,191,36,0.25);
+                border-radius: 50%; display: flex; align-items: center; justify-content: center;
+            ">
+                <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" fill="none" viewBox="0 0 24 24" stroke="#FBBF24" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M11.42 15.17 17.25 21A2.652 2.652 0 0 0 21 17.25l-5.877-5.877M11.42 15.17l2.496-3.03c.317-.384.74-.626 1.208-.766M11.42 15.17l-4.655 5.653a2.548 2.548 0 1 1-3.586-3.586l6.837-5.63m5.108-.233c.55-.164 1.163-.188 1.743-.14a4.5 4.5 0 0 0 4.486-6.336l-3.276 3.277a3.004 3.004 0 0 1-2.25-2.25l3.276-3.276a4.5 4.5 0 0 0-6.336 4.486c.091 1.076-.071 2.264-.904 2.95l-.102.085m-1.745 1.437L5.909 7.5H4.5L2.25 3.75l1.5-1.5L7.5 4.5v1.409l4.26 4.26m-1.745 1.437 1.745-1.437m6.615 8.206L15.75 15.75M4.867 19.125h.008v.008h-.008v-.008Z" />
+                </svg>
+            </div>
+
+            <!-- Titolo -->
+            <h1 style="font-size: 1.5rem; font-weight: 900; color: #F8FAFC; letter-spacing: -0.02em; margin-bottom: 0.75rem;">
+                Aggiornamento in corso
+            </h1>
+
+            <!-- Messaggio -->
+            <p style="color: #94A3B8; font-size: 0.95rem; line-height: 1.6; margin-bottom: 2rem;">
+                Stiamo lavorando a un aggiornamento della piattaforma.<br>
+                Il servizio sarà ripristinato a breve.
+            </p>
+
+            <!-- Badge stato -->
+            <div style="
+                display: inline-flex; align-items: center; gap: 8px;
+                background: rgba(251,191,36,0.08);
+                border: 1px solid rgba(251,191,36,0.2);
+                border-radius: 99px; padding: 6px 16px;
+                font-size: 0.8rem; color: #FCD34D; font-weight: 600;
+                letter-spacing: 0.05em;
+            ">
+                <span style="width:7px; height:7px; background:#FBBF24; border-radius:50%; display:inline-block; animation: blink 1.4s infinite;"></span>
+                MANUTENZIONE PROGRAMMATA
+            </div>
+
+            <!-- Contatto -->
+            <p style="color: #475569; font-size: 0.75rem; margin-top: 2.5rem;">
+                Per urgenze contatta il responsabile tecnico FIC
+            </p>
+        </div>
+
+        <style>
+            @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+        </style>
+    </div>
+    <!-- ======================================================== -->
 
     <div class="background-gradient gradient-1"></div>
     <div class="background-gradient gradient-2"></div>
