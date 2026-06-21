@@ -8,54 +8,37 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0F172A; color: #E2E8F0; -webkit-tap-highlight-color: transparent; }
-        
-        .form-input, .form-select { 
-            width: 100%; background-color: #1E293B; border: 1px solid #334155; 
-            border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0; 
+
+        .form-input, .form-select {
+            width: 100%; background-color: #1E293B; border: 1px solid #334155;
+            border-radius: 0.5rem; padding: 0.75rem 1rem; color: #E2E8F0;
             appearance: none; -webkit-appearance: none;
         }
-        .form-input:focus, .form-select:focus { 
-            outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3); 
+        .form-input:focus, .form-select:focus {
+            outline: none; border-color: #3B82F6; box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.3);
         }
         .form-select {
             background-image: url('data:image/svg+xml;charset=UTF-8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="%2394a3b8"><path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" /></svg>');
             background-repeat: no-repeat; background-position: right 0.75rem center; background-size: 1.25em; padding-right: 2.5rem;
         }
         .form-label { display: block; margin-bottom: 0.5rem; font-weight: 500; color: #94A3B8; font-size: 0.9rem; }
-        
-        /* Stili Modali */
+
         .summary-item { display: flex; justify-content: space-between; padding: 0.5rem 0; border-bottom: 1px solid #334155; }
         .summary-item:last-child { border-bottom: none; }
         .summary-label { font-weight: 500; color: #94A3B8; }
         .summary-value { font-weight: 600; color: #E2E8F0; text-align: right; }
 
-        /* Checkbox Custom per Selezione */
-        .custom-checkbox {
-            appearance: none; background-color: #1E293B; margin: 0;
-            font: inherit; color: currentColor; width: 1.25em; height: 1.25em;
-            border: 1px solid #475569; border-radius: 0.25em; display: grid; place-content: center;
-        }
-        .custom-checkbox::before {
-            content: ""; width: 0.65em; height: 0.65em; transform: scale(0);
-            transition: 120ms transform ease-in-out; box-shadow: inset 1em 1em white;
-            transform-origin: center; clip-path: polygon(14% 44%, 0 65%, 50% 100%, 100% 16%, 80% 0%, 43% 62%);
-        }
-        .custom-checkbox:checked { background-color: #3B82F6; border-color: #3B82F6; }
-        .custom-checkbox:checked::before { transform: scale(1); }
+        /* Step lock: opaco e non interagibile */
+        .step-disabled { opacity: 0.3; pointer-events: none; transition: opacity 0.2s ease; }
 
         input[type="date"]::-webkit-calendar-picker-indicator { filter: invert(1); cursor: pointer; }
     </style>
     <script type="module" src="../auth-manager.js"></script>
 </head>
 <body class="antialiased pb-24">
-    
-    <div id="loader-overlay" class="fixed inset-0 bg-slate-900/95 flex flex-col justify-center items-center z-[100] hidden backdrop-blur-sm">
-        <div class="animate-spin rounded-full h-16 w-16 border-4 border-slate-700 border-t-indigo-500"></div>
-        <p id="loader-text" class="mt-6 text-slate-300 font-medium animate-pulse">Analisi intelligente in corso...</p>
-    </div>
 
     <div class="p-4 md:p-8 max-w-3xl mx-auto">
-        
+
         <div class="flex items-center justify-between mb-8">
             <h1 class="text-3xl font-bold text-white tracking-tight">Allenamento RowErg</h1>
             <a href="home_carica_dati.html" class="p-2 bg-slate-800 rounded-full text-slate-400 hover:text-white transition-colors">
@@ -64,13 +47,14 @@
         </div>
 
         <div class="bg-slate-900/70 border border-slate-700/50 rounded-xl p-6 md:p-8 space-y-6 shadow-xl backdrop-blur-sm">
-            
+
             <div id="athlete-info-container">
                 <p id="athlete-info" class="text-center text-slate-300 bg-slate-800 p-4 rounded-lg">Verifica utente...</p>
             </div>
-            
+
             <div id="form-content" class="hidden space-y-6">
-                
+
+                <!-- STEP 1: Data + Tipo di Lavoro (sempre attivo) -->
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div>
                         <label class="form-label">Data Allenamento</label>
@@ -86,38 +70,8 @@
                     </div>
                 </div>
 
-                <div class="bg-indigo-900/20 border border-indigo-500/30 rounded-lg p-4 space-y-3">
-                    <h3 class="text-indigo-300 font-semibold text-sm flex items-center gap-2">
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                        Autocompilazione da Foto
-                    </h3>
-                    <div class="grid grid-cols-2 gap-3">
-                        <button id="snapPhotoBtn" class="bg-indigo-600 active:bg-indigo-700 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 text-sm">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
-                            Scatta Foto
-                        </button>
-                        <input type="file" id="cameraInput" accept="image/*" capture="environment" class="hidden">
-
-                        <button id="uploadFileBtn" class="bg-slate-700 active:bg-slate-600 text-white font-medium py-3 px-4 rounded-lg flex items-center justify-center gap-2 shadow-lg transition-transform active:scale-95 text-sm">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
-                            Galleria
-                        </button>
-                        <input type="file" id="galleryInput" accept="image/*" class="hidden">
-                    </div>
-                    
-                    <div id="ai-info-panel" class="hidden bg-slate-800/80 p-3 rounded-lg border border-indigo-500/30 flex flex-col gap-2 text-xs animate-fade-in mt-3">
-                        <div class="flex justify-between items-center border-b border-slate-700 pb-2 mb-1">
-                            <span class="text-slate-400">Modalità Rilevata:</span>
-                            <strong id="detected-mode-text" class="text-indigo-300">---</strong>
-                        </div>
-                        <div class="flex justify-between items-center">
-                            <span class="text-slate-400">Allenamento:</span>
-                            <strong id="auto-selected-workout" class="text-emerald-400 text-right">---</strong>
-                        </div>
-                    </div>
-                </div>
-
-                <div>
+                <!-- STEP 2: Modalità (opaco finché tipo non è selezionato) -->
+                <div id="step-modalita" class="step-disabled">
                     <label for="workoutMode" class="form-label">Modalità Allenamento</label>
                     <select id="workoutMode" class="form-select">
                         <option value="">-- Seleziona --</option>
@@ -126,7 +80,8 @@
                     </select>
                 </div>
 
-                <div id="distanza-fields" class="hidden space-y-6">
+                <!-- STEP 3a: Distanza (opaco finché modalità non è selezionata) -->
+                <div id="distanza-fields" class="hidden step-disabled space-y-6">
                     <div>
                         <label for="distanzaSelect" class="form-label">Distanza Specifica</label>
                         <select id="distanzaSelect" class="form-select">
@@ -135,12 +90,12 @@
                     </div>
                 </div>
 
-                <div id="tempo-fields" class="hidden space-y-6">
+                <!-- STEP 3b: Tempo (opaco finché modalità non è selezionata) -->
+                <div id="tempo-fields" class="hidden step-disabled space-y-6">
                     <div>
                         <label for="tempoSelect" class="form-label">Tempo (minuti)</label>
                         <select id="tempoSelect" class="form-select">
                             <option value="">-- Seleziona --</option>
-                            <option value="10">10 minuti</option>
                             <option value="30">30 minuti</option>
                             <option value="45">45 minuti</option>
                             <option value="60">60 minuti</option>
@@ -148,8 +103,9 @@
                     </div>
                 </div>
 
-                <div id="intervalli-common" class="hidden space-y-6">
-                     <div>
+                <!-- STEP 4: Intervalli (opaco finché distanza/tempo non è selezionato) -->
+                <div id="intervalli-common" class="hidden step-disabled space-y-6">
+                    <div>
                         <div class="flex justify-between items-center mb-1">
                             <label for="intervalliNumero" class="form-label mb-0">Numero di Intervalli</label>
                             <button id="resetIntervalliBtn" class="text-xs text-red-400 hover:text-red-300 flex items-center gap-1">
@@ -164,9 +120,11 @@
                     <div id="intervalli-inputs-container" class="space-y-3"></div>
                 </div>
 
-                <div class="pt-4">
+                <!-- STEP 5: Salva (opaco finché numero intervalli non è selezionato) -->
+                <div id="step-save" class="pt-4 step-disabled">
                     <button id="saveWorkoutBtn" class="w-full bg-green-600 hover:bg-green-500 text-white font-bold py-3 px-5 rounded-lg transition-colors">Salva Allenamento</button>
                 </div>
+
             </div>
         </div>
 
@@ -178,43 +136,26 @@
             </ol>
         </div>
     </div>
-    
+
     <div id="modal-backdrop" class="fixed inset-0 bg-black/80 hidden z-[200]"></div>
-    
+
     <div id="messageBox" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-md bg-slate-800 border border-slate-700 rounded-lg p-6 shadow-lg text-center hidden z-[210]">
         <div id="msgIcon" class="mb-4 text-indigo-400 flex justify-center"></div>
         <p id="messageText" class="mb-6 text-lg text-white"></p>
         <button id="messageBoxOkBtn" class="w-full bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded-lg">OK</button>
     </div>
 
-    <div id="selectionModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[95%] max-w-md bg-slate-900 border border-slate-700 rounded-xl p-0 shadow-2xl hidden z-[220] overflow-hidden flex flex-col max-h-[85vh]">
-        <div class="p-4 border-b border-slate-800 bg-slate-900 sticky top-0 z-10 flex justify-between items-center">
-            <h3 class="text-lg font-bold text-white">Conferma Dati</h3>
-            <button onclick="hideModal(document.getElementById('selectionModal'))" class="text-slate-400 hover:text-white">
-                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/></svg>
-            </button>
-        </div>
-        <div class="p-4 overflow-y-auto flex-1 bg-slate-900">
-            <p class="text-sm text-slate-400 mb-3">Seleziona le righe da importare (deseleziona i duplicati se presenti):</p>
-            <div id="selectionList" class="space-y-2">
-                </div>
-        </div>
-        <div class="p-4 border-t border-slate-800 bg-slate-900 sticky bottom-0 z-10">
-            <button id="confirmSelectionBtn" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold py-3 px-4 rounded-lg transition-colors">Importa Selezionati</button>
-        </div>
-    </div>
-
     <div id="summaryModal" class="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[90%] max-w-lg bg-slate-800 border border-slate-700 rounded-lg shadow-lg hidden z-[210]">
         <div class="p-6">
             <h3 class="text-2xl font-bold text-white mb-4">Riepilogo Dati</h3>
             <div id="summary-content" class="mb-6 max-h-[60vh] overflow-y-auto pr-2"></div>
-            
+
             <div id="ep-warning" class="hidden mb-4 p-4 bg-red-900/50 border border-red-700 rounded-lg text-center">
-                <p id="ep-warning-title" class="font-bold text-lg text-red-300 flex items-center justify-center gap-2">
+                <p class="font-bold text-lg text-red-300 flex items-center justify-center gap-2">
                     <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path></svg>
                     ATTENZIONE: EP ANOMALO!
                 </p>
-                <p id="ep-warning-text" class="text-red-400 text-sm mt-1">Valori impossibili (>110% o &lt;10%). Controlla i dati.</p>
+                <p class="text-red-400 text-sm mt-1">Valori impossibili (>110% o &lt;10%). Controlla i dati.</p>
             </div>
 
             <div class="grid grid-cols-2 gap-4">
@@ -227,12 +168,10 @@
     <script type="module">
         import { db } from '../auth-manager.js';
         import { collection, doc, getDoc, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-        import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
 
         const RECORD_MONDO_M_2000M = '05:35.8';
         const RECORD_MONDO_F_2000M = '06:21.1';
-        
-        // Liste Distanze
+
         const distanzePolarizzate = [
             { value: '500', text: '500 pol (50%)' }, { value: '750', text: '750 pol (33,3%)' },
             { value: '1000', text: '1000 pol (25%)' }, { value: '1500', text: '1500 pol (16,6%)' },
@@ -246,55 +185,38 @@
             { value: '6000', text: '6000' }, { value: '8000', text: '8000' }, { value: '10000', text: '10000' },
             { value: '16000', text: '16000' }, { value: '20000', text: '20000' }
         ];
-        const VALID_TIMES = ['10','20','30','45','60','90']; 
+        const VALID_TIMES = ['20','30','45','60','90'];
 
-        let currentAthleteId = null;
+        let currentAthleteId    = null;
         let currentAthleteCognome = null;
-        let pendingWorkoutData = null;
-        let accumulatedIntervals = []; // Array di oggetti {time:..., meters:...}
-        let pendingAIResults = null; // Per il modale di selezione
+        let pendingWorkoutData  = null;
 
-        // DOM
-        const aiInputCam = document.getElementById('cameraInput');
-        const aiInputGal = document.getElementById('galleryInput');
-        const snapBtn = document.getElementById('snapPhotoBtn');
-        const uploadBtn = document.getElementById('uploadFileBtn');
-        const resetIntervalliBtn = document.getElementById('resetIntervalliBtn');
-        const workoutModeSelect = document.getElementById('workoutMode');
-        const distanzaSelect = document.getElementById('distanzaSelect');
-        const tempoSelect = document.getElementById('tempoSelect');
-        const tipoLavoroSelect = document.getElementById('tipoLavoroSelect');
-        const selectionModal = document.getElementById('selectionModal');
-        const confirmSelectionBtn = document.getElementById('confirmSelectionBtn');
-        
-        // Functions
-        const functions = getFunctions();
-        const analizzaMonitor = httpsCallable(functions, 'analizzaMonitor');
+        const workoutModeSelect  = document.getElementById('workoutMode');
+        const distanzaSelect     = document.getElementById('distanzaSelect');
+        const tempoSelect        = document.getElementById('tempoSelect');
+        const tipoLavoroSelect   = document.getElementById('tipoLavoroSelect');
+        const intervalliNumero   = document.getElementById('intervalliNumero');
 
+        // ── setup iniziale ──────────────────────────────────────────────
         document.addEventListener('DOMContentLoaded', () => {
-            setupPage();
-            snapBtn.addEventListener('click', () => { if(checkTipoLavoro()) aiInputCam.click(); });
-            uploadBtn.addEventListener('click', () => { if(checkTipoLavoro()) aiInputGal.click(); });
-            
-            aiInputCam.addEventListener('change', handleImageUpload);
-            aiInputGal.addEventListener('change', handleImageUpload);
-            
-            workoutModeSelect.addEventListener('change', updateFormVisibility);
-            tipoLavoroSelect.addEventListener('change', updateDistanceOptions);
-            
-            document.getElementById('intervalliNumero').addEventListener('change', () => {
-                accumulatedIntervals = []; 
-                generateIntervalliInputs();
-            });
-            
-            resetIntervalliBtn.addEventListener('click', () => {
-                accumulatedIntervals = [];
-                document.getElementById('intervalliNumero').value = "";
-                generateIntervalliInputs();
-                document.getElementById('ai-info-panel').classList.add('hidden');
-            });
+            let html = '<option value="">-- Seleziona numero --</option>';
+            for (let i = 1; i <= 40; i++) html += `<option value="${i}">${i}</option>`;
+            intervalliNumero.innerHTML = html;
+            document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
+            populateDistanzaSelect();
 
-            confirmSelectionBtn.addEventListener('click', processSelectedRows);
+            // Listeners con cascade reset
+            tipoLavoroSelect.addEventListener('change',  onTipoChange);
+            workoutModeSelect.addEventListener('change', onModeChange);
+            distanzaSelect.addEventListener('change',    onDistanzaChange);
+            tempoSelect.addEventListener('change',       onTempoChange);
+            intervalliNumero.addEventListener('change',  onNumeroChange);
+
+            document.getElementById('resetIntervalliBtn').addEventListener('click', () => {
+                intervalliNumero.value = '';
+                generateIntervalliInputs();
+                updateStepStates();
+            });
 
             document.getElementById('saveWorkoutBtn').addEventListener('click', initiateSaveProcess);
             document.getElementById('summaryModificaBtn').addEventListener('click', () => hideModal(document.getElementById('summaryModal')));
@@ -302,103 +224,130 @@
             document.getElementById('messageBoxOkBtn').addEventListener('click', () => hideModal(document.getElementById('messageBox')));
         });
 
-        function setupPage() {
-            const intervalliSelect = document.getElementById('intervalliNumero');
-            let html = '<option value="">-- Seleziona numero --</option>';
-            for (let i = 1; i <= 40; i++) html += `<option value="${i}">${i}</option>`;
-            intervalliSelect.innerHTML = html;
-            document.getElementById('workoutDate').value = new Date().toISOString().split('T')[0];
-        }
-
-        function checkTipoLavoro() {
-            if (!document.getElementById('tipoLavoroSelect').value) {
-                showMessageBox("Seleziona prima il TIPO DI LAVORO.", true);
-                return false;
-            }
-            return true;
-        }
-
-        function setupHiddenSelects() {
+        function populateDistanzaSelect() {
             const allDists = [...distanzePolarizzate, ...distanzeSteady];
             allDists.forEach(d => {
-                if(![...distanzaSelect.options].some(o => o.value === d.value))
+                if (![...distanzaSelect.options].some(o => o.value === d.value))
                     distanzaSelect.innerHTML += `<option value="${d.value}">${d.text}</option>`;
             });
             VALID_TIMES.forEach(t => {
-                if(![...tempoSelect.options].some(o => o.value === t))
+                if (![...tempoSelect.options].some(o => o.value === t))
                     tempoSelect.innerHTML += `<option value="${t}">${t} min</option>`;
             });
         }
-        setupHiddenSelects();
 
-        function updateFormVisibility() {
-            const mode = document.getElementById('workoutMode').value;
-            document.getElementById('tempo-fields').classList.add('hidden');
+        // ── handlers con cascade reset ───────────────────────────────────
+        function onTipoChange() {
+            // reset tutto ciò che sta sotto
+            workoutModeSelect.value = '';
+            distanzaSelect.value    = '';
+            tempoSelect.value       = '';
+            intervalliNumero.value  = '';
             document.getElementById('distanza-fields').classList.add('hidden');
+            document.getElementById('tempo-fields').classList.add('hidden');
             document.getElementById('intervalli-common').classList.add('hidden');
-            document.getElementById('distanzaSelect').innerHTML = '<option value="">-- Seleziona --</option>'; 
-
-            if (mode === 'distanza') updateDistanceOptions();
-            else if (mode === 'tempo') {
-                document.getElementById('tempo-fields').classList.remove('hidden');
-                document.getElementById('intervalli-common').classList.remove('hidden');
-            }
             generateIntervalliInputs();
+            updateStepStates();
         }
 
+        function onModeChange() {
+            // reset parametri e intervalli
+            distanzaSelect.value   = '';
+            tempoSelect.value      = '';
+            intervalliNumero.value = '';
+            generateIntervalliInputs();
+            updateDistanceOptions(); // aggiorna le opzioni e show/hide sezioni
+            updateStepStates();
+        }
+
+        function onDistanzaChange() {
+            intervalliNumero.value = '';
+            generateIntervalliInputs();
+            // mostra intervalli-common se non già visibile
+            document.getElementById('intervalli-common').classList.remove('hidden');
+            updateStepStates();
+        }
+
+        function onTempoChange() {
+            intervalliNumero.value = '';
+            generateIntervalliInputs();
+            document.getElementById('intervalli-common').classList.remove('hidden');
+            updateStepStates();
+        }
+
+        function onNumeroChange() {
+            generateIntervalliInputs();
+            updateStepStates();
+        }
+
+        // ── step visibility ──────────────────────────────────────────────
+        function updateStepStates() {
+            const tipoVal  = tipoLavoroSelect.value;
+            const modVal   = workoutModeSelect.value;
+            const distVal  = distanzaSelect.value;
+            const tempoVal = tempoSelect.value;
+            const numVal   = intervalliNumero.value;
+
+            // Step 2: modalità attivo quando tipo selezionato
+            setStepEnabled('step-modalita', tipoVal !== '');
+
+            // Step 3: distanza/tempo attivi quando modalità selezionata
+            setStepEnabled('distanza-fields', modVal !== '');
+            setStepEnabled('tempo-fields',    modVal !== '');
+
+            // Step 4: intervalli attivi quando distanza o tempo ha un valore
+            const step3Done = (modVal === 'distanza' && distVal !== '') ||
+                              (modVal === 'tempo'    && tempoVal !== '');
+            setStepEnabled('intervalli-common', step3Done);
+
+            // Step 5: salva attivo quando numero intervalli selezionato
+            setStepEnabled('step-save', step3Done && numVal !== '');
+        }
+
+        function setStepEnabled(id, enabled) {
+            const el = document.getElementById(id);
+            if (el) el.classList.toggle('step-disabled', !enabled);
+        }
+
+        // ── logica form ──────────────────────────────────────────────────
         function updateDistanceOptions() {
-            const tipo = document.getElementById('tipoLavoroSelect').value;
-            const sel = document.getElementById('distanzaSelect');
-            sel.innerHTML = '<option value="">-- Seleziona distanza --</option>';
-            
-            if(document.getElementById('workoutMode').value === 'distanza') {
-                let opts = (tipo === 'polarizzato') ? distanzePolarizzate : (tipo === 'steady_state') ? distanzeSteady : [];
-                opts.forEach(o => sel.innerHTML += `<option value="${o.value}">${o.text}</option>`);
+            const tipo = tipoLavoroSelect.value;
+            const mode = workoutModeSelect.value;
+
+            document.getElementById('distanza-fields').classList.add('hidden');
+            document.getElementById('tempo-fields').classList.add('hidden');
+            document.getElementById('intervalli-common').classList.add('hidden');
+
+            if (mode === 'distanza') {
+                distanzaSelect.innerHTML = '<option value="">-- Seleziona distanza --</option>';
+                const opts = (tipo === 'polarizzato') ? distanzePolarizzate :
+                             (tipo === 'steady_state') ? distanzeSteady : [];
+                opts.forEach(o => distanzaSelect.innerHTML += `<option value="${o.value}">${o.text}</option>`);
                 document.getElementById('distanza-fields').classList.remove('hidden');
-                document.getElementById('intervalli-common').classList.remove('hidden');
+            } else if (mode === 'tempo') {
+                tempoSelect.value = '';
+                document.getElementById('tempo-fields').classList.remove('hidden');
             }
         }
 
         function generateIntervalliInputs() {
             const container = document.getElementById('intervalli-inputs-container');
-            const count = accumulatedIntervals.length > 0 
-                          ? accumulatedIntervals.length 
-                          : (parseInt(document.getElementById('intervalliNumero').value) || 0);
-            
-            const mode = document.getElementById('workoutMode').value;
+            const count = parseInt(intervalliNumero.value) || 0;
+            const mode  = workoutModeSelect.value;
             container.innerHTML = '';
 
-            if (accumulatedIntervals.length > 0) {
-                let sel = document.getElementById('intervalliNumero');
-                if(![...sel.options].some(o=>o.value==count)) {
-                    let opt = document.createElement('option'); opt.value = count; opt.text = count; sel.add(opt);
-                }
-                sel.value = count;
-            }
-
-            if (count > 0 && mode) {
-                for (let i = 1; i <= count; i++) {
-                    const isDist = mode === 'distanza';
-                    const ph = isDist ? 'mm:ss.d' : 'Metri (es. 1250)';
-                    const lbl = isDist ? 'Tempo' : 'Distanza';
-                    
-                    // Se abbiamo dati accumulati, prendiamo il valore giusto in base alla modalità
-                    let val = "";
-                    if (accumulatedIntervals[i-1]) {
-                        val = isDist ? accumulatedIntervals[i-1].time : accumulatedIntervals[i-1].meters;
-                    }
-
-                    const html = `
-                        <div class="animate-fade-in">
-                            <label class="form-label text-xs text-slate-400">Intervallo ${i} (${lbl})</label>
-                            <input type="${isDist ? 'text' : 'number'}" 
-                                   class="form-input intervallo-input" 
-                                   value="${val}"
-                                   placeholder="${ph}"
-                                   ${isDist ? 'oninput="formatTimeInput(event)" inputmode="decimal"' : 'inputmode="numeric"'}>
-                        </div>`;
-                    container.insertAdjacentHTML('beforeend', html);
-                }
+            for (let i = 1; i <= count; i++) {
+                const isDist = mode === 'distanza';
+                const ph  = isDist ? 'mm:ss.d' : 'Metri (es. 1250)';
+                const lbl = isDist ? 'Tempo'   : 'Distanza';
+                container.insertAdjacentHTML('beforeend', `
+                    <div>
+                        <label class="form-label text-xs text-slate-400">Intervallo ${i} (${lbl})</label>
+                        <input type="${isDist ? 'text' : 'number'}"
+                               class="form-input intervallo-input"
+                               placeholder="${ph}"
+                               ${isDist ? 'oninput="formatTimeInput(event)" inputmode="decimal"' : 'inputmode="numeric"'}>
+                    </div>`);
             }
         }
 
@@ -410,130 +359,10 @@
             else e.target.value = v;
         }
 
-        // --- AI LOGIC ---
-        async function handleImageUpload(e) {
-            const file = e.target.files[0];
-            if (!file) return;
-            e.target.value = '';
-            
-            document.getElementById('loader-overlay').classList.remove('hidden');
-
-            try {
-                const base64 = await fileToBase64(file);
-                const cleanBase64 = base64.split(',')[1];
-
-                const response = await analizzaMonitor({ image: cleanBase64 });
-                const result = response.data;
-
-                if (result.rows && Array.isArray(result.rows)) {
-                    // Logic Filtro Header
-                    const header = (result.header_text || "").toLowerCase().replace(/,/g, '').trim(); 
-                    const isInterval = header.includes('x') || header.includes('/');
-                    
-                    let newRows = [];
-                    if (isInterval && result.rows.length > 1) newRows = result.rows.slice(1);
-                    else if (!isInterval && result.rows.length > 0) newRows = [result.rows[0]]; 
-                    else newRows = result.rows; 
-
-                    // Filtra righe di recupero (iniziano con r)
-                    newRows = newRows.filter(r => !r.time.toLowerCase().startsWith('r'));
-
-                    // Setup per il modale di selezione
-                    pendingAIResults = { header, rows: newRows };
-                    showSelectionModal(newRows);
-                }
-
-            } catch (err) {
-                console.error(err);
-                showMessageBox("Errore AI: " + err.message, true);
-            } finally {
-                document.getElementById('loader-overlay').classList.add('hidden');
-            }
-        }
-
-        function showSelectionModal(rows) {
-            const list = document.getElementById('selectionList');
-            list.innerHTML = '';
-            
-            rows.forEach((row, idx) => {
-                const div = document.createElement('div');
-                div.className = "flex items-center gap-3 p-3 bg-slate-800 rounded border border-slate-700";
-                div.innerHTML = `
-                    <input type="checkbox" class="custom-checkbox row-selector" checked data-index="${idx}">
-                    <div class="flex-1 grid grid-cols-2 gap-2 text-sm">
-                        <span class="text-sky-300 font-mono">${row.time}</span>
-                        <span class="text-emerald-300 font-mono text-right">${row.meters}m</span>
-                    </div>
-                `;
-                list.appendChild(div);
-            });
-            
-            showModal(selectionModal);
-        }
-
-        function processSelectedRows() {
-            if (!pendingAIResults) return;
-            
-            const checkboxes = document.querySelectorAll('.row-selector:checked');
-            const selectedRows = Array.from(checkboxes).map(cb => pendingAIResults.rows[cb.dataset.index]);
-            
-            if (accumulatedIntervals.length === 0 && selectedRows.length > 0) {
-                detectAndSetMode(pendingAIResults.header, selectedRows);
-            }
-
-            accumulatedIntervals = [...accumulatedIntervals, ...selectedRows];
-            
-            generateIntervalliInputs();
-            hideModal(selectionModal);
-            pendingAIResults = null;
-        }
-
-        function detectAndSetMode(header, rows) {
-            let mode = 'distanza';
-            let param = '';
-
-            if (header.includes('m') && !header.includes(':')) {
-                mode = 'distanza';
-                param = header.match(/(\d+)m/)?.[1] || header.replace('m','').trim();
-            } else if (header.includes(':') && !header.includes('m')) {
-                mode = 'tempo';
-                param = (parseInt(header.split(':')[0])).toString();
-            } else {
-                const uM = new Set(rows.map(r => r.meters)).size;
-                const uT = new Set(rows.map(r => r.time)).size;
-                if (uT <= uM && uT === 1) mode = 'tempo';
-            }
-
-            document.getElementById('workoutMode').value = mode;
-            updateFormVisibility(); 
-
-            let targetSelect = (mode === 'distanza') ? document.getElementById('distanzaSelect') : document.getElementById('tempoSelect');
-            let detectedText = "";
-            let autoSelected = false;
-
-            for(let opt of targetSelect.options) {
-                if(opt.value == param) {
-                    targetSelect.value = param;
-                    detectedText = opt.text;
-                    autoSelected = true;
-                    break;
-                }
-            }
-            if(!autoSelected) detectedText = param + " (Non in lista)";
-
-            const p = document.getElementById('ai-info-panel');
-            p.classList.remove('hidden');
-            document.getElementById('detected-mode-text').textContent = mode.toUpperCase();
-            
-            const pt = document.getElementById('auto-selected-workout');
-            pt.textContent = detectedText;
-            pt.className = autoSelected ? 'text-emerald-400 text-right font-bold' : 'text-red-400 text-right';
-        }
-
-        // --- SALVATAGGIO ---
+        // ── salvataggio ──────────────────────────────────────────────────
         async function initiateSaveProcess() {
             if (!currentAthleteId) { showMessageBox("Login richiesto.", true); return; }
-            
+
             const btn = document.getElementById('saveWorkoutBtn');
             btn.disabled = true; btn.textContent = 'Verifica...';
 
@@ -542,124 +371,107 @@
                 atletaId: currentAthleteId,
                 cognomeAtleta: currentAthleteCognome,
                 data: document.getElementById('workoutDate').value,
-                modalita: document.getElementById('workoutMode').value,
+                modalita: workoutModeSelect.value,
                 timestamp: serverTimestamp(),
                 intervalli: [],
                 ep1: null, ep2: null
             };
 
             if (wData.modalita === 'distanza') {
-                wData.tipoLavoro = document.getElementById('tipoLavoroSelect').value;
-                wData.distanza = document.getElementById('distanzaSelect').value;
-                if (!wData.tipoLavoro || !wData.distanza) { showMessageBox("Seleziona tipo e distanza.", true); btn.disabled=false; return; }
+                wData.tipoLavoro = tipoLavoroSelect.value;
+                wData.distanza   = distanzaSelect.value;
+                if (!wData.tipoLavoro || !wData.distanza) { showMessageBox("Seleziona tipo e distanza.", true); btn.disabled=false; btn.textContent='Salva Allenamento'; return; }
+            } else if (wData.modalita === 'tempo') {
+                wData.tempo = tempoSelect.value;
+                if (!wData.tempo) { showMessageBox("Seleziona tempo.", true); btn.disabled=false; btn.textContent='Salva Allenamento'; return; }
             } else {
-                wData.tempo = document.getElementById('tempoSelect').value;
-                if (!wData.tempo) { showMessageBox("Seleziona tempo.", true); btn.disabled=false; return; }
+                showMessageBox("Seleziona la modalità.", true); btn.disabled=false; btn.textContent='Salva Allenamento'; return;
             }
 
-            const inputs = document.querySelectorAll('.intervallo-input');
-            inputs.forEach(inp => { if(inp.value) wData.intervalli.push(inp.value); });
-
-            if (wData.intervalli.length === 0) { showMessageBox("Nessun intervallo inserito.", true); btn.disabled=false; return; }
+            document.querySelectorAll('.intervallo-input').forEach(inp => { if (inp.value) wData.intervalli.push(inp.value); });
+            if (wData.intervalli.length === 0) { showMessageBox("Nessun intervallo inserito.", true); btn.disabled=false; btn.textContent='Salva Allenamento'; return; }
 
             const ath = await fetchAthleteRecord(currentAthleteId);
-            let blockSave = false;
-            
             if (ath) {
                 const ep = calculateErgoEP(wData, ath);
                 if (ep.ep1) wData.ep1 = parseFloat(ep.ep1.toFixed(2));
                 if (ep.ep2) wData.ep2 = parseFloat(ep.ep2.toFixed(2));
-                if ((wData.ep1 > 110 || wData.ep1 < 10) || (wData.ep2 > 110 || wData.ep2 < 10)) blockSave = true;
-            }
-
-            if (blockSave) {
-                showMessageBox("⛔ ERRORE EP: Valori anomali (>110% o <10%). Salvataggio bloccato.", true);
-                btn.disabled=false; btn.textContent = 'Salva Allenamento';
-                return;
+                if ((wData.ep1 > 110 || wData.ep1 < 10) || (wData.ep2 > 110 || wData.ep2 < 10)) {
+                    showMessageBox("⛔ ERRORE EP: Valori anomali (>110% o <10%). Salvataggio bloccato.", true);
+                    btn.disabled=false; btn.textContent='Salva Allenamento'; return;
+                }
             }
 
             pendingWorkoutData = wData;
-            
-            const sumCont = document.getElementById('summary-content');
-            sumCont.innerHTML = `
+            document.getElementById('summary-content').innerHTML = `
                 <div class="summary-item"><span class="summary-label">Modalità</span><span class="summary-value">${wData.modalita}</span></div>
                 <div class="summary-item"><span class="summary-label">Intervalli</span><span class="summary-value">${wData.intervalli.length}</span></div>
                 <div class="summary-item"><span class="summary-label">Dati</span><span class="summary-value text-xs">${wData.intervalli.join(', ')}</span></div>
             `;
-            
             document.getElementById('ep-warning').classList.add('hidden');
             document.getElementById('summaryConfermaBtn').classList.remove('hidden');
-            
             showModal(document.getElementById('summaryModal'));
         }
 
         async function proceedWithSave() {
             const btn = document.getElementById('summaryConfermaBtn');
             btn.textContent = 'Salvataggio...'; btn.disabled = true;
-            
             try {
                 await addDoc(collection(db, 'allenamenti'), pendingWorkoutData);
                 hideModal(document.getElementById('summaryModal'));
                 showMessageBox("Salvataggio riuscito!", false);
-                
-                accumulatedIntervals = [];
-                document.getElementById('intervalliNumero').value = "";
+                intervalliNumero.value = '';
                 generateIntervalliInputs();
-                document.getElementById('ai-info-panel').classList.add('hidden');
-                
+                updateStepStates();
             } catch(e) {
                 console.error(e);
                 showMessageBox("Errore database.", true);
             } finally {
                 btn.textContent = 'Conferma'; btn.disabled = false;
-                document.getElementById('saveWorkoutBtn').disabled = false; 
+                document.getElementById('saveWorkoutBtn').disabled = false;
                 document.getElementById('saveWorkoutBtn').textContent = 'Salva Allenamento';
             }
         }
 
-        // --- HELPERS ---
-        function showMessageBox(msg, isError) { 
-            const box = document.getElementById('messageBox');
-            const txt = document.getElementById('messageText');
-            const icon = document.getElementById('msgIcon');
-            txt.textContent = msg;
-            txt.className = isError ? "mb-6 text-lg text-red-300 font-medium" : "mb-6 text-lg text-slate-200 font-medium";
-            icon.innerHTML = isError 
+        // ── helpers ──────────────────────────────────────────────────────
+        function showMessageBox(msg, isError) {
+            document.getElementById('messageText').textContent = msg;
+            document.getElementById('messageText').className = isError ? "mb-6 text-lg text-red-300 font-medium" : "mb-6 text-lg text-slate-200 font-medium";
+            document.getElementById('msgIcon').innerHTML = isError
                 ? `<svg class="w-12 h-12 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`
                 : `<svg class="w-12 h-12 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>`;
-            showModal(box);
+            showModal(document.getElementById('messageBox'));
         }
         function showModal(m) { document.getElementById('modal-backdrop').classList.remove('hidden'); m.classList.remove('hidden'); }
         function hideModal(m) { document.getElementById('modal-backdrop').classList.add('hidden'); m.classList.add('hidden'); }
-        function fileToBase64(file) { return new Promise((r, j) => { const reader = new FileReader(); reader.onload = () => r(reader.result); reader.onerror = j; reader.readAsDataURL(file); }); }
         async function fetchAthleteRecord(id) { try { return (await getDoc(doc(db, 'atleti', id))).data(); } catch { return null; } }
-        function timeToSeconds(t) { if(!t || !t.includes(':')) return 0; const p=t.split(':'); return (parseInt(p[0])*60)+parseFloat(p[1]); }
+        function timeToSeconds(t) { if (!t || !t.includes(':')) return 0; const p = t.split(':'); return (parseInt(p[0]) * 60) + parseFloat(p[1]); }
         function calculateErgoEP(wData, aData) {
             let ep1 = null, ep2 = null;
-            const ints = wData.intervalli.map(i => timeToSeconds(i) || parseFloat(i)).filter(n=>n>0);
-            if(!ints.length) return {ep1,ep2};
-            const avg = ints.reduce((a,b)=>a+b,0)/ints.length;
+            const ints = wData.intervalli.map(i => timeToSeconds(i) || parseFloat(i)).filter(n => n > 0);
+            if (!ints.length) return { ep1, ep2 };
+            const avg = ints.reduce((a, b) => a + b, 0) / ints.length;
             let watts = 0;
-            if(wData.modalita === 'tempo') {
-                const sec = parseInt(wData.tempo)*60;
-                if(sec>0) watts = 2.8 * Math.pow(avg/sec, 3);
+            if (wData.modalita === 'tempo') {
+                const sec = parseInt(wData.tempo) * 60;
+                if (sec > 0) watts = 2.8 * Math.pow(avg / sec, 3);
             } else {
                 const dist = parseInt(wData.distanza);
-                if(avg>0) watts = 2.8 * Math.pow(dist/avg, 3);
+                if (avg > 0) watts = 2.8 * Math.pow(dist / avg, 3);
             }
-            if(watts<=0) return {ep1,ep2};
-            if(aData.rowerg) {
+            if (watts <= 0) return { ep1, ep2 };
+            if (aData.rowerg) {
                 const r = timeToSeconds(aData.rowerg);
-                if(r>0) ep2 = (watts / (2.8*Math.pow(2000/r,3)))*100;
+                if (r > 0) ep2 = (watts / (2.8 * Math.pow(2000 / r, 3))) * 100;
             }
-            const wr = timeToSeconds(aData.genere==='M'?RECORD_MONDO_M_2000M:RECORD_MONDO_F_2000M);
-            if(wr>0) ep1 = (watts / (2.8*Math.pow(2000/wr,3)))*100;
-            return {ep1,ep2};
+            const wr = timeToSeconds(aData.genere === 'M' ? RECORD_MONDO_M_2000M : RECORD_MONDO_F_2000M);
+            if (wr > 0) ep1 = (watts / (2.8 * Math.pow(2000 / wr, 3))) * 100;
+            return { ep1, ep2 };
         }
 
         document.addEventListener('authStateReady', (e) => {
             if (e.detail.athlete) {
-                currentAthleteId = e.detail.athlete.id;
+                currentAthleteId      = e.detail.athlete.id;
                 currentAthleteCognome = e.detail.athlete.cognome;
                 document.getElementById('athlete-info').innerHTML = `Stai inserendo un allenamento per: <strong class="text-sky-400">${e.detail.athlete.cognome}</strong>`;
                 document.getElementById('form-content').classList.remove('hidden');
